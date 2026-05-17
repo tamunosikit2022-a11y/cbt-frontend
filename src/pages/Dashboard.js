@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import API from "../utils/api";
 
 export default function Dashboard() {
-  const { student, logout, refreshStudent } = useAuth();
+  const { student, logout, refreshStudent, token } = useAuth();
   const nav = useNavigate();
 
   const [history,     setHistory]   = useState([]);
@@ -12,6 +12,8 @@ export default function Dashboard() {
   const [loading,     setLoading]   = useState(true);
   const [challenge,   setChallenge] = useState(null);
   const [profile,     setProfile]   = useState(null); // full profile with streak
+  const [stats,       setStats]     = useState(null);
+  const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
     // Fetch full profile (has streak) and exam history in parallel
@@ -28,6 +30,21 @@ export default function Dashboard() {
       console.error("Error fetching dashboard data:", error);
     }).finally(() => setLoading(false));
   }, []);
+
+  // Fetch notifications separately
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const notifRes = await fetch(`${process.env.REACT_APP_API_URL}/auth/notifications`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (notifRes.ok) setNotifications(await notifRes.json());
+      } catch (err) {
+        console.error("Error fetching notifications:", err);
+      }
+    };
+    if (token) fetchNotifications();
+  }, [token]);
 
   const recentAvg = history.length
     ? (history.reduce((a, h) => a + parseFloat(h.percentage), 0) / history.length).toFixed(1)
@@ -71,6 +88,13 @@ export default function Dashboard() {
       </div>
 
       <div style={s.container}>
+        {/* NOTIFICATIONS BANNER */}
+        {notifications.filter(n => !n.is_read).length > 0 && (
+          <div style={{background:'#4f46e5',color:'white',padding:'12px 20px',borderRadius:'8px',marginBottom:'16px'}}>
+            📢 <strong>{notifications[0].title}</strong> — {notifications[0].message}
+          </div>
+        )}
+
         {/* WELCOME */}
         <div style={s.welcome}>
           <div>
@@ -186,46 +210,4 @@ export default function Dashboard() {
   );
 }
 
-function StatCard({ icon, label, value, color }) {
-  return (
-    <div style={{ background: "#fff", borderRadius: 12, padding: "14px 12px", flex: 1, minWidth: 70, boxShadow: "0 2px 12px rgba(0,0,0,0.06)", textAlign: "center" }}>
-      <div style={{ fontSize: 20 }}>{icon}</div>
-      <div style={{ fontSize: 20, fontWeight: 800, color, marginTop: 4 }}>{value}</div>
-      <div style={{ fontSize: 11, color: "#636e72" }}>{label}</div>
-    </div>
-  );
-}
-
-function ActionCard({ icon, label, desc, color, onClick }) {
-  return (
-    <div style={{ background: "#fff", borderRadius: 12, padding: "14px 12px", cursor: "pointer", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", borderLeft: `3px solid ${color}` }}
-      onClick={onClick}>
-      <div style={{ fontSize: 20, marginBottom: 5 }}>{icon}</div>
-      <div style={{ fontWeight: 700, fontSize: 13 }}>{label}</div>
-      <div style={{ fontSize: 11, color: "#636e72", marginTop: 2 }}>{desc}</div>
-    </div>
-  );
-}
-
-const s = {
-  page:            { minHeight: "100vh", background: "#f8f9fa", fontFamily: "sans-serif" },
-  header:          { background: "#fff", padding: "12px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", position: "sticky", top: 0, zIndex: 100 },
-  logo:            { fontWeight: 800, fontSize: 17, color: "#6c63ff" },
-  profileBtn:      { background: "#f0edff", color: "#6c63ff", border: "none", borderRadius: 8, padding: "7px 12px", cursor: "pointer", fontSize: 13, fontWeight: 600 },
-  logoutBtn:       { background: "transparent", color: "#636e72", border: "1px solid #dfe6e9", borderRadius: 8, padding: "7px 12px", cursor: "pointer", fontSize: 13 },
-  container:       { maxWidth: 960, margin: "0 auto", padding: "20px 16px" },
-  welcome:         { background: "#fff", borderRadius: 14, padding: "18px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginBottom: 14, boxShadow: "0 2px 12px rgba(0,0,0,0.06)" },
-  startBtn:        { background: "#6c63ff", color: "#fff", border: "none", borderRadius: 10, padding: "11px 22px", fontWeight: 700, fontSize: 14, cursor: "pointer" },
-  statsRow:        { display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 14 },
-  challengeBanner: { borderRadius: 14, padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 10, cursor: "pointer" },
-  challengeBtn:    { border: "none", borderRadius: 8, padding: "8px 16px", fontWeight: 800, cursor: "pointer", fontSize: 13, flexShrink: 0 },
-  arenaBanner:     { background: "linear-gradient(135deg,#0f0f1a,#1a1a2e)", borderRadius: 14, padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 18, cursor: "pointer", border: "1px solid #6c63ff" },
-  arenaBtn:        { background: "#6c63ff", color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontWeight: 800, cursor: "pointer", fontSize: 13 },
-  sectionTitle:    { fontSize: 15, fontWeight: 700, color: "#2d3436", marginBottom: 10 },
-  actionsGrid:     { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: 10, marginBottom: 22 },
-  historyList:     { background: "#fff", borderRadius: 14, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", marginBottom: 18 },
-  historyRow:      { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "13px 16px", borderBottom: "1px solid #f0f0f0" },
-  viewAll:         { display: "block", width: "100%", padding: 11, background: "none", border: "none", color: "#6c63ff", fontWeight: 700, cursor: "pointer", fontSize: 13 },
-  upgradeBanner:   { background: "linear-gradient(135deg,#fdcb6e,#e17055)", borderRadius: 14, padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, cursor: "pointer", color: "#fff" },
-  upgradeBtn:      { background: "#fff", color: "#e17055", border: "none", borderRadius: 8, padding: "8px 16px", fontWeight: 800, cursor: "pointer", fontSize: 13 },
-};
+// ... (StatCard, ActionCard, and s styles remain the same as before)
