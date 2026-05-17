@@ -992,7 +992,7 @@ export default function AdminDashboard() {
                 <button style={{ ...st.genBtn, background: "#00b894" }}
                   onClick={() => {
                     if (!broadcast.title || !broadcast.body) return showMsg("Fill in title and message.", "error");
-                    showMsg("Broadcast sent! (Add your push notification service to deliver it.)");
+                    adminPost("/broadcast", { title: broadcast.title, message: broadcast.body, type: broadcast.type }).then(() => { showMsg("Broadc
                   }}>
                   📣 Send to All Students
                 </button>
