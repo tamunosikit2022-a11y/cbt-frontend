@@ -3,16 +3,41 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import API from "../utils/api";
 
+// Helper Components
+function StatCard({ icon, label, value, color }) {
+  return (
+    <div style={s.statCard}>
+      <div style={{ ...s.statIcon, background: `${color}15`, color: color }}>{icon}</div>
+      <div>
+        <div style={s.statValue}>{value}</div>
+        <div style={s.statLabel}>{label}</div>
+      </div>
+    </div>
+  );
+}
+
+function ActionCard({ icon, label, desc, color, onClick }) {
+  return (
+    <div style={s.actionCard} onClick={onClick}>
+      <div style={{ ...s.actionIcon, background: `${color}15`, color: color }}>{icon}</div>
+      <div>
+        <div style={s.actionLabel}>{label}</div>
+        <div style={s.actionDesc}>{desc}</div>
+      </div>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const { student, logout, refreshStudent, token } = useAuth();
   const nav = useNavigate();
 
-  const [history,     setHistory]   = useState([]);
-  const [totalExams,  setTotalExams] = useState(0);
-  const [loading,     setLoading]   = useState(true);
-  const [challenge,   setChallenge] = useState(null);
-  const [profile,     setProfile]   = useState(null); // full profile with streak
-  const [stats,       setStats]     = useState(null);
+  const [history, setHistory] = useState([]);
+  const [totalExams, setTotalExams] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [challenge, setChallenge] = useState(null);
+  const [profile, setProfile] = useState(null);
+  const [stats, setStats] = useState(null);
   const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
@@ -83,13 +108,13 @@ export default function Dashboard() {
         <div style={s.logo}>🎓 Scholars CBT</div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <button style={s.profileBtn} onClick={() => nav("/profile")}>👤 Profile</button>
-          <button style={s.logoutBtn}  onClick={logout}>Logout</button>
+          <button style={s.logoutBtn} onClick={logout}>Logout</button>
         </div>
       </div>
 
       <div style={s.container}>
-        {/* NOTIFICATIONS BANNER */}
-        {notifications.filter(n => !n.is_read).length > 0 && (
+        {/* NOTIFICATIONS BANNER - CHANGED LINE BELOW */}
+        {notifications.length > 0 && (
           <div style={{background:'#4f46e5',color:'white',padding:'12px 20px',borderRadius:'8px',marginBottom:'16px'}}>
             📢 <strong>{notifications[0].title}</strong> — {notifications[0].message}
           </div>
@@ -112,10 +137,10 @@ export default function Dashboard() {
 
         {/* STATS */}
         <div style={s.statsRow}>
-          <StatCard icon="📝" label="Exams"      value={totalExams > 0 ? `${totalExams}` : "0"} color="#6c63ff" />
-          <StatCard icon="📈" label="Avg Score"  value={recentAvg ? `${recentAvg}%` : "—"}              color="#00b894" />
-          <StatCard icon="🏆" label="Best"       value={bestScore  ? `${bestScore}%`  : "—"}             color="#e17055" />
-          <StatCard icon="🔥" label="Streak"     value={streak > 0 ? `${streak}d`    : "—"}             color="#fdcb6e" />
+          <StatCard icon="📝" label="Exams" value={totalExams > 0 ? `${totalExams}` : "0"} color="#6c63ff" />
+          <StatCard icon="📈" label="Avg Score" value={recentAvg ? `${recentAvg}%` : "—"} color="#00b894" />
+          <StatCard icon="🏆" label="Best" value={bestScore ? `${bestScore}%` : "—"} color="#e17055" />
+          <StatCard icon="🔥" label="Streak" value={streak > 0 ? `${streak}d` : "—"} color="#fdcb6e" />
         </div>
 
         {/* DAILY CHALLENGE */}
@@ -151,20 +176,20 @@ export default function Dashboard() {
         {/* QUICK ACTIONS */}
         <h3 style={s.sectionTitle}>Quick Actions</h3>
         <div style={s.actionsGrid}>
-          <ActionCard icon="📚" label="JAMB Practice"      desc="Full simulation"         color="#6c63ff" onClick={() => nav("/exam-select?type=JAMB")} />
-          <ActionCard icon="🏫" label="Post-UTME"          desc="University specific"     color="#00b894" onClick={() => nav("/exam-select?type=POST-UTME")} />
-          <ActionCard icon="⚔️"  label="Arena Battle"      desc="Compete live!"           color="#e17055" onClick={() => nav("/arena")} />
-          <ActionCard icon="🎯" label="Daily Challenge"    desc="Today's 10 questions"    color="#6c63ff" onClick={() => nav("/challenge")} />
-          <ActionCard icon="📋" label="Exam History"       desc="Review past sessions"    color="#0984e3" onClick={() => nav("/history")} />
-          <ActionCard icon="📊" label="My Analytics"       desc="Weak topics & strengths" color="#a29bfe" onClick={() => nav("/performance")} />
-          <ActionCard icon="🔁" label="Error Review"       desc="Practice your mistakes"  color="#e17055" onClick={() => nav("/error-review")} />
-          <ActionCard icon="🏆" label="Leaderboard"        desc="Top students"            color="#fdcb6e" onClick={() => nav("/leaderboard")} />
-          <ActionCard icon="🎓" label="Predicted Score"    desc="Your JAMB estimate"      color="#6c63ff" onClick={() => nav("/predicted")} />
-          <ActionCard icon="🏅" label="My Badges"          desc="Earn achievements"       color="#fdcb6e" onClick={() => nav("/badges")} />
-          <ActionCard icon="📂" label="Resume Exam"        desc="Continue unfinished"     color="#00b894" onClick={() => nav("/resume")} />
-          <ActionCard icon="🏛" label="Admission Check"    desc="Check uni chances"       color="#e17055" onClick={() => nav("/admission")} />
-          <ActionCard icon="🧠" label="Exam Personality"   desc="Understand your style"   color="#0984e3" onClick={() => nav("/personality")} />
-          <ActionCard icon="💪" label="Beat Yourself"      desc="Break your record"       color="#00b894" onClick={() => nav("/beat-yourself")} />
+          <ActionCard icon="📚" label="JAMB Practice" desc="Full simulation" color="#6c63ff" onClick={() => nav("/exam-select?type=JAMB")} />
+          <ActionCard icon="🏫" label="Post-UTME" desc="University specific" color="#00b894" onClick={() => nav("/exam-select?type=POST-UTME")} />
+          <ActionCard icon="⚔️" label="Arena Battle" desc="Compete live!" color="#e17055" onClick={() => nav("/arena")} />
+          <ActionCard icon="🎯" label="Daily Challenge" desc="Today's 10 questions" color="#6c63ff" onClick={() => nav("/challenge")} />
+          <ActionCard icon="📋" label="Exam History" desc="Review past sessions" color="#0984e3" onClick={() => nav("/history")} />
+          <ActionCard icon="📊" label="My Analytics" desc="Weak topics & strengths" color="#a29bfe" onClick={() => nav("/performance")} />
+          <ActionCard icon="🔁" label="Error Review" desc="Practice your mistakes" color="#e17055" onClick={() => nav("/error-review")} />
+          <ActionCard icon="🏆" label="Leaderboard" desc="Top students" color="#fdcb6e" onClick={() => nav("/leaderboard")} />
+          <ActionCard icon="🎓" label="Predicted Score" desc="Your JAMB estimate" color="#6c63ff" onClick={() => nav("/predicted")} />
+          <ActionCard icon="🏅" label="My Badges" desc="Earn achievements" color="#fdcb6e" onClick={() => nav("/badges")} />
+          <ActionCard icon="📂" label="Resume Exam" desc="Continue unfinished" color="#00b894" onClick={() => nav("/resume")} />
+          <ActionCard icon="🏛" label="Admission Check" desc="Check uni chances" color="#e17055" onClick={() => nav("/admission")} />
+          <ActionCard icon="🧠" label="Exam Personality" desc="Understand your style" color="#0984e3" onClick={() => nav("/personality")} />
+          <ActionCard icon="💪" label="Beat Yourself" desc="Break your record" color="#00b894" onClick={() => nav("/beat-yourself")} />
         </div>
 
         {/* RECENT HISTORY */}
@@ -210,4 +235,222 @@ export default function Dashboard() {
   );
 }
 
-// ... (StatCard, ActionCard, and s styles remain the same as before)
+// Styles object
+const s = {
+  page: {
+    minHeight: "100vh",
+    background: "#f8f9fa",
+  },
+  header: {
+    background: "white",
+    padding: "16px 24px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderBottom: "1px solid #e9ecef",
+    position: "sticky",
+    top: 0,
+    zIndex: 100,
+  },
+  logo: {
+    fontSize: 20,
+    fontWeight: 800,
+    color: "#6c63ff",
+  },
+  profileBtn: {
+    padding: "8px 16px",
+    background: "#f8f9fa",
+    border: "1px solid #e9ecef",
+    borderRadius: 8,
+    cursor: "pointer",
+    fontSize: 14,
+  },
+  logoutBtn: {
+    padding: "8px 16px",
+    background: "#e17055",
+    color: "white",
+    border: "none",
+    borderRadius: 8,
+    cursor: "pointer",
+    fontSize: 14,
+  },
+  container: {
+    maxWidth: 1200,
+    margin: "0 auto",
+    padding: "24px",
+  },
+  welcome: {
+    background: "white",
+    padding: "24px",
+    borderRadius: 12,
+    marginBottom: "24px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+  },
+  startBtn: {
+    padding: "12px 24px",
+    background: "#6c63ff",
+    color: "white",
+    border: "none",
+    borderRadius: 8,
+    cursor: "pointer",
+    fontWeight: 600,
+    fontSize: 14,
+  },
+  statsRow: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+    gap: "16px",
+    marginBottom: "24px",
+  },
+  statCard: {
+    background: "white",
+    padding: "20px",
+    borderRadius: 12,
+    display: "flex",
+    alignItems: "center",
+    gap: "16px",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+  },
+  statIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: 24,
+  },
+  statValue: {
+    fontSize: 28,
+    fontWeight: 800,
+    color: "#2d3436",
+  },
+  statLabel: {
+    fontSize: 13,
+    color: "#636e72",
+    marginTop: 4,
+  },
+  challengeBanner: {
+    background: "linear-gradient(135deg,#6c63ff,#a29bfe)",
+    padding: "20px",
+    borderRadius: 12,
+    marginBottom: "24px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    cursor: "pointer",
+  },
+  challengeBtn: {
+    padding: "8px 20px",
+    borderRadius: 8,
+    border: "none",
+    fontWeight: 600,
+    cursor: "pointer",
+  },
+  arenaBanner: {
+    background: "linear-gradient(135deg,#e17055,#d63031)",
+    padding: "20px",
+    borderRadius: 12,
+    marginBottom: "32px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    cursor: "pointer",
+  },
+  arenaBtn: {
+    padding: "8px 20px",
+    background: "white",
+    color: "#e17055",
+    borderRadius: 8,
+    border: "none",
+    fontWeight: 600,
+    cursor: "pointer",
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 700,
+    marginBottom: 16,
+    color: "#2d3436",
+  },
+  actionsGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+    gap: "12px",
+    marginBottom: "32px",
+  },
+  actionCard: {
+    background: "white",
+    padding: "16px",
+    borderRadius: 10,
+    display: "flex",
+    alignItems: "center",
+    gap: "14px",
+    cursor: "pointer",
+    transition: "transform 0.2s, box-shadow 0.2s",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+  },
+  actionIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: 22,
+  },
+  actionLabel: {
+    fontWeight: 600,
+    fontSize: 14,
+    color: "#2d3436",
+  },
+  actionDesc: {
+    fontSize: 12,
+    color: "#636e72",
+    marginTop: 2,
+  },
+  historyList: {
+    background: "white",
+    borderRadius: 12,
+    overflow: "hidden",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+    marginBottom: "32px",
+  },
+  historyRow: {
+    padding: "16px",
+    borderBottom: "1px solid #e9ecef",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  viewAll: {
+    width: "100%",
+    padding: "12px",
+    background: "none",
+    border: "none",
+    borderTop: "1px solid #e9ecef",
+    color: "#6c63ff",
+    fontWeight: 600,
+    cursor: "pointer",
+  },
+  upgradeBanner: {
+    background: "linear-gradient(135deg,#fdcb6e,#f39c12)",
+    padding: "20px",
+    borderRadius: 12,
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    cursor: "pointer",
+  },
+  upgradeBtn: {
+    padding: "8px 20px",
+    background: "white",
+    color: "#f39c12",
+    borderRadius: 8,
+    border: "none",
+    fontWeight: 600,
+    cursor: "pointer",
+  },
+};
