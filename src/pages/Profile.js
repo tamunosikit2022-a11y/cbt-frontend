@@ -61,7 +61,9 @@ export default function Profile() {
       await refreshStudent();
       setShowAvatars(false);
       showMsg("success", "Avatar updated!");
-    } catch {}
+    } catch (err) {
+      showMsg("error", "Failed to update avatar.");
+    }
   };
 
   const changePassword = async () => {
@@ -93,7 +95,7 @@ export default function Profile() {
   };
 
   const avatar  = student?.avatar_url || "🎓";
-  const isEmoji = avatar.length <= 2;
+  const isEmoji = avatar && avatar.length <= 2;
 
   return (
     <div style={s.page}>
@@ -113,7 +115,7 @@ export default function Profile() {
             <div style={s.avatarCircle}>
               {isEmoji
                 ? <span style={{ fontSize:48 }}>{avatar}</span>
-                : <img src={avatar} alt="avatar" style={{ width:"100%", height:"100%", objectFit:"cover" }} />}
+                : <img src={avatar} alt="avatar" style={{ width:"100%", height:"100%", objectFit:"cover", borderRadius:"50%" }} />}
             </div>
             <div style={s.editBadge}>✏️</div>
           </div>
@@ -129,6 +131,33 @@ export default function Profile() {
               <input style={{ ...s.input, marginTop:10, fontSize:12 }}
                 placeholder="Or paste image URL..."
                 onKeyDown={e => e.key === "Enter" && selectEmoji(e.target.value)} />
+              <label style={{ display:"block", marginTop:8, cursor:"pointer", background:"#6c63ff", color:"#fff", padding:"8px 12px", borderRadius:8, textAlign:"center", fontSize:13, fontWeight:700 }}>
+                📷 Upload Photo
+                <input type="file" accept="image/*" style={{ display:"none" }}
+                  onChange={async (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    
+                    // Validate file size (max 5MB)
+                    if (file.size > 5 * 1024 * 1024) {
+                      showMsg("error", "Image too large. Max 5MB.");
+                      return;
+                    }
+                    
+                    const reader = new FileReader();
+                    reader.onload = async (ev) => {
+                      try {
+                        const res = await API.put("/auth/avatar", { image_base64: ev.target.result });
+                        await refreshStudent();
+                        setShowAvatars(false);
+                        showMsg("success", "Photo uploaded successfully!");
+                      } catch (err) {
+                        showMsg("error", err.response?.data?.error || "Upload failed.");
+                      }
+                    };
+                    reader.readAsDataURL(file);
+                  }} />
+              </label>
             </div>
           )}
 
@@ -325,20 +354,20 @@ const s = {
   avatarCircle:  { width:80, height:80, borderRadius:"50%", background:"#f0edff", display:"flex", alignItems:"center", justifyContent:"center", border:"3px solid #6c63ff", overflow:"hidden" },
   editBadge:     { position:"absolute", bottom:0, right:0, background:"#fff", border:"2px solid #dfe6e9", borderRadius:"50%", width:24, height:24, display:"flex", alignItems:"center", justifyContent:"center", fontSize:12 },
   avatarPicker:  { position:"absolute", top:110, left:16, background:"#fff", border:"1px solid #dfe6e9", borderRadius:12, padding:14, boxShadow:"0 8px 24px rgba(0,0,0,0.12)", zIndex:100, width:280 },
-  avatarBtn:     { fontSize:24, background:"#f8f9fa", border:"none", borderRadius:8, padding:"6px 8px", cursor:"pointer" },
+  avatarBtn:     { fontSize:24, background:"#f8f9fa", border:"none", borderRadius:8, padding:"6px 8px", cursor:"pointer", transition:"transform 0.2s", ":hover":{ transform:"scale(1.05)" } },
   premBadge:     { display:"inline-block", background:"#fff9e6", color:"#b7860b", padding:"3px 10px", borderRadius:20, fontSize:12, fontWeight:700, marginTop:6 },
   statsRow:      { display:"flex", gap:10, marginBottom:14 },
   tabs:          { display:"flex", gap:8, marginBottom:16, flexWrap:"wrap" },
-  tab:           { flex:1, padding:"10px 12px", border:"2px solid #dfe6e9", borderRadius:10, fontWeight:700, cursor:"pointer", fontSize:13, whiteSpace:"nowrap" },
+  tab:           { flex:1, padding:"10px 12px", border:"2px solid #dfe6e9", borderRadius:10, fontWeight:700, cursor:"pointer", fontSize:13, whiteSpace:"nowrap", transition:"all 0.2s" },
   card:          { background:"#fff", borderRadius:14, padding:"20px 18px", boxShadow:"0 2px 12px rgba(0,0,0,0.06)" },
   cardTitle:     { fontSize:16, fontWeight:800, color:"#2d3436", marginBottom:16 },
   formGrid:      { display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:8 },
   label:         { display:"block", fontSize:12, fontWeight:600, color:"#636e72", marginBottom:4, marginTop:10 },
-  input:         { width:"100%", padding:"10px 12px", border:"2px solid #dfe6e9", borderRadius:8, fontSize:14, boxSizing:"border-box", outline:"none" },
-  saveBtn:       { width:"100%", padding:12, background:"linear-gradient(135deg,#6c63ff,#3f51b5)", color:"#fff", border:"none", borderRadius:10, fontWeight:800, cursor:"pointer", fontSize:14, marginTop:14 },
+  input:         { width:"100%", padding:"10px 12px", border:"2px solid #dfe6e9", borderRadius:8, fontSize:14, boxSizing:"border-box", outline:"none", transition:"border-color 0.2s", ":focus":{ borderColor:"#6c63ff" } },
+  saveBtn:       { width:"100%", padding:12, background:"linear-gradient(135deg,#6c63ff,#3f51b5)", color:"#fff", border:"none", borderRadius:10, fontWeight:800, cursor:"pointer", fontSize:14, marginTop:14, transition:"opacity 0.2s" },
   dangerZone:    { marginTop:20, paddingTop:16, borderTop:"1px solid #f0f0f0" },
-  logoutBtn:     { padding:"9px 20px", background:"#ffeae9", color:"#e17055", border:"none", borderRadius:8, fontWeight:700, cursor:"pointer", fontSize:13 },
+  logoutBtn:     { padding:"9px 20px", background:"#ffeae9", color:"#e17055", border:"none", borderRadius:8, fontWeight:700, cursor:"pointer", fontSize:13, transition:"background 0.2s", ":hover":{ background:"#ffd5d0" } },
   pricingBox:    { background:"#f8f9fa", borderRadius:10, padding:"14px", marginTop:16 },
   priceRow:      { display:"flex", justifyContent:"space-between", padding:"8px 0", borderBottom:"1px solid #f0f0f0", fontSize:14 },
-  waBtn:         { display:"block", marginTop:12, padding:"11px", background:"#25D366", color:"#fff", borderRadius:8, fontWeight:700, textAlign:"center", textDecoration:"none", fontSize:14 },
+  waBtn:         { display:"block", marginTop:12, padding:"11px", background:"#25D366", color:"#fff", borderRadius:8, fontWeight:700, textAlign:"center", textDecoration:"none", fontSize:14, transition:"opacity 0.2s", ":hover":{ opacity:0.9 } },
 };
