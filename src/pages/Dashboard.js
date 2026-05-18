@@ -60,16 +60,14 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const notifRes = await fetch(`${process.env.REACT_APP_API_URL}/auth/notifications`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (notifRes.ok) setNotifications(await notifRes.json());
+        const res = await API.get("/auth/notifications");
+        if (res.data && Array.isArray(res.data)) setNotifications(res.data);
       } catch (err) {
         console.error("Error fetching notifications:", err);
       }
     };
-    if (token) fetchNotifications();
-  }, [token]);
+    fetchNotifications();
+  }, []);
 
   const recentAvg = history.length
     ? (history.reduce((a, h) => a + parseFloat(h.percentage), 0) / history.length).toFixed(1)
