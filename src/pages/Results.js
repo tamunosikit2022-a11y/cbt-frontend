@@ -31,7 +31,7 @@ export default function Results() {
   }
 
   const { result, questions, mode, subject, subjectMap, multiSubjects, isJAMBFull, isPostUTME, institution } = state;
-  const { score, total, percentage, answers } = result;
+  const { score, total, percentage, answers, xp_earned } = result;
 
   // FIX BUG 3: Ensure answers exists and is an array
   const safeAnswers = Array.isArray(answers) ? answers : [];
@@ -87,6 +87,12 @@ export default function Results() {
                 {score || 0} correct out of {total || 0} · {isPostUTME ? `${institution || ""} Post-UTME` : subject || ""}
               </p>
             </>
+          )}
+
+          {xp_earned > 0 && (
+            <div style={{ background:"linear-gradient(135deg,#6c63ff,#a29bfe)", borderRadius:12, padding:"10px 16px", marginBottom:12, color:"#fff", fontWeight:800, fontSize:15, textAlign:"center" }}>
+              ⚡ +{xp_earned} XP earned!
+            </div>
           )}
 
           <div style={s.statsRow}>
