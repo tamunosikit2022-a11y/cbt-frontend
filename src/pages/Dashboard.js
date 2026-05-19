@@ -13,7 +13,7 @@ export default function Dashboard() {
   const [challenge,     setChallenge]     = useState(null);
   const [profile,       setProfile]       = useState(null);
   const [notifications, setNotifications] = useState([]);
-  const [activeTab,     setActiveTab]     = useState("home"); // home | practice | tools | profile
+  const [activeTab,     setActiveTab]     = useState("home"); // home | learn | progress | profile
   const [notifOpen,     setNotifOpen]     = useState(false);
 
   useEffect(() => {
@@ -181,7 +181,7 @@ export default function Dashboard() {
                       </div>
                     </div>
                   ))}
-                  <button style={s.viewAllBtn} onClick={() => setActiveTab("tools")}>View all →</button>
+                  <button style={s.viewAllBtn} onClick={() => setActiveTab("progress")}>View all →</button>
                 </div>
               </>
             )}
@@ -212,39 +212,70 @@ export default function Dashboard() {
               <ToolCard icon="🧠" title="Weakness Mode"    desc="Target your weak areas"                color="#6c63ff" onClick={() => nav("/exam-select")} />
             </div>
 
-            <div style={s.sectionLabel}>Video Learning</div>
-            <div style={s.toolGrid}>
-              <ToolCard icon="📺" title="Video Library"   desc="Top Nigerian educators · by subject"    color="#e17055" onClick={() => nav("/videos")} wide />
-            </div>
-
             <div style={s.sectionLabel}>Arena Battles</div>
             <div style={s.toolGrid}>
-              <ToolCard icon="🏟️" title="Enter Arena"     desc="Live battles with students"            color="#1a1a2e" onClick={() => nav("/arena")} wide />
+              <ToolCard icon="🏟️" title="Enter Arena"     desc="Live battles with students"            color="#e17055" onClick={() => nav("/arena")} wide />
             </div>
           </>
         )}
 
-        {/* ══ TOOLS TAB ══ */}
-        {activeTab === "tools" && (
+        {/* ══ PROGRESS TAB ══ */}
+        {activeTab === "progress" && (
           <>
             <div style={s.tabHero}>
-              <div style={s.tabHeroTitle}>📊 Analytics & Tools</div>
-              <div style={s.tabHeroSub}>Track progress and plan your success</div>
+              <div style={s.tabHeroTitle}>📈 My Progress</div>
+              <div style={s.tabHeroSub}>See how far you've come</div>
             </div>
 
-            <div style={s.sectionLabel}>My Performance</div>
+            {/* SHELF 1 — How am I doing? */}
+            <div style={s.shelfHeader}>
+              <span style={s.shelfIcon}>📊</span>
+              <div>
+                <div style={s.shelfTitle}>How Am I Doing?</div>
+                <div style={s.shelfDesc}>Check your scores and weak subjects</div>
+              </div>
+            </div>
             <div style={s.toolGrid}>
-              <ToolCard icon="📊" title="Analytics"        desc="Subjects · strengths · weaknesses"     color="#6c63ff" onClick={() => nav("/performance")} />
-              <ToolCard icon="🎓" title="Predicted Score"  desc="Estimate your JAMB score"              color="#00b894" onClick={() => nav("/predicted")} />
-              <ToolCard icon="🏛" title="Admission Chance" desc="Check university cut-offs"             color="#0984e3" onClick={() => nav("/admission")} />
-              <ToolCard icon="🧠" title="Exam Personality" desc="Understand your exam style"            color="#a29bfe" onClick={() => nav("/personality")} />
+              <ToolCard icon="📊" title="My Analytics"     desc="See your strongest & weakest subjects"  color="#6c63ff" onClick={() => nav("/performance")} />
+              <ToolCard icon="📋" title="Exam History"     desc="Every exam you've ever taken"           color="#636e72" onClick={() => nav("/history")} />
             </div>
 
-            <div style={s.sectionLabel}>History & Achievements</div>
+            {/* SHELF 2 — Where will I get into? */}
+            <div style={s.shelfHeader}>
+              <span style={s.shelfIcon}>🎓</span>
+              <div>
+                <div style={s.shelfTitle}>University Planner</div>
+                <div style={s.shelfDesc}>Know your chances before results come out</div>
+              </div>
+            </div>
             <div style={s.toolGrid}>
-              <ToolCard icon="📋" title="Exam History"     desc="All past sessions"                     color="#636e72" onClick={() => nav("/history")} />
-              <ToolCard icon="🏅" title="My Badges"        desc="Achievements earned"                   color="#fdcb6e" onClick={() => nav("/badges")} />
-              <ToolCard icon="🏆" title="Leaderboard"      desc="Top students ranking"                  color="#e17055" onClick={() => nav("/leaderboard")} />
+              <ToolCard icon="🎯" title="Predicted Score"  desc="What JAMB score will you likely get?"  color="#00b894" onClick={() => nav("/predicted")} />
+              <ToolCard icon="🏛" title="Admission Checker" desc="Can you get into your dream school?"  color="#0984e3" onClick={() => nav("/admission")} />
+            </div>
+
+            {/* SHELF 3 — Know yourself */}
+            <div style={s.shelfHeader}>
+              <span style={s.shelfIcon}>🧠</span>
+              <div>
+                <div style={s.shelfTitle}>Know Yourself</div>
+                <div style={s.shelfDesc}>Understand how you study & compete</div>
+              </div>
+            </div>
+            <div style={s.toolGrid}>
+              <ToolCard icon="🧠" title="Exam Personality" desc="Are you fast? slow? accurate? a guesser?" color="#a29bfe" onClick={() => nav("/personality")} />
+              <ToolCard icon="🏆" title="Leaderboard"      desc="Where do you rank among all students?"  color="#e17055" onClick={() => nav("/leaderboard")} />
+            </div>
+
+            {/* SHELF 4 — Rewards */}
+            <div style={s.shelfHeader}>
+              <span style={s.shelfIcon}>🏅</span>
+              <div>
+                <div style={s.shelfTitle}>Rewards & Badges</div>
+                <div style={s.shelfDesc}>Celebrate your achievements</div>
+              </div>
+            </div>
+            <div style={s.toolGrid}>
+              <ToolCard icon="🏅" title="My Badges"        desc="{badges earned so far}"                color="#fdcb6e" onClick={() => nav("/badges")} wide />
             </div>
           </>
         )}
@@ -287,8 +318,8 @@ export default function Dashboard() {
       <nav style={s.bottomNav}>
         {[
           { id:"home",     icon:"🏠", label:"Home"     },
-          { id:"practice", icon:"📚", label:"Practice" },
-          { id:"tools",    icon:"📊", label:"Tools"    },
+          { id:"learn",    icon:"📚", label:"Learn"    },
+          { id:"progress", icon:"📈", label:"Progress" },
           { id:"profile",  icon:"👤", label:"Profile"  },
         ].map(tab => (
           <button key={tab.id} style={{ ...s.navBtn, ...(activeTab === tab.id ? s.navBtnActive : {}) }}
@@ -385,8 +416,14 @@ const s = {
   histRow:     { padding:"14px 16px", display:"flex", alignItems:"center", gap:12 },
   viewAllBtn:  { width:"100%", padding:12, background:"none", border:"none", borderTop:"1px solid #f5f5f5", color:"#6c63ff", fontWeight:700, cursor:"pointer", fontSize:13 },
 
+  // Shelves
+  shelfHeader: { display:"flex", alignItems:"center", gap:12, background:"#fff", borderRadius:14, padding:"12px 14px", marginBottom:10, marginTop:16, boxShadow:"0 1px 6px rgba(0,0,0,0.05)" },
+  shelfIcon:   { fontSize:24, width:42, height:42, background:"#f0edff", borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 },
+  shelfTitle:  { fontWeight:800, fontSize:15, color:"#2d3436" },
+  shelfDesc:   { fontSize:12, color:"#636e72", marginTop:1 },
+
   // Tool Grid
-  toolGrid:    { display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:16 },
+  toolGrid:    { display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:4 },
 
   // Tab Hero
   tabHero:     { background:"linear-gradient(135deg,#6c63ff,#a29bfe)", borderRadius:18, padding:"20px", marginBottom:18, color:"#fff" },
