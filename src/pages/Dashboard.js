@@ -18,15 +18,16 @@ export default function Dashboard() {
 
   useEffect(() => {
     Promise.all([
-      API.get("/auth/profile").catch(() => null),
-      API.get("/exam/history").catch(() => ({ data: [] })),
+      API.get("/auth/profile"),
+      API.get("/exam/history"),
       API.get("/innovations/challenge/today").catch(() => null),
       API.get("/auth/notifications").catch(() => ({ data: [] })),
     ]).then(([p, h, c, n]) => {
-      if (p?.data) setProfile(p.data);
-      if (h?.data) { setTotalExams(h.data.length); setHistory(h.data.slice(0, 3)); }
-      if (c?.data) setChallenge(c.data);
-      if (n?.data && Array.isArray(n.data)) setNotifications(n.data);
+      setProfile(p.data);
+      setTotalExams(h.data.length);
+      setHistory(h.data.slice(0, 3));
+      if (c) setChallenge(c.data);
+      if (n?.data) setNotifications(n.data);
     }).finally(() => setLoading(false));
   }, []);
 
@@ -211,9 +212,14 @@ export default function Dashboard() {
               <ToolCard icon="🧠" title="Weakness Mode"    desc="Target your weak areas"                color="#6c63ff" onClick={() => nav("/exam-select")} />
             </div>
 
+            <div style={s.sectionLabel}>Video Learning</div>
+            <div style={s.toolGrid}>
+              <ToolCard icon="📺" title="Video Library"   desc="Top Nigerian educators · by subject"    color="#e17055" onClick={() => nav("/videos")} wide />
+            </div>
+
             <div style={s.sectionLabel}>Arena Battles</div>
             <div style={s.toolGrid}>
-              <ToolCard icon="🏟️" title="Enter Arena"     desc="Live battles with students"            color="#e17055" onClick={() => nav("/arena")} wide />
+              <ToolCard icon="🏟️" title="Enter Arena"     desc="Live battles with students"            color="#1a1a2e" onClick={() => nav("/arena")} wide />
             </div>
           </>
         )}

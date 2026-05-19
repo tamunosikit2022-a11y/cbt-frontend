@@ -35,6 +35,9 @@ const AdmissionChecker = lazy(() => import("./pages/AdmissionChecker"));
 const PersonalityProfile = lazy(() => import("./pages/PersonalityProfile"));
 const BeatYourself       = lazy(() => import("./pages/BeatYourself"));
 
+// ── NEW FEATURES ──────────────────────────────────────────
+const VideoLibrary     = lazy(() => import("./pages/VideoLibrary"));
+
 // ── ADMIN ─────────────────────────────────────────────────
 const AdminLogin       = lazy(() => import("./pages/admin/AdminLogin"));
 const AdminDashboard   = lazy(() => import("./pages/admin/AdminDashboard"));
@@ -108,6 +111,9 @@ export default function App() {
             <Route path="/badges"     element={<Private><Badges /></Private>} />
             <Route path="/resume"     element={<Private><ResumeExam /></Private>} />
             <Route path="/admission"  element={<Private><AdmissionChecker /></Private>} />
+
+            {/* New Features */}
+            <Route path="/videos"       element={<Private><VideoLibrary /></Private>} />
 
             {/* Phase 2 Innovations */}
             <Route path="/personality"   element={<Private><PersonalityProfile /></Private>} />
