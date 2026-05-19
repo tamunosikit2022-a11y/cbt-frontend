@@ -157,33 +157,29 @@ export default function Arena() {
               <h3 style={s.panelTitle}>⚔️ Create Room</h3>
 
               <label style={s.label}>Game Mode</label>
-              <div style={{ display: "flex", flexDirection: "column", gap: 7, marginBottom: 14 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 14 }}>
                 {MODES.map(m => (
                   <div key={m.id}
-                    style={{ ...s.modeCard, borderColor: mode === m.id ? m.color : "#2d2d44", background: mode === m.id ? m.color + "18" : "#0f0f1a" }}
+                    style={{ ...s.modeCard, borderColor: mode === m.id ? m.color : "#2d2d44", background: mode === m.id ? m.color + "22" : "#0f0f1a", padding: "7px 10px" }}
                     onClick={() => { setMode(m.id); setError(""); }}>
-                    <span style={{ fontSize: 20 }}>{m.icon}</span>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 700, fontSize: 13, color: mode === m.id ? m.color : "#fff" }}>{m.name}</div>
-                      <div style={{ fontSize: 11, color: "#636e72" }}>{m.desc}</div>
+                    <span style={{ fontSize: 16 }}>{m.icon}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, fontSize: 12, color: mode === m.id ? m.color : "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.name}</div>
+                      <div style={{ fontSize: 10, color: "#636e72", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.desc}</div>
                     </div>
-                    {mode === m.id && <span style={{ color: m.color }}>✓</span>}
+                    {mode === m.id && <span style={{ color: m.color, fontSize: 12, flexShrink: 0 }}>✓</span>}
                   </div>
                 ))}
               </div>
 
               <label style={s.label}>Battle Type</label>
-              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 14 }}>
+              <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
                 {BATTLE_TYPES.map(b => (
                   <div key={b.id}
-                    style={{ ...s.modeCard, borderColor: battleType === b.id ? "#e17055" : "#2d2d44", background: battleType === b.id ? "#e1705518" : "#0f0f1a" }}
+                    style={{ ...s.modeCard, flex: 1, flexDirection: "column", gap: 3, borderColor: battleType === b.id ? "#e17055" : "#2d2d44", background: battleType === b.id ? "#e1705518" : "#0f0f1a", padding: "8px 6px", textAlign: "center", alignItems: "center" }}
                     onClick={() => setBattleType(b.id)}>
-                    <span style={{ fontSize: 18 }}>{b.icon}</span>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 700, fontSize: 12, color: battleType === b.id ? "#e17055" : "#fff" }}>{b.name}</div>
-                      <div style={{ fontSize: 11, color: "#636e72" }}>{b.desc}</div>
-                    </div>
-                    {battleType === b.id && <span style={{ color: "#e17055" }}>✓</span>}
+                    <span style={{ fontSize: 16 }}>{b.icon}</span>
+                    <div style={{ fontWeight: 700, fontSize: 10, color: battleType === b.id ? "#e17055" : "#fff" }}>{b.name}</div>
                   </div>
                 ))}
               </div>

@@ -36,6 +36,7 @@ export default function WaitingRoom() {
   const [chat,       setChat]       = useState([]);
   const [chatInput,  setChatInput]  = useState("");
   const [autoStart,  setAutoStart]  = useState(null);
+  const [kickConfirm, setKickConfirm] = useState(null); // playerId being confirmed
 
   const isHost     = state?.creating;
   const playerId   = state?.config?.playerId   || state?.playerId;
@@ -151,6 +152,18 @@ export default function WaitingRoom() {
       setTimeout(() => nav("/arena"), 3000);
     });
 
+    sock.on("player_kicked", ({ playerId: pid, playerName: pname, players: updated }) => {
+      setPlayers(updated);
+      setReadyCount(updated.filter(p => p.ready).length);
+      addChat("system", `🚫 ${pname} was removed from the room.`);
+      scrollChatToBottom();
+    });
+
+    sock.on("kicked", ({ reason }) => {
+      setError(reason || "You were removed from the room.");
+      setTimeout(() => nav("/arena"), 2500);
+    });
+
     sock.on("player_reaction", ({ playerName: n, emoji }) => {
       addChat("reaction", `${n}: ${emoji}`);
       scrollChatToBottom();
@@ -165,7 +178,8 @@ export default function WaitingRoom() {
     return () => {
       ["player_joined","player_left","player_disconnected","player_reconnected",
        "ready_update","room_full_autostart","countdown_start","countdown_tick",
-       "new_question","room_closed","player_reaction","chat_msg"]
+       "new_question","room_closed","player_reaction","chat_msg",
+       "player_kicked","kicked"]
         .forEach(ev => sock.off(ev));
     };
   }, []);
@@ -181,20 +195,30 @@ export default function WaitingRoom() {
     }
   };
   
-  const handleStart = () => {
+  const handleStart = (force = false) => {
     if (players.length < 2) {
       setError("Need at least 2 players to start.");
       setTimeout(() => setError(""), 3000);
       return;
     }
-    if (!players.every(p => p.ready)) {
+    if (!force && !players.every(p => p.ready)) {
       const notReady = players.filter(p => !p.ready).map(p => p.name);
-      setError(`${notReady.length} player(s) not ready: ${notReady.join(", ")}`);
-      setTimeout(() => setError(""), 3000);
+      setError(`${notReady.length} player(s) not ready: ${notReady.join(", ")}. Force start or wait.`);
+      setTimeout(() => setError(""), 4000);
       return;
     }
     socket.current?.emit("start_game", {}, (res) => { 
       if (!res?.success) setError(res?.error || "Cannot start."); 
+    });
+  };
+
+  const handleKickPlayer = (targetPlayerId, targetName) => {
+    setKickConfirm(null);
+    socket.current?.emit("kick_player", { playerId: targetPlayerId }, (res) => {
+      if (!res?.success) {
+        setError(res?.error || "Cannot remove player.");
+        setTimeout(() => setError(""), 3000);
+      }
     });
   };
   
@@ -222,7 +246,10 @@ export default function WaitingRoom() {
   if (!room)   return <Loader text="Loading room..." />;
 
   const totalSlots = room.maxPlayers || 4;
-  const canStart   = isHost && players.length >= 2 && players.every(p => p.ready);
+  const hasEnough  = players.length >= 2;
+  const allReady   = players.every(p => p.ready);
+  const canStart   = isHost && hasEnough && allReady;
+  const canForce   = isHost && hasEnough && !allReady;
 
   // Group players by squad for squad modes
   const squad0 = isSquadMode(room.mode) ? players.filter(p => p.squad === 0) : [];
@@ -286,7 +313,14 @@ export default function WaitingRoom() {
                       <div style={{ color: SQUAD_COLORS[si], fontWeight: 700, fontSize: 12, marginBottom: 8 }}>
                         {SQUAD_LABELS[si]}
                       </div>
-                      {squad.map(p => <PlayerRow key={p.id} p={p} isSelf={p.id === playerId} isHost={p.id === room.host?.id} />)}
+                      {squad.map(p => (
+                        <PlayerRow key={p.id} p={p}
+                          isSelf={p.id === playerId}
+                          isHost={p.id === room.host?.id}
+                          canKick={isHost && p.id !== playerId}
+                          onKick={() => setKickConfirm(p)}
+                        />
+                      ))}
                       {Array.from({ length: Math.max(0, 2 - squad.length) }).map((_, i) => (
                         <div key={i} style={s.emptySlot}>
                           <span style={{ fontSize: 20 }}>❓</span>
@@ -307,7 +341,14 @@ export default function WaitingRoom() {
               <div style={s.panel}>
                 <div style={s.panelTitle}>Players ({players.length}/{totalSlots})</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
-                  {players.map(p => <PlayerRow key={p.id} p={p} isSelf={p.id === playerId} isHost={p.id === room.host?.id} />)}
+                  {players.map(p => (
+                    <PlayerRow key={p.id} p={p}
+                      isSelf={p.id === playerId}
+                      isHost={p.id === room.host?.id}
+                      canKick={isHost && p.id !== playerId}
+                      onKick={() => setKickConfirm(p)}
+                    />
+                  ))}
                   {Array.from({ length: Math.max(0, Math.min(totalSlots, 6) - players.length) }).map((_, i) => (
                     <div key={i} style={s.emptySlot}>
                       <span style={{ fontSize: 20 }}>❓</span>
@@ -335,16 +376,28 @@ export default function WaitingRoom() {
                 <div style={s.readyMsg}>✅ You're ready! ({readyCount}/{players.length})</div>
               )}
               {isHost && isReady && (
-                <button
-                  style={{ ...s.startBtn, opacity: canStart ? 1 : 0.5, marginTop: 10 }}
-                  onClick={handleStart}
-                  disabled={!canStart}>
-                  {players.length < 2
-                    ? "⏳ Waiting for another player..."
-                    : !players.every(p => p.ready)
-                    ? `⏳ ${readyCount}/${players.length} ready...`
-                    : "🚀 Start Battle!"}
-                </button>
+                <>
+                  <button
+                    style={{ ...s.startBtn, opacity: canStart || canForce ? 1 : 0.5, marginTop: 10 }}
+                    onClick={() => handleStart(false)}
+                    disabled={!canStart && !canForce}>
+                    {players.length < 2
+                      ? "⏳ Waiting for another player..."
+                      : allReady
+                      ? "🚀 Start Battle!"
+                      : `⏳ ${readyCount}/${players.length} ready...`}
+                  </button>
+                  {canForce && (
+                    <button
+                      style={{ ...s.forceBtn, marginTop: 8 }}
+                      onClick={() => {
+                        if (window.confirm(`Force start? ${players.filter(p=>!p.ready).map(p=>p.name).join(", ")} is not ready yet.`))
+                          handleStart(true);
+                      }}>
+                      ⚡ Force Start (ignore not-ready)
+                    </button>
+                  )}
+                </>
               )}
               {!isHost && isReady && (
                 <p style={{ fontSize: 13, color: "#636e72", textAlign: "center", marginTop: 8 }}>
@@ -396,13 +449,34 @@ export default function WaitingRoom() {
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </div>{/* end twoCol */}
+
+        {/* KICK CONFIRM MODAL */}
+        {kickConfirm && (
+          <div style={s.modalOverlay}>
+            <div style={s.modal}>
+              <div style={{ fontSize: 28, marginBottom: 8 }}>🚫</div>
+              <div style={{ color: "#fff", fontWeight: 800, fontSize: 16, marginBottom: 6 }}>Remove Player?</div>
+              <div style={{ color: "#a29bfe", fontSize: 13, marginBottom: 18 }}>
+                Remove <strong style={{ color: "#fff" }}>{kickConfirm.name}</strong> from the room?
+                They will not be able to rejoin.
+              </div>
+              <div style={{ display: "flex", gap: 10 }}>
+                <button style={s.kickCancelBtn} onClick={() => setKickConfirm(null)}>Cancel</button>
+                <button style={s.kickConfirmBtn} onClick={() => handleKickPlayer(kickConfirm.id, kickConfirm.name)}>
+                  Yes, Remove
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+      </div>{/* end container */}
     </div>
   );
 }
 
-function PlayerRow({ p, isSelf, isHost }) {
+function PlayerRow({ p, isSelf, isHost, canKick, onKick }) {
   return (
     <div style={{
       display: "flex", alignItems: "center", gap: 10,
@@ -421,6 +495,14 @@ function PlayerRow({ p, isSelf, isHost }) {
       <div style={{ fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 10, background: p.ready ? "#00b89422" : "#2d2d44", color: p.ready ? "#00b894" : "#636e72", border: `1px solid ${p.ready ? "#00b894" : "#2d2d44"}` }}>
         {p.ready ? "✓ Ready" : "Waiting"}
       </div>
+      {canKick && (
+        <button
+          onClick={onKick}
+          title="Remove player"
+          style={{ background: "#e1705522", border: "1px solid #e17055", color: "#e17055", borderRadius: 6, padding: "3px 8px", cursor: "pointer", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+          ✕
+        </button>
+      )}
     </div>
   );
 }
@@ -462,4 +544,9 @@ const s = {
   chatInputRow:    { display: "flex", gap: 8 },
   chatInput:       { flex: 1, background: "#0f0f1a", border: "1px solid #2d2d44", borderRadius: 8, padding: "8px 10px", color: "#fff", fontSize: 13 },
   chatSendBtn:     { padding: "8px 14px", background: "#6c63ff", color: "#fff", border: "none", borderRadius: 8, fontWeight: 700, cursor: "pointer", fontSize: 13 },
+  forceBtn:        { width: "100%", padding: 10, background: "transparent", color: "#fdcb6e", border: "2px solid #fdcb6e44", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer" },
+  modalOverlay:    { position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000 },
+  modal:           { background: "#1a1a2e", border: "1px solid #6c63ff", borderRadius: 16, padding: "28px 32px", textAlign: "center", maxWidth: 340, width: "90%" },
+  kickCancelBtn:   { flex: 1, padding: "10px", background: "#2d2d44", color: "#fff", border: "none", borderRadius: 8, fontWeight: 700, cursor: "pointer", fontSize: 14 },
+  kickConfirmBtn:  { flex: 1, padding: "10px", background: "#e17055", color: "#fff", border: "none", borderRadius: 8, fontWeight: 700, cursor: "pointer", fontSize: 14 },
 };

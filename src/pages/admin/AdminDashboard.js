@@ -186,6 +186,8 @@ export default function AdminDashboard() {
   const [msgType,      setMsgType]      = useState("success");
   const [liveActivity, setLiveActivity] = useState([]);
   const [arenaStats,   setArenaStats]   = useState(null);
+  const [arenaLive,    setArenaLive]    = useState([]);
+  const [arenaLoading, setArenaLoading] = useState(false);
   const [broadcast,    setBroadcast]    = useState({ title: "", body: "", type: "info" });
   const [sideCollapsed,setSideCollapsed]= useState(false);
   const liveRef = useRef(null);
@@ -241,9 +243,15 @@ export default function AdminDashboard() {
       }).catch(() => {});
     }
     if (tab === "arena") {
-      // Fetch arena leaderboard via regular API
-      fetch(`${API_URL}/arena/leaderboard`, { headers: { Authorization: `Bearer ${token}` } })
-        .then(r => r.json()).then(setArenaStats).catch(() => {});
+      setArenaLoading(true);
+      Promise.all([
+        fetch(`${API_URL}/admin/arena-live`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+        fetch(`${API_URL}/admin/arena-stats`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+      ]).then(([live, stats]) => {
+        setArenaLive(Array.isArray(live) ? live : []);
+        setArenaStats(stats || null);
+      }).catch(() => {})
+        .finally(() => setArenaLoading(false));
     }
   }, [tab, search, sort, filterP, filterB, studentPage]);
 
@@ -819,56 +827,157 @@ export default function AdminDashboard() {
         {/* ══ ARENA ══════════════════════════════════════════ */}
         {tab === "arena" && (
           <>
-            <h2 style={st.pageTitle}>🏟️ Arena Monitor</h2>
-            <div style={st.twoCol}>
-              <div style={st.card}>
-                <div style={st.cardTitle}>🏆 Arena Leaderboard (Top 20)</div>
-                {!arenaStats ? <Empty text="Loading..." /> : (
-                  <div style={{ maxHeight: 500, overflowY: "auto" }}>
-                    {(Array.isArray(arenaStats) ? arenaStats : []).slice(0, 20).map((p, i) => (
-                      <div key={i} style={st.actRow}>
-                        <div style={{ width: 28, fontWeight: 800, fontSize: 14, color: i < 3 ? ["#FFD700","#C0C0C0","#CD7F32"][i] : "#636e72", textAlign: "center" }}>
-                          {i < 3 ? ["🥇","🥈","🥉"][i] : `#${p.rank}`}
-                        </div>
-                        <div style={{ flex: 1, marginLeft: 8 }}>
-                          <div style={{ fontWeight: 600, fontSize: 13 }}>{p.full_name}</div>
-                          <div style={{ fontSize: 11, color: "#636e72" }}>{p.wins}W · {p.win_rate}% win rate</div>
-                        </div>
-                        <div style={{ textAlign: "right" }}>
-                          <div style={{ fontWeight: 900, color: "#6c63ff" }}>{p.xp} XP</div>
-                          <div style={{ fontSize: 10, color: "#636e72" }}>{p.arena_rank}</div>
-                        </div>
-                      </div>
-                    ))}
-                    {(!arenaStats || !Array.isArray(arenaStats) || arenaStats.length === 0) && <Empty text="No arena matches yet." />}
-                  </div>
-                )}
+            <div style={st.pageHeader}>
+              <div>
+                <h2 style={st.pageTitle}>🏟️ Arena Monitor</h2>
+                <p style={st.pageSubtitle}>Live rooms + historical stats</p>
               </div>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                <div style={st.card}>
-                  <div style={st.cardTitle}>📊 Arena Mode Popularity</div>
-                  {s?.arena_mode_stats ? (
-                    <MiniBar data={s.arena_mode_stats} labelKey="mode" valueKey="total_matches" color="#6c63ff" height={100} />
-                  ) : <Empty text="No arena data yet." />}
-                </div>
-                <div style={st.card}>
-                  <div style={st.cardTitle}>⚡ Arena Quick Stats</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    {[
-                      { label: "Total matches played", value: s?.arena_total_matches || "—", icon: "⚔️" },
-                      { label: "Active players (XP > 0)", value: Array.isArray(arenaStats) ? arenaStats.length : "—", icon: "🎮" },
-                      { label: "Top rank", value: Array.isArray(arenaStats) && arenaStats[0] ? arenaStats[0].arena_rank : "—", icon: "👑" },
-                    ].map((item, i) => (
-                      <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #f0f0f0" }}>
-                        <span style={{ fontSize: 13, color: "#636e72" }}>{item.icon} {item.label}</span>
-                        <strong style={{ fontSize: 15, color: "#2d3436" }}>{item.value}</strong>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              <button style={st.refreshBtn} onClick={() => {
+                setArenaLoading(true);
+                Promise.all([
+                  fetch(`${API_URL}/admin/arena-live`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+                  fetch(`${API_URL}/admin/arena-stats`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+                ]).then(([live, stats]) => {
+                  setArenaLive(Array.isArray(live) ? live : []);
+                  setArenaStats(stats || null);
+                }).catch(() => {}).finally(() => setArenaLoading(false));
+              }}>↻ Refresh</button>
             </div>
+
+            {arenaLoading ? <Skeleton /> : (
+              <>
+                {/* LIVE ROOMS */}
+                <div style={st.card}>
+                  <div style={st.cardHeader}>
+                    <div style={st.cardTitle}>🔴 Live / Recent Rooms ({arenaLive.length})</div>
+                    {arenaLive.some(r => r.status === "playing") && (
+                      <Badge text="🟢 Games in progress" color="#00b894" />
+                    )}
+                  </div>
+                  {arenaLive.length === 0 ? (
+                    <Empty text="No active arena rooms right now." />
+                  ) : (
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 10 }}>
+                      {arenaLive.map((room, i) => (
+                        <div key={i} style={{
+                          background: room.status === "playing" ? "#0f1f1a" : "#f8f9fa",
+                          border: `2px solid ${room.status === "playing" ? "#00b894" : room.status === "countdown" ? "#fdcb6e" : "#dfe6e9"}`,
+                          borderRadius: 12, padding: "12px 14px",
+                        }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                            <div style={{ fontFamily: "monospace", fontWeight: 900, fontSize: 15, color: room.status === "playing" ? "#00b894" : "#2d3436", letterSpacing: 2 }}>
+                              {room.code}
+                            </div>
+                            <Badge
+                              text={room.status === "playing" ? "▶ Playing" : room.status === "countdown" ? "⏳ Starting" : "⏸ Waiting"}
+                              color={room.status === "playing" ? "#00b894" : room.status === "countdown" ? "#fdcb6e" : "#636e72"}
+                            />
+                          </div>
+                          <div style={{ fontSize: 12, color: room.status === "playing" ? "#a0e8d0" : "#636e72", marginBottom: 6 }}>
+                            <strong>{room.mode?.replace(/_/g," ")}</strong> · {room.battleType?.replace(/_/g," ")} · {room.subject}
+                          </div>
+                          <div style={{ fontSize: 11, color: room.status === "playing" ? "#636e72" : "#b2bec3", marginBottom: 8 }}>
+                            Host: <strong>{room.hostName}</strong>
+                          </div>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                            {room.players.map((p, pi) => (
+                              <div key={pi} style={{
+                                fontSize: 10, padding: "2px 7px", borderRadius: 10,
+                                background: p.ready ? "#00b89420" : "#f0f0f0",
+                                color: p.ready ? "#00b894" : "#636e72",
+                                border: `1px solid ${p.ready ? "#00b894" : "#dfe6e9"}`,
+                              }}>
+                                {p.name.split(" ")[0]} {p.score !== undefined ? `· ${p.score}pts` : ""}
+                              </div>
+                            ))}
+                            {Array.from({ length: Math.max(0, room.maxPlayers - room.playerCount) }).map((_, ei) => (
+                              <div key={`e${ei}`} style={{ fontSize: 10, padding: "2px 7px", borderRadius: 10, background: "#f0f0f0", color: "#b2bec3", border: "1px dashed #dfe6e9" }}>
+                                empty
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* STATS ROW */}
+                <div style={st.twoCol}>
+                  {/* MODE BREAKDOWN */}
+                  <div style={st.card}>
+                    <div style={st.cardTitle}>📊 Mode Popularity</div>
+                    {arenaStats?.mode_stats?.length ? (
+                      arenaStats.mode_stats.map((m, i) => (
+                        <div key={i} style={{ marginBottom: 10 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 3 }}>
+                            <span style={{ fontWeight: 600, textTransform: "capitalize" }}>{m.mode?.replace(/_/g," ")}</span>
+                            <span style={{ fontWeight: 800, color: "#6c63ff" }}>{parseInt(m.total_matches)} matches</span>
+                          </div>
+                          <div style={{ height: 5, background: "#f0f0f0", borderRadius: 3, overflow: "hidden" }}>
+                            <div style={{ height: "100%", width: `${Math.min((parseInt(m.total_matches) / (parseInt(arenaStats.mode_stats[0]?.total_matches) || 1)) * 100, 100)}%`, background: "#6c63ff", borderRadius: 3 }} />
+                          </div>
+                        </div>
+                      ))
+                    ) : <Empty text="No match data yet." />}
+                  </div>
+
+                  {/* TOP PLAYERS */}
+                  <div style={st.card}>
+                    <div style={st.cardTitle}>🏆 Top Arena Players</div>
+                    <div style={{ maxHeight: 340, overflowY: "auto" }}>
+                      {arenaStats?.top_players?.map((p, i) => (
+                        <div key={i} style={st.actRow}>
+                          <div style={{ width: 28, fontWeight: 800, fontSize: 14, color: i < 3 ? ["#FFD700","#C0C0C0","#CD7F32"][i] : "#636e72", textAlign: "center" }}>
+                            {i < 3 ? ["🥇","🥈","🥉"][i] : `#${i+1}`}
+                          </div>
+                          <div style={{ flex: 1, marginLeft: 8 }}>
+                            <div style={{ fontWeight: 600, fontSize: 13 }}>{p.full_name}</div>
+                            <div style={{ fontSize: 11, color: "#636e72" }}>{p.wins}W · {p.win_rate}% win rate · {p.arena_rank}</div>
+                          </div>
+                          <div style={{ textAlign: "right" }}>
+                            <div style={{ fontWeight: 900, color: "#6c63ff" }}>{p.xp} XP</div>
+                          </div>
+                        </div>
+                      ))}
+                      {!arenaStats?.top_players?.length && <Empty text="No arena players yet." />}
+                    </div>
+                  </div>
+                </div>
+
+                {/* RECENT MATCHES */}
+                <div style={st.card}>
+                  <div style={st.cardTitle}>🕐 Recent Matches</div>
+                  <div style={{ overflowX: "auto" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 500 }}>
+                      <thead>
+                        <tr style={{ background: "#f8f9fa" }}>
+                          {["Room", "Mode", "Battle", "Subject", "Players", "Top Score", "Ended"].map(h => (
+                            <th key={h} style={st.th}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(arenaStats?.recent_matches || []).map((m, i) => (
+                          <tr key={i} style={{ borderBottom: "1px solid #f0f0f0" }}>
+                            <td style={st.td}><span style={{ fontFamily: "monospace", fontWeight: 700, fontSize: 12, letterSpacing: 1 }}>{m.room_code}</span></td>
+                            <td style={st.td}><span style={{ textTransform: "capitalize" }}>{m.mode?.replace(/_/g," ")}</span></td>
+                            <td style={st.td}><span style={{ textTransform: "capitalize" }}>{m.battle_type?.replace(/_/g," ")}</span></td>
+                            <td style={st.td}>{m.subject || "Mixed"}</td>
+                            <td style={{ ...st.td, textAlign: "center" }}><strong style={{ color: "#6c63ff" }}>{m.player_count}</strong></td>
+                            <td style={{ ...st.td, textAlign: "center" }}><strong style={{ color: "#00b894" }}>{m.top_score}</strong></td>
+                            <td style={st.td}><span style={{ fontSize: 11, color: "#636e72" }}>{new Date(m.ended_at).toLocaleString("en-NG")}</span></td>
+                          </tr>
+                        ))}
+                        {!arenaStats?.recent_matches?.length && (
+                          <tr><td colSpan={7} style={{ padding: 20, textAlign: "center", color: "#b2bec3" }}>No matches recorded yet.</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            )}
           </>
         )}
 
