@@ -18,16 +18,15 @@ export default function Dashboard() {
 
   useEffect(() => {
     Promise.all([
-      API.get("/auth/profile"),
-      API.get("/exam/history"),
+      API.get("/auth/profile").catch(() => null),
+      API.get("/exam/history").catch(() => ({ data: [] })),
       API.get("/innovations/challenge/today").catch(() => null),
       API.get("/auth/notifications").catch(() => ({ data: [] })),
     ]).then(([p, h, c, n]) => {
-      setProfile(p.data);
-      setTotalExams(h.data.length);
-      setHistory(h.data.slice(0, 3));
-      if (c) setChallenge(c.data);
-      if (n?.data) setNotifications(n.data);
+      if (p?.data) setProfile(p.data);
+      if (h?.data) { setTotalExams(h.data.length); setHistory(h.data.slice(0, 3)); }
+      if (c?.data) setChallenge(c.data);
+      if (n?.data && Array.isArray(n.data)) setNotifications(n.data);
     }).finally(() => setLoading(false));
   }, []);
 
