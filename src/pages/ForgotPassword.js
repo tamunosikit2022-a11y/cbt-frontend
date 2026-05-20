@@ -237,4 +237,3 @@ const s = {
   eyeBtn:     { position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", fontSize:18 },
   footer:     { textAlign:"center", marginTop:16, paddingTop:16, borderTop:"1px solid #f0f0f0" },
 };
-
