@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { ThemeProvider } from "./context/ThemeContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { lazy, Suspense } from "react";
 
@@ -37,6 +38,7 @@ const BeatYourself       = lazy(() => import("./pages/BeatYourself"));
 
 // ── NEW FEATURES ──────────────────────────────────────────
 const VideoLibrary     = lazy(() => import("./pages/VideoLibrary"));
+const ThemeSettings    = lazy(() => import("./pages/ThemeSettings"));
 
 // ── ADMIN ─────────────────────────────────────────────────
 const AdminLogin       = lazy(() => import("./pages/admin/AdminLogin"));
@@ -114,6 +116,7 @@ export default function App() {
 
             {/* New Features */}
             <Route path="/videos"       element={<Private><VideoLibrary /></Private>} />
+            <Route path="/theme"        element={<Private><ThemeSettings /></Private>} />
 
             {/* Phase 2 Innovations */}
             <Route path="/personality"   element={<Private><PersonalityProfile /></Private>} />
