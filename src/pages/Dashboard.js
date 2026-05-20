@@ -228,20 +228,20 @@ export default function Dashboard() {
 
             {/* SHELF 1 — How am I doing? */}
             <div style={s.shelfHeader}>
-              <span style={s.shelfIcon}>📊</span>
+              <div style={s.shelfIcon}>📊</div>
               <div>
                 <div style={s.shelfTitle}>How Am I Doing?</div>
                 <div style={s.shelfDesc}>Check your scores and weak subjects</div>
               </div>
             </div>
             <div style={s.toolGrid}>
-              <ToolCard icon="📊" title="My Analytics"     desc="See your strongest & weakest subjects"  color="#6c63ff" onClick={() => nav("/performance")} />
+              <ToolCard icon="📊" title="My Analytics 👑"  desc="Premium · strengths & weaknesses"       color="#6c63ff" onClick={() => nav("/performance")} />
               <ToolCard icon="📋" title="Exam History"     desc="Every exam you've ever taken"           color="#636e72" onClick={() => nav("/history")} />
             </div>
 
             {/* SHELF 2 — Where will I get into? */}
             <div style={s.shelfHeader}>
-              <span style={s.shelfIcon}>🎓</span>
+              <div style={s.shelfIcon}>🎓</div>
               <div>
                 <div style={s.shelfTitle}>University Planner</div>
                 <div style={s.shelfDesc}>Know your chances before results come out</div>
@@ -254,7 +254,7 @@ export default function Dashboard() {
 
             {/* SHELF 3 — Know yourself */}
             <div style={s.shelfHeader}>
-              <span style={s.shelfIcon}>🧠</span>
+              <div style={s.shelfIcon}>🧠</div>
               <div>
                 <div style={s.shelfTitle}>Know Yourself</div>
                 <div style={s.shelfDesc}>Understand how you study & compete</div>
@@ -267,7 +267,7 @@ export default function Dashboard() {
 
             {/* SHELF 4 — Rewards */}
             <div style={s.shelfHeader}>
-              <span style={s.shelfIcon}>🏅</span>
+              <div style={s.shelfIcon}>🏅</div>
               <div>
                 <div style={s.shelfTitle}>Rewards & Badges</div>
                 <div style={s.shelfDesc}>Celebrate your achievements</div>

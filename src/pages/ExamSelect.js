@@ -29,23 +29,21 @@ const JAMB_COURSE_GUIDES = [
 // ── POST-UTME DATA ─────────────────────────────────────────
 // Real exam formats per university
 const UNIVERSITIES = {
-  // Federal Universities
-  UNILAG:   { name:"Univ. of Lagos",         state:"Lagos",    questions:60,  time:45,  englishFixed:true,  mathFixed:false, subjectCount:3, note:"English compulsory + 2 subjects from your combination" },
-  UI:       { name:"Univ. of Ibadan",        state:"Oyo",      questions:100, time:90,  englishFixed:false, mathFixed:false, subjectCount:4, note:"All 4 JAMB subjects tested, 25 questions each" },
-  OAU:      { name:"Obafemi Awolowo Univ.",  state:"Osun",     questions:100, time:60,  englishFixed:false, mathFixed:false, subjectCount:4, note:"All 4 JAMB subjects, equal distribution" },
-  UNIBEN:   { name:"Univ. of Benin",         state:"Edo",      questions:60,  time:60,  englishFixed:true,  mathFixed:false, subjectCount:3, note:"English + 2 course-relevant subjects" },
-  ABU:      { name:"Ahmadu Bello Univ.",     state:"Kaduna",   questions:100, time:60,  englishFixed:false, mathFixed:false, subjectCount:4, note:"All 4 JAMB subjects" },
-  UNIABUJA: { name:"Univ. of Abuja",        state:"FCT",      questions:60,  time:45,  englishFixed:false, mathFixed:false, subjectCount:3, note:"3 relevant subjects, 20 questions each" },
-  UNN:      { name:"Univ. of Nigeria",       state:"Enugu",    questions:80,  time:60,  englishFixed:false, mathFixed:false, subjectCount:4, note:"4 subjects, 20 questions each" },
-  FUTO:     { name:"Federal Univ. of Tech.", state:"Imo",      questions:60,  time:45,  englishFixed:false, mathFixed:false, subjectCount:3, note:"3 subjects from JAMB combination" },
-  LAUTECH:  { name:"Ladoke Akintola Univ.", state:"Oyo",      questions:60,  time:60,  englishFixed:false, mathFixed:false, subjectCount:3, note:"3 relevant subjects" },
-  DELSU:    { name:"Delta State Univ.",      state:"Delta",    questions:60,  time:45,  englishFixed:false, mathFixed:false, subjectCount:3, note:"3 subjects" },
-  // State Universities
-  LASU:     { name:"Lagos State Univ.",      state:"Lagos",    questions:60,  time:45,  englishFixed:true,  mathFixed:false, subjectCount:3, note:"English + 2 relevant subjects" },
-  UNIPORT:  { name:"Univ. of Port Harcourt",state:"Rivers",   questions:80,  time:60,  englishFixed:false, mathFixed:false, subjectCount:4, note:"All 4 JAMB subjects" },
-  FUOYE:    { name:"Fed Univ. Oye-Ekiti",   state:"Ekiti",    questions:60,  time:45,  englishFixed:false, mathFixed:false, subjectCount:3, note:"3 subjects" },
-  UNICAL:   { name:"Univ. of Calabar",       state:"Cross River",questions:80,time:60, englishFixed:false, mathFixed:false, subjectCount:4, note:"4 JAMB subjects" },
-  EKSU:     { name:"Ekiti State Univ.",      state:"Ekiti",    questions:60,  time:45,  englishFixed:false, mathFixed:false, subjectCount:3, note:"3 subjects" },
+  UNILAG:   { name:"Univ. of Lagos",          state:"Lagos",       questions:40,  time:30,  englishFixed:true,  mathFixed:true,  subjectCount:3, note:"English (20q) + Maths (10q) + General Paper (10q) · 30 mins · Online CBT" },
+  UI:       { name:"Univ. of Ibadan",         state:"Oyo",         questions:40,  time:30,  englishFixed:false, mathFixed:false, subjectCount:4, note:"4 JAMB subjects · 30 mins · aggregate = JAMB÷8 + Post-UTME÷2 + O'Level" },
+  OAU:      { name:"Obafemi Awolowo Univ.",   state:"Osun",        questions:40,  time:30,  englishFixed:true,  mathFixed:false, subjectCount:5, note:"English + Current Affairs + 3 JAMB subjects · 40 questions · 30 mins" },
+  UNIBEN:   { name:"Univ. of Benin",          state:"Edo",         questions:50,  time:30,  englishFixed:true,  mathFixed:false, subjectCount:4, note:"50 questions including English · graded over 100 · min 50% to qualify" },
+  ABU:      { name:"Ahmadu Bello Univ.",      state:"Kaduna",      questions:100, time:60,  englishFixed:false, mathFixed:false, subjectCount:4, note:"All 4 JAMB subjects · 100 questions · 60 mins" },
+  UNIPORT:  { name:"Univ. of Port Harcourt", state:"Rivers",      questions:50,  time:30,  englishFixed:false, mathFixed:true,  subjectCount:4, note:"50 questions · 30 mins · Maths compulsory for all · scored over 100" },
+  UNN:      { name:"Univ. of Nigeria",        state:"Enugu",       questions:60,  time:45,  englishFixed:false, mathFixed:false, subjectCount:4, note:"4 JAMB subjects · 60 questions · 45 mins" },
+  UNILORIN: { name:"Univ. of Ilorin",         state:"Kwara",       questions:60,  time:45,  englishFixed:false, mathFixed:false, subjectCount:4, note:"4 JAMB subjects · CBT screening · 60 questions · 45 mins" },
+  FUTO:     { name:"Fed. Univ. of Tech.",     state:"Imo",         questions:60,  time:45,  englishFixed:false, mathFixed:false, subjectCount:3, note:"3 relevant JAMB subjects · 60 questions · 45 mins" },
+  LAUTECH:  { name:"Ladoke Akintola Univ.",   state:"Oyo",         questions:60,  time:45,  englishFixed:false, mathFixed:false, subjectCount:3, note:"3 relevant subjects from JAMB combination · 60 questions · 45 mins" },
+  UNIABUJA: { name:"Univ. of Abuja",          state:"FCT",         questions:60,  time:45,  englishFixed:false, mathFixed:false, subjectCount:3, note:"3 relevant subjects · 20 questions each · 45 mins" },
+  UNICAL:   { name:"Univ. of Calabar",        state:"Cross River", questions:60,  time:45,  englishFixed:false, mathFixed:false, subjectCount:4, note:"4 JAMB subjects · 60 questions · 45 mins" },
+  LASU:     { name:"Lagos State Univ.",        state:"Lagos",       questions:50,  time:30,  englishFixed:true,  mathFixed:false, subjectCount:3, note:"English compulsory + 2 relevant subjects · 50 questions · 30 mins" },
+  DELSU:    { name:"Delta State Univ.",        state:"Delta",       questions:60,  time:45,  englishFixed:false, mathFixed:false, subjectCount:3, note:"3 JAMB subjects · 60 questions · 45 mins" },
+  FUOYE:    { name:"Fed. Univ. Oye-Ekiti",    state:"Ekiti",       questions:60,  time:45,  englishFixed:false, mathFixed:false, subjectCount:3, note:"3 relevant subjects · 60 questions · 45 mins" },
 };
 
 const STUDY_MODES = [

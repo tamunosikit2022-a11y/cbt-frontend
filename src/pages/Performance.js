@@ -1,5 +1,31 @@
+
+// Premium gate component
+function PremiumGate() {
+  const nav = useNavigate();
+  return (
+    <div style={{ minHeight:"100vh", background:"#f4f6fb", display:"flex", alignItems:"center", justifyContent:"center", padding:20, fontFamily:"sans-serif" }}>
+      <div style={{ background:"#fff", borderRadius:20, padding:"36px 28px", maxWidth:380, textAlign:"center", boxShadow:"0 8px 32px rgba(0,0,0,0.1)" }}>
+        <div style={{ fontSize:52, marginBottom:12 }}>👑</div>
+        <h2 style={{ fontSize:22, fontWeight:900, color:"#2d3436", marginBottom:8 }}>Premium Feature</h2>
+        <p style={{ color:"#636e72", fontSize:14, marginBottom:24, lineHeight:1.6 }}>
+          Subject Analytics & Error Review are Premium features.<br/>
+          Upgrade to see your strengths, weaknesses and improve faster.
+        </p>
+        <button style={{ width:"100%", padding:14, background:"linear-gradient(135deg,#6c63ff,#a29bfe)", color:"#fff", border:"none", borderRadius:12, fontWeight:800, fontSize:15, cursor:"pointer", marginBottom:10 }}
+          onClick={() => nav && nav("/upgrade")}>
+          Unlock Premium →
+        </button>
+        <button style={{ width:"100%", padding:12, background:"none", border:"2px solid #dfe6e9", borderRadius:12, color:"#636e72", fontWeight:600, fontSize:14, cursor:"pointer" }}
+          onClick={() => nav && nav(-1)}>
+          ← Go Back
+        </button>
+      </div>
+    </div>
+  );
+}
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import API from "../utils/api";
 
 export default function Performance() {
