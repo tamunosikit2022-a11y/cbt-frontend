@@ -38,6 +38,7 @@ const BeatYourself       = lazy(() => import("./pages/BeatYourself"));
 
 // ── NEW FEATURES ──────────────────────────────────────────
 const VideoLibrary     = lazy(() => import("./pages/VideoLibrary"));
+const Missions         = lazy(() => import("./pages/Missions"));
 const ThemeSettings    = lazy(() => import("./pages/ThemeSettings"));
 
 // ── ADMIN ─────────────────────────────────────────────────
@@ -116,6 +117,7 @@ export default function App() {
 
             {/* New Features */}
             <Route path="/videos"       element={<Private><VideoLibrary /></Private>} />
+            <Route path="/missions"     element={<Private><Missions /></Private>} />
             <Route path="/theme"        element={<Private><ThemeSettings /></Private>} />
 
             {/* Phase 2 Innovations */}
