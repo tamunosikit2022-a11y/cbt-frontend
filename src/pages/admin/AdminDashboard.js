@@ -666,8 +666,13 @@ export default function AdminDashboard() {
                         onMouseLeave={e => e.currentTarget.style.background = ""}>
                         <td style={st.td}>
                           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg,#6c63ff,#3f51b5)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 13, flexShrink: 0 }}>
-                              {s.full_name?.[0] || "?"}
+                            <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg,#6c63ff,#3f51b5)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 13, flexShrink: 0, overflow: "hidden", border: "2px solid #e0e0e0" }}>
+                              {s.avatar_url && s.avatar_url.startsWith("http")
+                                ? <img src={s.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { e.target.style.display = "none"; e.target.parentNode.innerHTML = s.full_name?.[0] || "?"; }} />
+                                : s.avatar_url && !s.avatar_url.startsWith("http")
+                                  ? <span style={{ fontSize: 16 }}>{s.avatar_url}</span>
+                                  : <span>{s.full_name?.[0] || "?"}</span>
+                              }
                             </div>
                             <div>
                               <div style={{ fontWeight: 600, fontSize: 13 }}>{s.full_name}</div>
@@ -730,8 +735,13 @@ export default function AdminDashboard() {
                 {/* PROFILE INFO */}
                 <div style={st.card}>
                   <div style={{ display: "flex", gap: 14, alignItems: "center", marginBottom: 16 }}>
-                    <div style={{ width: 56, height: 56, borderRadius: "50%", background: "linear-gradient(135deg,#6c63ff,#3f51b5)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 900, fontSize: 22 }}>
-                      {profile.profile?.full_name?.[0]}
+                    <div style={{ width: 56, height: 56, borderRadius: "50%", background: "linear-gradient(135deg,#6c63ff,#3f51b5)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 900, fontSize: 22, overflow: "hidden", border: "3px solid #e0e0e0", flexShrink: 0 }}>
+                      {profile.profile?.avatar_url && profile.profile.avatar_url.startsWith("http")
+                        ? <img src={profile.profile.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { e.target.style.display = "none"; }} />
+                        : profile.profile?.avatar_url && !profile.profile.avatar_url.startsWith("http")
+                          ? <span style={{ fontSize: 32 }}>{profile.profile.avatar_url}</span>
+                          : <span>{profile.profile?.full_name?.[0] || "?"}</span>
+                      }
                     </div>
                     <div>
                       <div style={{ fontWeight: 800, fontSize: 18 }}>{profile.profile?.full_name}</div>

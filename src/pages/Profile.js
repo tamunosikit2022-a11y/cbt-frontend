@@ -128,9 +128,6 @@ export default function Profile() {
                   <button key={e} style={s.avatarBtn} onClick={() => selectEmoji(e)}>{e}</button>
                 ))}
               </div>
-              <input style={{ ...s.input, marginTop:10, fontSize:12 }}
-                placeholder="Or paste image URL..."
-                onKeyDown={e => e.key === "Enter" && selectEmoji(e.target.value)} />
               <label style={{ display:"block", marginTop:8, cursor:"pointer", background:"#6c63ff", color:"#fff", padding:"8px 12px", borderRadius:8, textAlign:"center", fontSize:13, fontWeight:700 }}>
                 📷 Upload Photo
                 <input type="file" accept="image/*" style={{ display:"none" }}
