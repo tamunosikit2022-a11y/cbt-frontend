@@ -30,11 +30,11 @@ const JAMB_COURSE_GUIDES = [
 // Real exam formats per university
 const UNIVERSITIES = {
   UNILAG:   { name:"Univ. of Lagos",          state:"Lagos",       questions:40,  time:30,  englishFixed:true,  mathFixed:true,  subjectCount:3, note:"English (20q) + Maths (10q) + General Paper (10q) · 30 mins · Online CBT" },
-  UI:       { name:"Univ. of Ibadan",         state:"Oyo",         questions:40,  time:30,  englishFixed:false, mathFixed:false, subjectCount:4, note:"4 JAMB subjects · 30 mins · aggregate = JAMB÷8 + Post-UTME÷2 + O'Level" },
+  UI:       { name:"Univ. of Ibadan",         state:"Oyo",         questions:100, time:45,  englishFixed:true,  mathFixed:false, subjectCount:4, note:"English + 3 JAMB subjects · 25 questions each · 100 total · 45 mins · aggregate = JAMB÷8 + Post-UTME÷2 + O'Level" },
   OAU:      { name:"Obafemi Awolowo Univ.",   state:"Osun",        questions:40,  time:30,  englishFixed:true,  mathFixed:false, subjectCount:5, note:"English + Current Affairs + 3 JAMB subjects · 40 questions · 30 mins" },
   UNIBEN:   { name:"Univ. of Benin",          state:"Edo",         questions:50,  time:30,  englishFixed:true,  mathFixed:false, subjectCount:4, note:"50 questions including English · graded over 100 · min 50% to qualify" },
   ABU:      { name:"Ahmadu Bello Univ.",      state:"Kaduna",      questions:100, time:60,  englishFixed:false, mathFixed:false, subjectCount:4, note:"All 4 JAMB subjects · 100 questions · 60 mins" },
-  UNIPORT:  { name:"Univ. of Port Harcourt", state:"Rivers",      questions:50,  time:30,  englishFixed:false, mathFixed:true,  subjectCount:4, note:"50 questions · 30 mins · Maths compulsory for all · scored over 100" },
+  UNIPORT:  { name:"Univ. of Port Harcourt", state:"Rivers",      questions:100, time:45,  englishFixed:true,  mathFixed:false, subjectCount:4, note:"English + 3 JAMB subjects · 25 questions each · 100 total · 45 mins · scored /100" },
   UNN:      { name:"Univ. of Nigeria",        state:"Enugu",       questions:60,  time:45,  englishFixed:false, mathFixed:false, subjectCount:4, note:"4 JAMB subjects · 60 questions · 45 mins" },
   UNILORIN: { name:"Univ. of Ilorin",         state:"Kwara",       questions:60,  time:45,  englishFixed:false, mathFixed:false, subjectCount:4, note:"4 JAMB subjects · CBT screening · 60 questions · 45 mins" },
   FUTO:     { name:"Fed. Univ. of Tech.",     state:"Imo",         questions:60,  time:45,  englishFixed:false, mathFixed:false, subjectCount:3, note:"3 relevant JAMB subjects · 60 questions · 45 mins" },
@@ -126,12 +126,13 @@ export default function ExamSelect() {
       if (postSubjects.length !== needed)
         return setError(`Please select ${needed} subject${needed > 1 ? "s" : ""} for ${university}`);
 
-      const finalSubjects = uni.englishFixed
-        ? ["English Language", ...postSubjects]
-        : postSubjects;
+      // English Language is ALWAYS included in Post-UTME
+      const finalSubjects = ["English Language", ...postSubjects.filter(s => s !== "English Language")];
 
-      const questionsPerSubject = Math.floor(uni.questions / finalSubjects.length);
-      nav(`/exam?exam_type=POST-UTME&institution=${university}&mode=postutme&subjects=${encodeURIComponent(JSON.stringify(finalSubjects))}&limit=${uni.questions}&time=${uni.time}&qPerSubject=${questionsPerSubject}`);
+      // Always 25 questions per subject for Post-UTME, English always included
+      const qPerSubject = 25;
+      const totalQ = finalSubjects.length * qPerSubject;
+      nav(`/exam?exam_type=POST-UTME&institution=${university}&mode=postutme&subjects=${encodeURIComponent(JSON.stringify(finalSubjects))}&limit=${totalQ}&time=${uni.time}&qPerSubject=${qPerSubject}`);
     }
   };
 
