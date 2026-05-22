@@ -1,728 +1,824 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import API from "../utils/api";
 
-// ── Circular Progress ─────────────────────────────────────────
-function CircleScore({ pct, size = 120, stroke = 10 }) {
-  const r = (size - stroke) / 2;
-  const circ = 2 * Math.PI * r;
-  const offset = circ - (Math.min(parseFloat(pct) || 0, 100) / 100) * circ;
-  return (
-    <svg width={size} height={size}>
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth={stroke} />
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#fff"
-        strokeWidth={stroke} strokeLinecap="round"
-        strokeDasharray={circ} strokeDashoffset={offset}
-        transform={`rotate(-90 ${size/2} ${size/2})`} />
-      <text x="50%" y="44%" dominantBaseline="middle" textAnchor="middle"
-        fill="#fff" fontSize={size * 0.22} fontWeight="800">
-        {Math.round(parseFloat(pct) || 0)}%
-      </text>
-      <text x="50%" y="64%" dominantBaseline="middle" textAnchor="middle"
-        fill="rgba(255,255,255,0.7)" fontSize={size * 0.11}>
-        Overall Score
-      </text>
-    </svg>
-  );
-}
+// ── GLOBAL STYLES injected once ─────────────────────────────
+const GLOBAL_CSS = `
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
 
-// ── Small circular for recent exams ──────────────────────────
-function SmallCircle({ pct, color }) {
-  const size = 48, stroke = 4;
-  const r = (size - stroke) / 2;
-  const circ = 2 * Math.PI * r;
-  const offset = circ - (Math.min(parseFloat(pct) || 0, 100) / 100) * circ;
-  return (
-    <svg width={size} height={size}>
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#f0f0f0" strokeWidth={stroke} />
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color}
-        strokeWidth={stroke} strokeLinecap="round"
-        strokeDasharray={circ} strokeDashoffset={offset}
-        transform={`rotate(-90 ${size/2} ${size/2})`} />
-      <text x="50%" y="50%" dominantBaseline="middle" textAnchor="middle"
-        fill={color} fontSize={10} fontWeight="700">
-        {Math.round(parseFloat(pct) || 0)}%
-      </text>
-    </svg>
-  );
-}
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-// ── Simple line chart ─────────────────────────────────────────
-function MiniLineChart({ data }) {
-  if (!data || data.length < 2) return (
-    <div style={{ height:120, display:"flex", alignItems:"center", justifyContent:"center", color:"rgba(255,255,255,0.4)", fontSize:12 }}>
-      Complete more exams to see your trend
+  body { background: #0B1020; font-family: 'Plus Jakarta Sans', sans-serif; }
+
+  @keyframes glow-pulse {
+    0%, 100% { box-shadow: 0 0 12px rgba(124,92,255,0.4); }
+    50%       { box-shadow: 0 0 28px rgba(124,92,255,0.8), 0 0 60px rgba(124,92,255,0.3); }
+  }
+  @keyframes gold-pulse {
+    0%, 100% { box-shadow: 0 0 12px rgba(255,200,87,0.4); }
+    50%       { box-shadow: 0 0 28px rgba(255,200,87,0.8), 0 0 60px rgba(255,200,87,0.3); }
+  }
+  @keyframes float-up {
+    0%   { opacity:1; transform: translateY(0) scale(1); }
+    100% { opacity:0; transform: translateY(-60px) scale(1.3); }
+  }
+  @keyframes shimmer {
+    0%   { background-position: -400px 0; }
+    100% { background-position: 400px 0; }
+  }
+  @keyframes slide-in {
+    from { opacity:0; transform: translateY(20px); }
+    to   { opacity:1; transform: translateY(0); }
+  }
+  @keyframes particle-float {
+    0%,100% { transform: translateY(0) rotate(0deg); opacity:0.4; }
+    50%      { transform: translateY(-20px) rotate(180deg); opacity:0.8; }
+  }
+  @keyframes border-glow {
+    0%,100% { border-color: rgba(124,92,255,0.3); }
+    50%      { border-color: rgba(124,92,255,0.8); }
+  }
+  @keyframes spin-badge {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+  @keyframes bar-fill {
+    from { width: 0%; }
+    to   { width: var(--target-width); }
+  }
+  @keyframes countdown-pulse {
+    0%,100% { transform: scale(1); }
+    50%      { transform: scale(1.05); }
+  }
+  @keyframes xp-float {
+    0%   { opacity:0; transform: translateY(0) scale(0.8); }
+    20%  { opacity:1; transform: translateY(-10px) scale(1.1); }
+    80%  { opacity:1; transform: translateY(-40px) scale(1); }
+    100% { opacity:0; transform: translateY(-60px) scale(0.9); }
+  }
+
+  .cyber-btn {
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.15s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+  }
+  .cyber-btn:active {
+    transform: scale(0.96);
+  }
+  .cyber-btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .glass-card {
+    background: rgba(255,255,255,0.04);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 8px 32px rgba(124,92,255,0.15);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .glass-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(124,92,255,0.25);
+  }
+  .shimmer-btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    animation: shimmer 2s infinite;
+  }
+  .nav-btn {
+    transition: all 0.2s ease;
+  }
+  .nav-btn:active { transform: scale(0.9); }
+  
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: #0B1020; }
+  ::-webkit-scrollbar-thumb { background: #7C5CFF44; border-radius: 4px; }
+`;
+
+// ── Color tokens ─────────────────────────────────────────────
+const C = {
+  bg:        "#0B1020",
+  bg2:       "#111827",
+  bg3:       "#1a2035",
+  purple:    "#7C5CFF",
+  purpleGlow:"#9D7BFF",
+  green:     "#00D084",
+  gold:      "#FFC857",
+  red:       "#FF5A5F",
+  blue:      "#5B8CFF",
+  text:      "#F1F5F9",
+  textMuted: "rgba(255,255,255,0.5)",
+  border:    "rgba(255,255,255,0.08)",
+};
+
+// ── Animated XP float ────────────────────────────────────────
+function XPFloat({ amount, visible }) {
+  if (!visible) return null;
+  return (
+    <div style={{
+      position:"fixed", top:"20%", left:"50%", transform:"translateX(-50%)",
+      fontSize:28, fontWeight:900, color:C.gold, zIndex:999, pointerEvents:"none",
+      animation:"xp-float 1.5s ease forwards",
+      textShadow:`0 0 20px ${C.gold}`,
+    }}>
+      ⚡ +{amount} XP
     </div>
   );
-  const scores = data.map(d => parseFloat(d.percentage) || 0);
-  const maxS = Math.max(...scores, 100);
-  const W = 320, H = 100;
-  const pts = scores.map((s, i) => `${(i / (scores.length - 1)) * W},${H - (s / maxS) * H}`).join(" ");
-  const lastIdx = scores.length - 1;
-  const lastX = (lastIdx / (scores.length - 1)) * W;
-  const lastY = H - (scores[lastIdx] / maxS) * H;
+}
+
+// ── Animated level bar ───────────────────────────────────────
+function LevelBar({ level, pct, title, icon }) {
   return (
-    <svg viewBox={`0 0 ${W} ${H + 20}`} style={{ width:"100%", height:120, overflow:"visible" }}>
-      <defs>
-        <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="rgba(255,255,255,0.3)" />
-          <stop offset="100%" stopColor="rgba(255,255,255,0)" />
-        </linearGradient>
-      </defs>
-      <polygon points={`0,${H} ${pts} ${W},${H}`} fill="url(#chartGrad)" />
-      <polyline points={pts} fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      {scores.length > 0 && (
-        <>
-          <circle cx={lastX} cy={lastY} r={5} fill="#fff" />
-          <rect x={lastX - 36} y={lastY - 28} width={72} height={22} rx={6} fill="rgba(0,0,0,0.4)" />
-          <text x={lastX} y={lastY - 13} textAnchor="middle" fill="#fff" fontSize={10} fontWeight="700">
-            Score: {Math.round(scores[lastIdx])}%
-          </text>
-        </>
-      )}
+    <div style={{ padding:"0 4px" }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+          <span style={{ fontSize:18 }}>{icon || "⭐"}</span>
+          <div>
+            <div style={{ fontSize:13, fontWeight:800, color:C.text }}>Level {level} · {title}</div>
+          </div>
+        </div>
+        <div style={{ fontSize:11, color:C.gold, fontWeight:700 }}>{pct}%</div>
+      </div>
+      <div style={{ height:6, background:"rgba(255,255,255,0.08)", borderRadius:10, overflow:"hidden" }}>
+        <div style={{
+          height:"100%", width:`${pct}%`,
+          background:`linear-gradient(90deg,${C.purple},${C.gold})`,
+          borderRadius:10, transition:"width 1s ease",
+          boxShadow:`0 0 10px ${C.purple}88`,
+        }} />
+      </div>
+    </div>
+  );
+}
+
+// ── Glowing action button ────────────────────────────────────
+function GlowBtn({ children, onClick, gradient, glow, style={} }) {
+  const [pressed, setPressed] = useState(false);
+  return (
+    <button
+      className="cyber-btn shimmer-btn"
+      onMouseDown={() => setPressed(true)}
+      onMouseUp={() => setPressed(false)}
+      onTouchStart={() => setPressed(true)}
+      onTouchEnd={() => setPressed(false)}
+      onClick={onClick}
+      style={{
+        position:"relative", overflow:"hidden",
+        background: gradient || `linear-gradient(135deg,${C.purple},${C.blue})`,
+        border:"none", borderRadius:12, color:"#fff",
+        fontFamily:"'Plus Jakarta Sans',sans-serif",
+        fontWeight:800, cursor:"pointer",
+        boxShadow: pressed
+          ? `0 2px 8px ${glow || C.purple}66`
+          : `0 4px 20px ${glow || C.purple}55, 0 0 0 1px ${glow||C.purple}33`,
+        transform: pressed ? "scale(0.96)" : "scale(1)",
+        transition:"all 0.15s ease",
+        ...style,
+      }}>
+      {children}
+    </button>
+  );
+}
+
+// ── Glass card component ─────────────────────────────────────
+function GlassCard({ children, style={}, onClick, glow=false, pulse=false }) {
+  return (
+    <div
+      className={`glass-card${glow ? "" : ""}`}
+      onClick={onClick}
+      style={{
+        background:"rgba(255,255,255,0.04)",
+        backdropFilter:"blur(20px)",
+        border:`1px solid ${C.border}`,
+        borderRadius:20,
+        animation: pulse ? "border-glow 2s infinite" : undefined,
+        cursor: onClick ? "pointer" : undefined,
+        ...style,
+      }}>
+      {children}
+    </div>
+  );
+}
+
+// ── Particle background ──────────────────────────────────────
+function Particles() {
+  const particles = [
+    {x:"10%",y:"20%",size:3,dur:"4s",delay:"0s"},
+    {x:"30%",y:"60%",size:2,dur:"6s",delay:"1s"},
+    {x:"60%",y:"15%",size:4,dur:"5s",delay:"0.5s"},
+    {x:"80%",y:"70%",size:2,dur:"7s",delay:"2s"},
+    {x:"50%",y:"40%",size:3,dur:"4.5s",delay:"1.5s"},
+    {x:"90%",y:"30%",size:2,dur:"6s",delay:"0.8s"},
+    {x:"20%",y:"80%",size:3,dur:"5s",delay:"2.5s"},
+  ];
+  return (
+    <div style={{ position:"fixed", inset:0, pointerEvents:"none", zIndex:0, overflow:"hidden" }}>
+      {particles.map((p,i) => (
+        <div key={i} style={{
+          position:"absolute", left:p.x, top:p.y,
+          width:p.size, height:p.size,
+          background:`radial-gradient(circle,${C.purple},transparent)`,
+          borderRadius:"50%",
+          animation:`particle-float ${p.dur} ${p.delay} infinite ease-in-out`,
+        }} />
+      ))}
+    </div>
+  );
+}
+
+// ── Circular score ───────────────────────────────────────────
+function CircleScore({ pct, size=110, color=C.purple }) {
+  const r = (size-8)/2;
+  const circ = 2*Math.PI*r;
+  const off = circ - (Math.min(parseFloat(pct)||0,100)/100)*circ;
+  return (
+    <svg width={size} height={size}>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={8}/>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color}
+        strokeWidth={8} strokeLinecap="round"
+        strokeDasharray={circ} strokeDashoffset={off}
+        transform={`rotate(-90 ${size/2} ${size/2})`}
+        style={{ filter:`drop-shadow(0 0 8px ${color})`, transition:"stroke-dashoffset 1s ease" }}/>
+      <text x="50%" y="44%" dominantBaseline="middle" textAnchor="middle"
+        fill="#fff" fontSize={size*0.2} fontWeight="800">{Math.round(pct)||0}%</text>
+      <text x="50%" y="64%" dominantBaseline="middle" textAnchor="middle"
+        fill={C.textMuted} fontSize={size*0.1}>Overall</text>
     </svg>
   );
 }
 
-const NAV_ITEMS = [
-  { id:"home",        label:"Dashboard",   emoji:"🏠" },
-  { id:"exams",       label:"Exams",       emoji:"📝" },
-  { id:"learn",       label:"Practice",    emoji:"📖" },
-  { id:"progress",    label:"Progress",    emoji:"📊" },
-  { id:"arena",       label:"Arena",       emoji:"🏟️" },
-  { id:"leaderboard", label:"Leaderboard", emoji:"🏆" },
-  { id:"profile",     label:"Profile",     emoji:"👤" },
-  { id:"settings",    label:"Settings",    emoji:"⚙️" },
-];
-
-const scoreColor = p => parseFloat(p) >= 70 ? "#00b894" : parseFloat(p) >= 50 ? "#f39c12" : "#e17055";
-
+// ── Main component ───────────────────────────────────────────
 export default function Dashboard() {
   const { student, logout } = useAuth();
   const nav = useNavigate();
   const [history,       setHistory]       = useState([]);
+  const [loading,       setLoading]       = useState(true);
   const [challenge,     setChallenge]     = useState(null);
   const [profile,       setProfile]       = useState(null);
-  const [perf,          setPerf]          = useState([]);
+  const [levelData,     setLevelData]     = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [activeTab,     setActiveTab]     = useState("home");
   const [notifOpen,     setNotifOpen]     = useState(false);
-  const [sidebarOpen,   setSidebarOpen]   = useState(false);
-  const [loading,       setLoading]       = useState(true);
+  const [xpFloat,       setXpFloat]       = useState(null);
+  const [sideOpen,      setSideOpen]      = useState(false);
+
+  // Inject global CSS once
+  useEffect(() => {
+    if (!document.getElementById("cyber-css")) {
+      const style = document.createElement("style");
+      style.id = "cyber-css";
+      style.textContent = GLOBAL_CSS;
+      document.head.appendChild(style);
+    }
+    document.body.style.background = C.bg;
+    return () => { document.body.style.background = ""; };
+  }, []);
 
   useEffect(() => {
     Promise.all([
       API.get("/auth/profile").catch(() => null),
-      API.get("/exam/history").catch(() => ({ data: [] })),
+      API.get("/exam/history").catch(() => ({ data:[] })),
       API.get("/innovations/challenge/today").catch(() => null),
-      API.get("/auth/notifications").catch(() => ({ data: [] })),
-      API.get("/exam/performance").catch(() => ({ data: { subjects:[] } })),
-    ]).then(([p, h, c, n, perf]) => {
+      API.get("/auth/notifications").catch(() => ({ data:[] })),
+      API.get("/missions/level").catch(() => null),
+    ]).then(([p,h,c,n,lv]) => {
       if (p?.data)                         setProfile(p.data);
-      if (h?.data)                         setHistory(h.data.slice(0, 5));
+      if (h?.data)                         setHistory(h.data.slice(0,5));
       if (c?.data)                         setChallenge(c.data);
       if (n?.data && Array.isArray(n.data))setNotifications(n.data);
-      if (perf?.data?.subjects)            setPerf(perf.data.subjects);
+      if (lv?.data)                        setLevelData(lv.data);
     }).finally(() => setLoading(false));
   }, []);
 
-  const streak    = profile?.current_streak || 0;
-  const xp        = profile?.points || 0;
-  const avgScore  = history.length
-    ? (history.reduce((a, h) => a + parseFloat(h.percentage || 0), 0) / history.length).toFixed(0)
-    : 0;
+  const streak   = profile?.current_streak || 0;
+  const xp       = profile?.points || 0;
+  const coins    = profile?.coins  || 0;
+  const avgScore = history.length
+    ? (history.reduce((a,h)=>a+parseFloat(h.percentage||0),0)/history.length).toFixed(0) : 0;
   const bestScore = history.length
-    ? Math.max(...history.map(h => parseFloat(h.percentage || 0))).toFixed(0)
-    : 0;
-  const firstName = (student?.full_name || profile?.full_name || "Student").split(" ")[0];
-  const fullName  = student?.full_name || profile?.full_name || "Student";
-  const email     = student?.email || profile?.email || "";
-  const initials  = fullName.split(" ").map(w => w[0]).join("").slice(0,2).toUpperCase();
-  const unread    = notifications.length;
+    ? Math.max(...history.map(h=>parseFloat(h.percentage||0))).toFixed(0) : 0;
+  const firstName = (student?.full_name||profile?.full_name||"Student").split(" ")[0];
+  const initials  = (student?.full_name||profile?.full_name||"S").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
 
-  const goNav = (id) => {
-    setSidebarOpen(false);
-    if (id === "arena")       { nav("/arena");         return; }
-    if (id === "leaderboard") { nav("/leaderboard");   return; }
-    if (id === "settings")    { nav("/profile");       return; }
-    if (id === "exams")       { nav("/exam-select?type=JAMB"); return; }
-    setActiveTab(id);
+  const scoreColor = p => parseFloat(p)>=70 ? C.green : parseFloat(p)>=50 ? C.gold : C.red;
+
+  const showXP = (amt) => {
+    setXpFloat(amt);
+    setTimeout(() => setXpFloat(null), 2000);
   };
 
   if (loading) return (
-    <div style={{ minHeight:"100vh", background:"#0f0e1a", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:16 }}>
-      <div style={{ fontSize:48 }}>🎓</div>
-      <p style={{ color:"rgba(255,255,255,0.5)", fontSize:14, fontFamily:"sans-serif" }}>Loading your dashboard...</p>
+    <div style={{ minHeight:"100vh", background:C.bg, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:16, fontFamily:"'Plus Jakarta Sans',sans-serif" }}>
+      <div style={{ width:60, height:60, borderRadius:16, background:`linear-gradient(135deg,${C.purple},${C.blue})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:30, animation:"glow-pulse 2s infinite" }}>🎓</div>
+      <p style={{ color:C.textMuted, fontSize:14 }}>Loading your arena...</p>
     </div>
   );
 
-  // ── Sidebar ───────────────────────────────────────────────
+  // ── Sidebar ─────────────────────────────────────────────
   const Sidebar = () => (
     <>
-      {sidebarOpen && <div style={s.overlay} onClick={() => setSidebarOpen(false)} />}
-      <aside style={{ ...s.sidebar, ...(sidebarOpen ? s.sidebarOpen : {}) }}>
+      {sideOpen && <div onClick={()=>setSideOpen(false)} style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:98,backdropFilter:"blur(4px)" }}/>}
+      <aside style={{
+        position:"fixed",top:0,left:0,bottom:0,width:240,
+        background:"#080d1a",
+        borderRight:`1px solid ${C.border}`,
+        zIndex:99, display:"flex", flexDirection:"column", padding:"20px 0 16px",
+        transform: sideOpen ? "translateX(0)" : "translateX(-100%)",
+        transition:"transform 0.3s cubic-bezier(0.4,0,0.2,1)",
+        boxShadow: sideOpen ? `4px 0 40px rgba(124,92,255,0.3)` : "none",
+      }}>
         {/* Logo */}
-        <div style={s.logoBox}>
-          <img src="/icons/icon-72x72.png" alt="logo" style={{ width:48, height:48, borderRadius:12 }}
-            onError={e => { e.target.style.display="none"; }} />
+        <div style={{ display:"flex", alignItems:"center", gap:10, padding:"0 18px 20px", borderBottom:`1px solid ${C.border}`, marginBottom:8 }}>
+          <div style={{ width:44, height:44, borderRadius:12, background:`linear-gradient(135deg,${C.purple},${C.blue})`, display:"flex",alignItems:"center",justifyContent:"center", fontSize:22, boxShadow:`0 4px 16px ${C.purple}66` }}>🎓</div>
           <div>
-            <div style={s.logoName}>SCHOLARS</div>
-            <div style={s.logoSub}>SYNDICATE</div>
+            <div style={{ fontWeight:900, fontSize:13, color:C.text, letterSpacing:1 }}>SCHOLARS</div>
+            <div style={{ fontSize:9, color:C.textMuted, letterSpacing:2 }}>SYNDICATE</div>
           </div>
         </div>
 
         {/* Nav */}
-        <nav style={{ flex:1, paddingTop:8 }}>
-          {NAV_ITEMS.map(item => (
+        <nav style={{ flex:1, padding:"4px 8px" }}>
+          {[
+            { id:"home",     label:"Dashboard",  emoji:"🏠" },
+            { id:"learn",    label:"Practice",   emoji:"📖" },
+            { id:"progress", label:"Progress",   emoji:"📊" },
+            { id:"missions", label:"Missions",   emoji:"🎯", badge:true },
+            { id:"arena",    label:"Arena",      emoji:"⚔️" },
+            { id:"videos",   label:"Videos",     emoji:"📺" },
+            { id:"leaderboard",label:"Leaderboard",emoji:"🏆" },
+            { id:"profile",  label:"Profile",    emoji:"👤" },
+          ].map(item => (
             <div key={item.id}
-              style={{ ...s.navItem, ...(activeTab === item.id ? s.navItemActive : {}) }}
-              onClick={() => goNav(item.id)}>
-              <span style={{ width:22, textAlign:"center", fontSize:16 }}>{item.emoji}</span>
-              <span style={{ fontSize:13 }}>{item.label}</span>
+              style={{
+                display:"flex", alignItems:"center", gap:12,
+                padding:"11px 16px", cursor:"pointer",
+                borderRadius:12, marginBottom:2,
+                background: activeTab===item.id ? `linear-gradient(135deg,${C.purple}33,${C.blue}22)` : "transparent",
+                border: activeTab===item.id ? `1px solid ${C.purple}44` : "1px solid transparent",
+                color: activeTab===item.id ? C.text : C.textMuted,
+                fontWeight: activeTab===item.id ? 700 : 500,
+                fontSize:13, transition:"all 0.2s ease",
+                boxShadow: activeTab===item.id ? `0 0 20px ${C.purple}22` : "none",
+              }}
+              onClick={() => {
+                setSideOpen(false);
+                if (item.id==="arena")       { nav("/arena");       return; }
+                if (item.id==="videos")      { nav("/videos");      return; }
+                if (item.id==="leaderboard") { nav("/leaderboard"); return; }
+                if (item.id==="missions")    { nav("/missions");    return; }
+                setActiveTab(item.id);
+              }}>
+              <span style={{ fontSize:18, width:22, textAlign:"center" }}>{item.emoji}</span>
+              <span>{item.label}</span>
+              {item.badge && <div style={{ marginLeft:"auto", width:8, height:8, borderRadius:"50%", background:C.green, boxShadow:`0 0 8px ${C.green}` }} />}
             </div>
           ))}
         </nav>
 
         {/* Upgrade CTA */}
-        <div style={s.upgradeCTA}>
-          <div style={{ fontSize:22, marginBottom:4 }}>👑</div>
-          <div style={{ fontWeight:700, fontSize:13, color:"#fff", marginBottom:4 }}>Upgrade to Pro</div>
-          <div style={{ fontSize:11, color:"rgba(255,255,255,0.55)", marginBottom:12, lineHeight:1.5 }}>
-            Unlock more features and exclusive content.
-          </div>
-          <button style={s.upgradeBtn} onClick={() => nav("/upgrade")}>Upgrade Now 👑</button>
+        <div style={{ margin:"12px 12px 0", background:`linear-gradient(135deg,${C.purple}22,${C.gold}11)`, border:`1px solid ${C.gold}33`, borderRadius:16, padding:"16px 14px", textAlign:"center" }}>
+          <div style={{ fontSize:24, marginBottom:6 }}>👑</div>
+          <div style={{ fontWeight:800, fontSize:13, color:C.gold, marginBottom:4 }}>Upgrade to Pro</div>
+          <div style={{ fontSize:11, color:C.textMuted, marginBottom:12, lineHeight:1.5 }}>Unlock unlimited features</div>
+          <GlowBtn gradient={`linear-gradient(135deg,${C.gold},#FFB300)`} glow={C.gold}
+            onClick={()=>nav("/upgrade")} style={{ width:"100%", padding:"10px 0", fontSize:12, borderRadius:10 }}>
+            Upgrade Now 👑
+          </GlowBtn>
         </div>
       </aside>
     </>
   );
 
-  // ── Header ────────────────────────────────────────────────
-  const Header = ({ title, sub }) => (
-    <header style={s.header}>
-      <button style={s.hamburger} onClick={() => setSidebarOpen(true)}>☰</button>
+  // ── Header ───────────────────────────────────────────────
+  const Header = () => (
+    <header style={{
+      background:"rgba(8,13,26,0.9)", backdropFilter:"blur(20px)",
+      borderBottom:`1px solid ${C.border}`,
+      padding:"12px 16px", display:"flex", alignItems:"center", gap:10,
+      position:"sticky", top:0, zIndex:50,
+    }}>
+      <button className="nav-btn" onClick={()=>setSideOpen(true)} style={{
+        background:"rgba(255,255,255,0.06)", border:`1px solid ${C.border}`,
+        borderRadius:10, width:38, height:38, fontSize:18, cursor:"pointer",
+        color:C.text, display:"flex", alignItems:"center", justifyContent:"center",
+      }}>☰</button>
+
       <div style={{ flex:1 }}>
-        <div style={s.headerTitle}>{title || `Welcome back,`}</div>
-        {title
-          ? <div style={s.headerSub}>{sub}</div>
-          : <div style={s.headerTitle2}>{firstName} 👋</div>
-        }
+        <div style={{ fontWeight:900, fontSize:15, color:C.text }}>Scholars Syndicate</div>
+        <div style={{ fontSize:10, color:C.textMuted }}>Learn. Practice. Excel.</div>
       </div>
-      <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-        <div style={{ position:"relative" }}>
-          <button style={s.iconBtn} onClick={() => setNotifOpen(!notifOpen)}>
-            🔔
-            {unread > 0 && <span style={s.notifBadge}>{unread}</span>}
-          </button>
-          {notifOpen && (
-            <div style={s.notifDrop}>
-              <div style={s.notifHead}>Notifications</div>
-              {notifications.length === 0
-                ? <p style={{ color:"#999", fontSize:13, textAlign:"center", padding:16 }}>No announcements yet</p>
-                : notifications.map((n, i) => (
-                  <div key={i} style={s.notifItem}>
-                    <div style={{ fontWeight:700, fontSize:13 }}>{n.title}</div>
-                    <div style={{ fontSize:12, color:"#636e72", marginTop:3 }}>{n.message}</div>
-                  </div>
-                ))}
-            </div>
-          )}
-        </div>
-        <div style={s.avatarCircle} onClick={() => setActiveTab("profile")}>
-          {profile?.avatar_url
-            ? <img src={profile.avatar_url} alt="" style={{ width:"100%", height:"100%", objectFit:"cover", borderRadius:"50%" }} />
-            : <span style={{ fontSize:14, fontWeight:800, color:"#6c63ff" }}>{initials}</span>}
-        </div>
+
+      {/* Coins */}
+      <div style={{ display:"flex", alignItems:"center", gap:5, background:"rgba(255,200,87,0.1)", border:`1px solid ${C.gold}33`, borderRadius:10, padding:"5px 10px" }}>
+        <span style={{ fontSize:14 }}>🪙</span>
+        <span style={{ fontWeight:800, color:C.gold, fontSize:13 }}>{coins.toLocaleString()}</span>
+      </div>
+
+      {/* Notif */}
+      <div style={{ position:"relative" }}>
+        <button className="nav-btn" onClick={()=>setNotifOpen(!notifOpen)} style={{
+          position:"relative", background:"rgba(255,255,255,0.06)",
+          border:`1px solid ${C.border}`, borderRadius:10, width:38, height:38,
+          fontSize:16, cursor:"pointer", color:C.text, display:"flex", alignItems:"center", justifyContent:"center",
+        }}>
+          🔔
+          {notifications.length>0 && <span style={{ position:"absolute", top:-4, right:-4, background:C.red, color:"#fff", borderRadius:"50%", width:16, height:16, fontSize:9, fontWeight:800, display:"flex", alignItems:"center", justifyContent:"center" }}>{notifications.length}</span>}
+        </button>
+        {notifOpen && (
+          <div style={{ position:"absolute", top:46, right:0, background:C.bg2, border:`1px solid ${C.border}`, borderRadius:16, width:280, zIndex:200, boxShadow:`0 16px 48px rgba(0,0,0,0.5)` }}>
+            <div style={{ fontWeight:800, fontSize:14, padding:"14px 16px 10px", color:C.text, borderBottom:`1px solid ${C.border}` }}>Notifications</div>
+            {notifications.length===0
+              ? <p style={{ color:C.textMuted, fontSize:13, textAlign:"center", padding:16 }}>No announcements yet</p>
+              : notifications.map((n,i)=>(
+                <div key={i} style={{ padding:"12px 16px", borderBottom:`1px solid ${C.border}` }}>
+                  <div style={{ fontWeight:700, fontSize:13, color:C.text }}>{n.title}</div>
+                  <div style={{ fontSize:12, color:C.textMuted, marginTop:3 }}>{n.message}</div>
+                </div>
+              ))}
+          </div>
+        )}
+      </div>
+
+      {/* Avatar */}
+      <div onClick={()=>setActiveTab("profile")} style={{
+        width:38, height:38, borderRadius:"50%", cursor:"pointer",
+        background:`linear-gradient(135deg,${C.purple},${C.blue})`,
+        display:"flex", alignItems:"center", justifyContent:"center",
+        fontWeight:800, fontSize:14, color:"#fff",
+        border:`2px solid ${C.purple}66`,
+        boxShadow:`0 0 12px ${C.purple}44`,
+        overflow:"hidden",
+      }}>
+        {profile?.avatar_url && profile.avatar_url.startsWith("http")
+          ? <img src={profile.avatar_url} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} onError={e=>{e.target.style.display="none";}}/>
+          : profile?.avatar_url && !profile.avatar_url.startsWith("http")
+            ? profile.avatar_url
+            : initials}
       </div>
     </header>
   );
 
   return (
-    <div style={s.root}>
+    <div style={{ minHeight:"100vh", background:C.bg, fontFamily:"'Plus Jakarta Sans',sans-serif", maxWidth:520, margin:"0 auto", position:"relative" }}>
+      <Particles />
       <Sidebar />
-      <main style={s.main}>
+      <XPFloat amount={xpFloat} visible={!!xpFloat} />
 
-        {/* ══════════════ HOME TAB ══════════════ */}
-        {activeTab === "home" && (
-          <>
-            <Header />
-            <div style={s.content}>
-              {/* Hero */}
-              <div style={s.heroCard}>
-                <div style={s.heroTop}>
-                  <div>
-                    <div style={s.heroGreet}>Good day, {firstName} 👋</div>
-                    <div style={s.heroSub}>Ready to ace your exams today?</div>
-                  </div>
-                  <div style={s.xpChip}>⚡ {xp} XP</div>
+      <div style={{ position:"relative", zIndex:1 }}>
+        <Header />
+
+        {/* ════ HOME TAB ════ */}
+        {activeTab==="home" && (
+          <div style={{ padding:"16px 16px 100px", animation:"slide-in 0.3s ease" }}>
+
+            {/* Hero gradient card */}
+            <div style={{
+              background:`linear-gradient(135deg,${C.purple}cc,${C.blue}99)`,
+              borderRadius:24, padding:"22px 20px 20px",
+              marginBottom:14, position:"relative", overflow:"hidden",
+              boxShadow:`0 8px 40px ${C.purple}44`,
+              border:`1px solid ${C.purple}44`,
+            }}>
+              {/* Decorative glow */}
+              <div style={{ position:"absolute", top:-40, right:-40, width:120, height:120, borderRadius:"50%", background:`${C.blue}33`, filter:"blur(30px)" }}/>
+              <div style={{ position:"absolute", bottom:-20, left:-20, width:80, height:80, borderRadius:"50%", background:`${C.purple}44`, filter:"blur(20px)" }}/>
+
+              <div style={{ position:"relative", display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:20 }}>
+                <div>
+                  <div style={{ fontSize:13, color:"rgba(255,255,255,0.7)", marginBottom:4 }}>Welcome back,</div>
+                  <div style={{ fontSize:22, fontWeight:900, color:"#fff" }}>{firstName} 👋</div>
                 </div>
-                <div style={s.statsRow}>
-                  <div style={s.statCol}>
-                    <div style={s.statEmoji}>🔥</div>
-                    <div style={s.statNum}>{streak}</div>
-                    <div style={s.statLbl}>Day Streak</div>
-                  </div>
-                  <div style={s.statDiv} />
-                  <div style={s.statCol}>
-                    <div style={s.statEmoji}>📝</div>
-                    <div style={s.statNum}>{history.length}</div>
-                    <div style={s.statLbl}>Exams Taken</div>
-                  </div>
-                  <div style={s.statDiv} />
-                  <div style={s.statCol}>
-                    <div style={s.statEmoji}>📈</div>
-                    <div style={s.statNum}>{avgScore}%</div>
-                    <div style={s.statLbl}>Average Score</div>
-                  </div>
+                <div style={{ background:"rgba(255,200,87,0.2)", border:`1px solid ${C.gold}66`, borderRadius:12, padding:"6px 14px", display:"flex", alignItems:"center", gap:6, animation:"gold-pulse 3s infinite" }}>
+                  <span style={{ fontSize:14 }}>⚡</span>
+                  <span style={{ fontWeight:900, color:C.gold, fontSize:14 }}>{xp.toLocaleString()} XP</span>
                 </div>
               </div>
 
-              {/* Daily Challenge */}
-              <div style={s.challengeCard}>
-                <div style={s.challengeIconBox}>🎯</div>
-                <div style={{ flex:1 }}>
-                  <div style={s.challengeTitle}>Daily Challenge</div>
-                  <div style={s.challengeSub}>
-                    {challenge ? `${challenge.subject} • ${challenge.total_q || 10} questions • 2 mins` : "10 questions • 2 mins"}
-                  </div>
-                </div>
-                <button style={s.challengeBtn} onClick={() => nav("/challenge")}>Play Now →</button>
-              </div>
-
-              {/* Start Exam */}
-              <div style={s.sectionLbl}>START EXAM</div>
-              <div style={s.examGrid}>
-                <div style={s.jambCard} onClick={() => nav("/exam-select?type=JAMB")}>
-                  <div style={{ fontSize:40, marginBottom:12 }}>📘</div>
-                  <div style={s.examTitle}>JAMB / UTME</div>
-                  <div style={s.examDesc}>Full simulation • Single subject • Past questions</div>
-                  <button style={s.examBtn}>Start Exam →</button>
-                </div>
-                <div style={s.postCard} onClick={() => nav("/exam-select?type=POST-UTME")}>
-                  <div style={{ fontSize:40, marginBottom:12 }}>🏫</div>
-                  <div style={s.examTitle}>Post-UTME</div>
-                  <div style={s.examDesc}>UNILAG • UI • OAU • UNIPORT & more</div>
-                  <button style={{ ...s.examBtn, color:"#00b894" }}>Start Exam →</button>
-                </div>
-              </div>
-
-              {/* Arena */}
-              <div style={s.arenaCard} onClick={() => nav("/arena")}>
-                <div style={{ fontSize:44, flexShrink:0 }}>🏆</div>
-                <div style={{ flex:1 }}>
-                  <div style={s.arenaTitle}>Scholars Arena</div>
-                  <div style={s.arenaSub}>1v1 Battles • Duo • 50-player Clash{"\n"}Live competition</div>
-                </div>
-                <button style={s.arenaBtn}>Enter Arena →</button>
-              </div>
-
-              {/* Recent Exams */}
-              {history.length > 0 && (
-                <>
-                  <div style={s.sectionLbl}>RECENT EXAMS</div>
-                  <div style={s.recentBox}>
-                    {history.slice(0,3).map((h, i) => (
-                      <div key={i} style={{ ...s.recentRow, ...(i < 2 ? { borderBottom:"1px solid #f5f5f5" } : {}) }}>
-                        <div style={s.recentIconBox}>📝</div>
-                        <div style={{ flex:1, minWidth:0 }}>
-                          <div style={s.recentTitle}>
-                            {(h.subject || "Mixed Subjects")} • {h.exam_type || "JAMB"}
-                          </div>
-                          <div style={s.recentMeta}>
-                            {new Date(h.completed_at).toLocaleDateString("en-NG", { day:"numeric", month:"short", year:"numeric" })}
-                            {" • "}{h.total_questions || 0} Questions
-                          </div>
-                        </div>
-                        <SmallCircle pct={h.percentage || 0} color={scoreColor(h.percentage || 0)} />
-                      </div>
-                    ))}
-                    <div style={{ textAlign:"center", paddingTop:10 }}>
-                      <button style={s.viewAllBtn} onClick={() => setActiveTab("progress")}>View all →</button>
-                    </div>
-                  </div>
-                </>
-              )}
-              <div style={{ height:80 }} />
-            </div>
-          </>
-        )}
-
-        {/* ══════════════ LEARN TAB ══════════════ */}
-        {activeTab === "learn" && (
-          <>
-            <Header title="Practice Centre" sub="All practice modes — completely free" />
-            <div style={s.content}>
-              <div style={s.sectionLbl}>EXAM PREPARATION</div>
-              <div style={s.toolGrid}>
+              {/* Stats row */}
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }}>
                 {[
-                  { emoji:"📘", title:"JAMB Full Exam",   desc:"4 subjects · 180 questions · 2hrs",  path:"/exam-select?type=JAMB" },
-                  { emoji:"🏫", title:"Post-UTME",        desc:"University-specific format",          path:"/exam-select?type=POST-UTME" },
-                  { emoji:"📖", title:"Subject Practice", desc:"40 questions per subject",            path:"/exam-select?type=JAMB" },
-                  { emoji:"🎯", title:"Daily Challenge",  desc:"10 questions · new every day",        path:"/challenge" },
-                ].map((t,i) => (
-                  <div key={i} style={s.toolCard} onClick={() => nav(t.path)}>
-                    <div style={s.toolEmoji}>{t.emoji}</div>
-                    <div style={s.toolTitle}>{t.title}</div>
-                    <div style={s.toolDesc}>{t.desc}</div>
+                  { icon:"🔥", val:streak, lbl:"Day Streak", color:C.red },
+                  { icon:"📝", val:history.length, lbl:"Exams Taken", color:C.blue },
+                  { icon:"📈", val:`${avgScore}%`, lbl:"Avg Score", color:C.green },
+                ].map((s,i)=>(
+                  <div key={i} style={{ background:"rgba(255,255,255,0.1)", borderRadius:14, padding:"12px 8px", textAlign:"center", backdropFilter:"blur(10px)", border:`1px solid rgba(255,255,255,0.1)` }}>
+                    <div style={{ fontSize:22, marginBottom:4 }}>{s.icon}</div>
+                    <div style={{ fontSize:20, fontWeight:900, color:"#fff" }}>{s.val}</div>
+                    <div style={{ fontSize:10, color:"rgba(255,255,255,0.6)", marginTop:2 }}>{s.lbl}</div>
                   </div>
                 ))}
               </div>
 
-              <div style={s.sectionLbl}>SMART LEARNING</div>
-              <div style={s.toolGrid}>
-                {[
-                  { emoji:"🔁", title:"Error Review",   desc:"Redo your wrong answers",       path:"/error-review" },
-                  { emoji:"💪", title:"Beat Yourself",  desc:"Break your personal best",      path:"/beat-yourself" },
-                  { emoji:"📂", title:"Resume Exam",    desc:"Continue unfinished exam",      path:"/resume" },
-                  { emoji:"🧠", title:"Weakness Mode",  desc:"Target your weak areas",        path:"/exam-select" },
-                ].map((t,i) => (
-                  <div key={i} style={s.toolCard} onClick={() => nav(t.path)}>
-                    <div style={s.toolEmoji}>{t.emoji}</div>
-                    <div style={s.toolTitle}>{t.title}</div>
-                    <div style={s.toolDesc}>{t.desc}</div>
-                  </div>
-                ))}
-              </div>
-
-              <div style={s.sectionLbl}>ARENA BATTLES</div>
-              <div style={{ ...s.arenaCard, marginBottom:0 }} onClick={() => nav("/arena")}>
-                <div style={{ fontSize:44, flexShrink:0 }}>🏟️</div>
-                <div style={{ flex:1 }}>
-                  <div style={s.arenaTitle}>Enter Arena</div>
-                  <div style={s.arenaSub}>Live battles · All modes free</div>
+              {/* Level bar */}
+              {levelData && (
+                <div style={{ marginTop:16, background:"rgba(0,0,0,0.2)", borderRadius:12, padding:"10px 14px" }}>
+                  <LevelBar level={levelData.level} pct={levelData.pct} title={levelData.title} icon={levelData.icon} />
                 </div>
-                <button style={s.arenaBtn}>Enter →</button>
-              </div>
-
-              <div style={{ height:80 }} />
-            </div>
-          </>
-        )}
-
-        {/* ══════════════ PROGRESS TAB ══════════════ */}
-        {activeTab === "progress" && (
-          <>
-            <Header title="My Progress" sub="See how far you've come" />
-            <div style={s.content}>
-
-              {/* Overall Progress Card */}
-              <div style={s.progressHero}>
-                <div style={s.progressHeroTop}>
-                  <div>
-                    <div style={{ fontWeight:800, fontSize:16, color:"#fff" }}>Overall Progress</div>
-                    <div style={{ fontSize:12, color:"rgba(255,255,255,0.7)", marginTop:2 }}>Your hard work is paying off!</div>
-                  </div>
-                </div>
-                <div style={s.progressMainRow}>
-                  <CircleScore pct={avgScore} />
-                  <div style={s.progressStats}>
-                    <div style={s.progStat}>
-                      <div style={s.progStatNum}>{history.length}</div>
-                      <div style={s.progStatLbl}>Exams Taken</div>
-                    </div>
-                    <div style={s.progStat}>
-                      <div style={s.progStatNum}>{avgScore}%</div>
-                      <div style={s.progStatLbl}>Average Score</div>
-                    </div>
-                    <div style={s.progStat}>
-                      <div style={s.progStatNum}>{bestScore}%</div>
-                      <div style={s.progStatLbl}>Best Score</div>
-                    </div>
-                    <div style={s.progStat}>
-                      <div style={s.progStatNum}>🔥 {streak}</div>
-                      <div style={s.progStatLbl}>Current Streak</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Performance Overview Chart */}
-              <div style={s.chartCard}>
-                <div style={s.chartHeader}>
-                  <div style={{ fontWeight:800, fontSize:15, color:"#fff" }}>Performance Overview</div>
-                  <div style={{ fontSize:11, color:"rgba(255,255,255,0.5)" }}>This Month</div>
-                </div>
-                <MiniLineChart data={history} />
-                <div style={s.chartAxis}>
-                  {history.slice(-5).map((h, i) => (
-                    <div key={i} style={{ fontSize:9, color:"rgba(255,255,255,0.4)" }}>
-                      {new Date(h.completed_at).toLocaleDateString("en-NG", { month:"short", day:"numeric" })}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Subject Strengths */}
-              {perf.length > 0 && (
-                <>
-                  <div style={s.whiteCard}>
-                    <div style={s.cardHeader}>
-                      <div style={{ fontWeight:800, fontSize:15, color:"#2d3436" }}>Subject Strengths</div>
-                      <div style={{ fontSize:12, color:"#6c63ff", cursor:"pointer" }} onClick={() => nav("/performance")}>View All</div>
-                    </div>
-                    {[...perf].sort((a,b) => b.accuracy - a.accuracy).slice(0,4).map((p, i) => (
-                      <div key={i} style={{ marginBottom:14 }}>
-                        <div style={{ display:"flex", justifyContent:"space-between", marginBottom:5 }}>
-                          <div style={{ fontWeight:600, fontSize:13, color:"#2d3436" }}>{p.subject}</div>
-                          <div style={{ fontWeight:700, fontSize:13, color: scoreColor(p.accuracy) }}>{Math.round(p.accuracy)}%</div>
-                        </div>
-                        <div style={s.progressBarBg}>
-                          <div style={{ ...s.progressBarFill, width:`${Math.min(p.accuracy,100)}%`, background: scoreColor(p.accuracy) }} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </>
               )}
+            </div>
 
-              {/* Recent Exams */}
-              {history.length > 0 && (
-                <div style={s.whiteCard}>
-                  <div style={s.cardHeader}>
-                    <div style={{ fontWeight:800, fontSize:15, color:"#2d3436" }}>Recent Exams</div>
-                    <div style={{ fontSize:12, color:"#6c63ff", cursor:"pointer" }} onClick={() => nav("/history")}>View All</div>
-                  </div>
-                  {history.slice(0,3).map((h, i) => (
-                    <div key={i} style={{ ...s.recentRow, ...(i < 2 ? { borderBottom:"1px solid #f5f5f5" } : {}) }}>
-                      <div style={s.recentIconBox}>📝</div>
+            {/* Action Buttons Row */}
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14 }}>
+              <GlowBtn gradient={`linear-gradient(135deg,${C.purple},${C.blue})`} glow={C.purple}
+                onClick={()=>nav("/missions")}
+                style={{ padding:"14px 0", fontSize:13, borderRadius:14, display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}>
+                <span style={{ fontSize:22 }}>🎯</span>
+                <span>Daily Missions</span>
+                <span style={{ fontSize:10, opacity:0.8 }}>Earn XP & Coins</span>
+              </GlowBtn>
+              <GlowBtn gradient={`linear-gradient(135deg,${C.gold},#FFB300)`} glow={C.gold}
+                onClick={()=>nav("/challenge")}
+                style={{ padding:"14px 0", fontSize:13, borderRadius:14, display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}>
+                <span style={{ fontSize:22 }}>{challenge?.already_done ? "✅" : "🎯"}</span>
+                <span>Daily Challenge</span>
+                <span style={{ fontSize:10, opacity:0.8 }}>{challenge?.already_done ? "Done!" : "Play now"}</span>
+              </GlowBtn>
+            </div>
+
+            {/* Start Exam cards */}
+            <div style={{ fontSize:11, fontWeight:800, color:C.textMuted, letterSpacing:1.5, textTransform:"uppercase", marginBottom:10 }}>Start Exam</div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:14 }}>
+              <GlassCard onClick={()=>nav("/exam-select?type=JAMB")} style={{ padding:"20px 16px", borderRadius:18 }}>
+                <div style={{ fontSize:36, marginBottom:10 }}>📘</div>
+                <div style={{ fontWeight:900, fontSize:15, color:C.text, marginBottom:6 }}>JAMB / UTME</div>
+                <div style={{ fontSize:11, color:C.textMuted, lineHeight:1.5, marginBottom:14 }}>Full simulation · Single subject · Past questions</div>
+                <div style={{ background:`${C.purple}22`, border:`1px solid ${C.purple}44`, borderRadius:8, padding:"7px 0", textAlign:"center", color:C.purpleGlow, fontWeight:800, fontSize:12 }}>Start Exam →</div>
+              </GlassCard>
+              <GlassCard onClick={()=>nav("/exam-select?type=POST-UTME")} style={{ padding:"20px 16px", borderRadius:18 }}>
+                <div style={{ fontSize:36, marginBottom:10 }}>🏫</div>
+                <div style={{ fontWeight:900, fontSize:15, color:C.text, marginBottom:6 }}>Post-UTME</div>
+                <div style={{ fontSize:11, color:C.textMuted, lineHeight:1.5, marginBottom:14 }}>UNILAG · UI · OAU · UNIPORT & more</div>
+                <div style={{ background:`${C.green}22`, border:`1px solid ${C.green}44`, borderRadius:8, padding:"7px 0", textAlign:"center", color:C.green, fontWeight:800, fontSize:12 }}>Start Exam →</div>
+              </GlassCard>
+            </div>
+
+            {/* Arena card - premium feel */}
+            <div onClick={()=>nav("/arena")} className="cyber-btn glass-card" style={{
+              background:`linear-gradient(135deg,#1a0a2e,#2d1060)`,
+              borderRadius:20, padding:"20px 18px", marginBottom:14,
+              display:"flex", alignItems:"center", gap:16, cursor:"pointer",
+              border:`1px solid ${C.purple}33`,
+              boxShadow:`0 8px 32px rgba(124,92,255,0.2), inset 0 1px 0 rgba(255,255,255,0.05)`,
+            }}>
+              <div style={{ fontSize:48, filter:"drop-shadow(0 0 12px gold)" }}>🏆</div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontWeight:900, fontSize:17, color:C.text, marginBottom:5 }}>Scholars Arena</div>
+                <div style={{ fontSize:12, color:C.textMuted, lineHeight:1.5 }}>1v1 Battles · Duo · 50-player Clash{"\n"}Live competition</div>
+              </div>
+              <GlowBtn gradient={`linear-gradient(135deg,${C.purple},${C.blue})`} glow={C.purple}
+                style={{ padding:"10px 16px", fontSize:12, borderRadius:10, flexShrink:0 }}>
+                Enter →
+              </GlowBtn>
+            </div>
+
+            {/* Recent Exams */}
+            {history.length>0 && (
+              <>
+                <div style={{ fontSize:11, fontWeight:800, color:C.textMuted, letterSpacing:1.5, textTransform:"uppercase", marginBottom:10 }}>Recent Exams</div>
+                <GlassCard style={{ borderRadius:18, overflow:"hidden" }}>
+                  {history.slice(0,3).map((h,i)=>(
+                    <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"14px 16px", borderBottom: i<2 ? `1px solid ${C.border}` : "none" }}>
+                      <div style={{ width:42, height:42, borderRadius:12, background:`${C.purple}22`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, flexShrink:0 }}>📝</div>
                       <div style={{ flex:1, minWidth:0 }}>
-                        <div style={s.recentTitle}>{h.subject || "Mixed"} {h.exam_type}</div>
-                        <div style={s.recentMeta}>{new Date(h.completed_at).toLocaleDateString("en-NG", { day:"numeric", month:"short", year:"numeric" })}</div>
+                        <div style={{ fontWeight:700, fontSize:13, color:C.text, marginBottom:2 }}>{h.subject||"Mixed"} · {h.exam_type}</div>
+                        <div style={{ fontSize:11, color:C.textMuted }}>{new Date(h.completed_at).toLocaleDateString("en-NG",{day:"numeric",month:"short"})}</div>
                       </div>
-                      <SmallCircle pct={h.percentage || 0} color={scoreColor(h.percentage || 0)} />
+                      <div style={{ fontWeight:900, fontSize:16, color:scoreColor(h.percentage||0), textShadow:`0 0 10px ${scoreColor(h.percentage||0)}66` }}>
+                        {Math.round(h.percentage||0)}%
+                      </div>
+                    </div>
+                  ))}
+                  <div style={{ padding:"10px 16px", textAlign:"center" }}>
+                    <button onClick={()=>setActiveTab("progress")} style={{ background:"none", border:"none", color:C.purpleGlow, fontWeight:700, fontSize:13, cursor:"pointer" }}>View all →</button>
+                  </div>
+                </GlassCard>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ════ LEARN TAB ════ */}
+        {activeTab==="learn" && (
+          <div style={{ padding:"16px 16px 100px", animation:"slide-in 0.3s ease" }}>
+            <div style={{ marginBottom:20 }}>
+              <div style={{ fontSize:22, fontWeight:900, color:C.text }}>Practice Centre</div>
+              <div style={{ fontSize:13, color:C.textMuted, marginTop:2 }}>All practice modes — completely free</div>
+            </div>
+
+            {[
+              { label:"EXAM PREPARATION", items:[
+                { emoji:"📘", title:"JAMB Full Exam",   desc:"4 subjects · 180 questions · 2hrs",  path:"/exam-select?type=JAMB",    color:C.purple },
+                { emoji:"🏫", title:"Post-UTME",        desc:"University-specific format",          path:"/exam-select?type=POST-UTME",color:C.green },
+                { emoji:"📖", title:"Subject Practice", desc:"40 questions per subject",            path:"/exam-select?type=JAMB",    color:C.blue },
+                { emoji:"🎯", title:"Daily Challenge",  desc:"10 questions · new every day",        path:"/challenge",                color:C.gold },
+              ]},
+              { label:"SMART LEARNING", items:[
+                { emoji:"🔁", title:"Error Review",   desc:"Redo your wrong answers",       path:"/error-review", color:C.red },
+                { emoji:"💪", title:"Beat Yourself",  desc:"Break your personal best",      path:"/beat-yourself",color:C.green },
+                { emoji:"📂", title:"Resume Exam",    desc:"Continue unfinished exam",      path:"/resume",       color:C.blue },
+                { emoji:"🧠", title:"Weakness Mode",  desc:"Target your weak areas",        path:"/exam-select",  color:C.purple },
+              ]},
+              { label:"ARENA & COMMUNITY", items:[
+                { emoji:"⚔️", title:"Enter Arena",    desc:"Live battles · All modes",      path:"/arena",    color:C.purple, wide:true },
+                { emoji:"🎯", title:"Daily Missions", desc:"Earn XP, coins & level up",    path:"/missions", color:C.gold },
+                { emoji:"📺", title:"Video Library",  desc:"Learn from top educators",     path:"/videos",   color:"#fd79a8" },
+              ]},
+            ].map(section => (
+              <div key={section.label}>
+                <div style={{ fontSize:11, fontWeight:800, color:C.textMuted, letterSpacing:1.5, textTransform:"uppercase", margin:"16px 0 10px" }}>{section.label}</div>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+                  {section.items.map((item,i)=>(
+                    <GlassCard key={i} onClick={()=>nav(item.path)} style={{ padding:"16px 14px", borderRadius:16, border:`1px solid ${item.color}22` }}>
+                      <div style={{ width:44, height:44, borderRadius:12, background:`${item.color}18`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, marginBottom:10, boxShadow:`0 4px 12px ${item.color}22` }}>{item.emoji}</div>
+                      <div style={{ fontWeight:800, fontSize:13, color:C.text, marginBottom:4 }}>{item.title}</div>
+                      <div style={{ fontSize:11, color:C.textMuted, lineHeight:1.4 }}>{item.desc}</div>
+                    </GlassCard>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ════ PROGRESS TAB ════ */}
+        {activeTab==="progress" && (
+          <div style={{ padding:"16px 16px 100px", animation:"slide-in 0.3s ease" }}>
+            <div style={{ marginBottom:20 }}>
+              <div style={{ fontSize:22, fontWeight:900, color:C.text }}>My Progress</div>
+              <div style={{ fontSize:13, color:C.textMuted, marginTop:2 }}>See how far you've come</div>
+            </div>
+
+            {/* Overall progress hero */}
+            <div style={{ background:`linear-gradient(135deg,${C.purple}cc,${C.blue}99)`, borderRadius:24, padding:"20px", marginBottom:14, boxShadow:`0 8px 32px ${C.purple}44`, border:`1px solid ${C.purple}44` }}>
+              <div style={{ fontWeight:800, fontSize:16, color:"#fff", marginBottom:4 }}>Overall Progress</div>
+              <div style={{ fontSize:12, color:"rgba(255,255,255,0.7)", marginBottom:16 }}>Your hard work is paying off!</div>
+              <div style={{ display:"flex", alignItems:"center", gap:16 }}>
+                <CircleScore pct={avgScore} color={C.gold} />
+                <div style={{ flex:1, display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+                  {[
+                    { lbl:"Exams Taken", val:history.length },
+                    { lbl:"Average Score", val:`${avgScore}%` },
+                    { lbl:"Best Score", val:`${bestScore}%` },
+                    { lbl:"Day Streak", val:`🔥 ${streak}` },
+                  ].map((s,i)=>(
+                    <div key={i} style={{ background:"rgba(255,255,255,0.12)", borderRadius:12, padding:"10px 8px", textAlign:"center" }}>
+                      <div style={{ fontWeight:900, fontSize:16, color:"#fff" }}>{s.val}</div>
+                      <div style={{ fontSize:10, color:"rgba(255,255,255,0.6)", marginTop:2 }}>{s.lbl}</div>
                     </div>
                   ))}
                 </div>
-              )}
-
-              {/* Quick Links */}
-              <div style={s.sectionLbl}>EXPLORE MORE</div>
-              <div style={s.toolGrid}>
-                {[
-                  { emoji:"📊", title:"My Analytics 👑", desc:"Deep insights into your performance", path:"/performance" },
-                  { emoji:"📋", title:"Exam History",     desc:"Every exam you've taken",            path:"/history" },
-                  { emoji:"🎯", title:"Predicted Score",  desc:"Your likely JAMB score",             path:"/predicted" },
-                  { emoji:"🏛️", title:"Admission Checker",desc:"Can you get into your dream school?",path:"/admission" },
-                  { emoji:"🧠", title:"Exam Personality", desc:"Fast? Slow? Accurate?",              path:"/personality" },
-                  { emoji:"🏆", title:"Leaderboard",      desc:"Where do you rank nationally?",      path:"/leaderboard" },
-                  { emoji:"🏅", title:"My Badges",        desc:"Achievements you've earned",         path:"/badges" },
-                  { emoji:"🎁", title:"Rewards Shop",     desc:"Spend your coins on power-ups",     path:"/shop" },
-                ].map((t,i) => (
-                  <div key={i} style={s.toolCard} onClick={() => nav(t.path)}>
-                    <div style={s.toolEmoji}>{t.emoji}</div>
-                    <div style={s.toolTitle}>{t.title}</div>
-                    <div style={s.toolDesc}>{t.desc}</div>
-                  </div>
-                ))}
               </div>
-
-              <div style={{ height:80 }} />
             </div>
-          </>
+
+            {/* Quick links grid */}
+            <div style={{ fontSize:11, fontWeight:800, color:C.textMuted, letterSpacing:1.5, textTransform:"uppercase", marginBottom:10 }}>Explore</div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+              {[
+                { emoji:"📊", title:"My Analytics 👑", desc:"Deep insights",           path:"/performance", color:C.purple },
+                { emoji:"📋", title:"Exam History",    desc:"Every exam taken",         path:"/history",     color:C.blue },
+                { emoji:"🎯", title:"Predicted Score", desc:"Your likely JAMB score",  path:"/predicted",   color:C.green },
+                { emoji:"🏛️", title:"Admission Check", desc:"Dream school chances",    path:"/admission",   color:C.gold },
+                { emoji:"🧠", title:"Exam Personality",desc:"Know your study style",   path:"/personality", color:"#a29bfe" },
+                { emoji:"🏆", title:"Leaderboard",     desc:"National ranking",        path:"/leaderboard", color:C.red },
+                { emoji:"🏅", title:"My Badges",       desc:"Achievements earned",     path:"/badges",      color:C.gold },
+                { emoji:"🎯", title:"Daily Missions",  desc:"XP & coin challenges",   path:"/missions",    color:C.green },
+              ].map((t,i)=>(
+                <GlassCard key={i} onClick={()=>nav(t.path)} style={{ padding:"16px 14px", borderRadius:16, border:`1px solid ${t.color}22` }}>
+                  <div style={{ width:44, height:44, borderRadius:12, background:`${t.color}18`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, marginBottom:10 }}>{t.emoji}</div>
+                  <div style={{ fontWeight:800, fontSize:13, color:C.text, marginBottom:4 }}>{t.title}</div>
+                  <div style={{ fontSize:11, color:C.textMuted }}>{t.desc}</div>
+                </GlassCard>
+              ))}
+            </div>
+          </div>
         )}
 
-        {/* ══════════════ PROFILE TAB ══════════════ */}
-        {activeTab === "profile" && (
-          <>
-            <Header title="My Profile" sub="Manage your account and preferences" />
-            <div style={s.content}>
-
-              {/* Profile card */}
-              <div style={s.profileHero}>
-                <div style={s.profileAvatar}>
-                  {profile?.avatar_url
-                    ? <img src={profile.avatar_url} alt="" style={{ width:"100%", height:"100%", objectFit:"cover", borderRadius:"50%" }} />
-                    : <span style={{ fontSize:28, fontWeight:800, color:"#6c63ff" }}>{initials}</span>}
-                </div>
-                <div style={s.profileName}>{fullName}</div>
-                <div style={s.profileEmail}>{email}</div>
-                <div style={s.profileChips}>
-                  <div style={s.chip}>⚡ {xp} XP</div>
-                  <div style={s.chip}>🔥 {streak} Day Streak</div>
-                </div>
-                <button style={s.editProfileBtn} onClick={() => nav("/profile")}>Edit Profile</button>
+        {/* ════ PROFILE TAB ════ */}
+        {activeTab==="profile" && (
+          <div style={{ padding:"16px 16px 100px", animation:"slide-in 0.3s ease" }}>
+            {/* Profile hero */}
+            <div style={{ background:`linear-gradient(135deg,${C.purple}cc,${C.blue}99)`, borderRadius:24, padding:"24px 20px", textAlign:"center", marginBottom:14, boxShadow:`0 8px 32px ${C.purple}44`, border:`1px solid ${C.purple}44` }}>
+              <div style={{ width:80, height:80, borderRadius:"50%", background:`${C.purple}44`, border:`3px solid ${C.purpleGlow}`, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 12px", fontSize:32, fontWeight:900, color:"#fff", overflow:"hidden", boxShadow:`0 0 20px ${C.purple}66` }}>
+                {profile?.avatar_url && profile.avatar_url.startsWith("http")
+                  ? <img src={profile.avatar_url} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} onError={e=>{e.target.style.display="none";}}/>
+                  : profile?.avatar_url && !profile.avatar_url.startsWith("http")
+                    ? profile.avatar_url
+                    : initials}
               </div>
-
-              {/* Menu */}
-              <div style={s.menuBox}>
-                {[
-                  { emoji:"👤", label:"Edit Profile",            sub:"Update your personal information",       path:"/profile" },
-                  { emoji:"🔒", label:"Account Security",        sub:"Change password and security settings",  path:"/profile" },
-                  { emoji:"👑", label:"Subscription",            sub:"Manage your subscription plan",          path:"/upgrade" },
-                  { emoji:"🏅", label:"My Badges",               sub:"View your achievements and badges",      path:"/badges" },
-                  { emoji:"🏆", label:"Leaderboard",             sub:"See how you rank among others",          path:"/leaderboard" },
-                  { emoji:"📊", label:"My Analytics",            sub:"Detailed insights about your performance",path:"/performance" },
-                  { emoji:"🔔", label:"Notification Settings",   sub:"Manage your notification preferences",   path:"/profile" },
-                  { emoji:"💬", label:"Support",                 sub:"Get help and contact support",           path:"/profile" },
-                ].map((m, i) => (
-                  <div key={i} style={s.menuRow} onClick={() => nav(m.path)}>
-                    <div style={s.menuIconBox}>{m.emoji}</div>
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <div style={s.menuLabel}>{m.label}</div>
-                      <div style={s.menuSub}>{m.sub}</div>
-                    </div>
-                    <span style={{ color:"#b2bec3", fontSize:18 }}>›</span>
-                  </div>
-                ))}
+              <div style={{ fontWeight:900, fontSize:20, color:"#fff", marginBottom:4 }}>{student?.full_name||profile?.full_name}</div>
+              <div style={{ fontSize:12, color:"rgba(255,255,255,0.6)", marginBottom:14 }}>{student?.email||profile?.email}</div>
+              <div style={{ display:"flex", gap:8, justifyContent:"center", marginBottom:16 }}>
+                <div style={{ background:"rgba(255,200,87,0.2)", border:`1px solid ${C.gold}44`, borderRadius:20, padding:"5px 14px", fontSize:12, fontWeight:700, color:C.gold }}>⚡ {xp} XP</div>
+                <div style={{ background:"rgba(255,90,95,0.2)", border:`1px solid ${C.red}44`, borderRadius:20, padding:"5px 14px", fontSize:12, fontWeight:700, color:C.red }}>🔥 {streak} day streak</div>
               </div>
-
-              {/* Upgrade CTA */}
-              <div style={s.upgradeInline}>
-                <div style={{ fontSize:24, marginBottom:6 }}>👑</div>
-                <div style={{ fontWeight:800, fontSize:15, color:"#fff", marginBottom:4 }}>Upgrade to Pro</div>
-                <div style={{ fontSize:12, color:"rgba(255,255,255,0.6)", marginBottom:14 }}>Unlock more features and exclusive content.</div>
-                <button style={s.upgradeBtn} onClick={() => nav("/upgrade")}>Upgrade Now 👑</button>
-              </div>
-
-              {/* Log Out */}
-              <div style={s.logoutBtn} onClick={logout}>
-                🚪 Log Out
-              </div>
-
-              <div style={{ height:80 }} />
+              <GlowBtn onClick={()=>nav("/profile")} style={{ padding:"10px 28px", fontSize:13, borderRadius:10 }}>
+                Edit Profile
+              </GlowBtn>
             </div>
-          </>
+
+            {/* Menu */}
+            <GlassCard style={{ borderRadius:20, overflow:"hidden", marginBottom:14 }}>
+              {[
+                { emoji:"👤", label:"Edit Profile",          sub:"Update personal information", path:"/profile" },
+                { emoji:"🔒", label:"Account Security",      sub:"Password & security",         path:"/profile" },
+                { emoji:"👑", label:"Subscription",          sub:"Manage your plan",            path:"/upgrade" },
+                { emoji:"🎯", label:"Daily Missions",        sub:"Earn XP & coins daily",       path:"/missions" },
+                { emoji:"🏅", label:"My Badges",            sub:"View achievements",            path:"/badges" },
+                { emoji:"🏆", label:"Leaderboard",          sub:"See your national rank",       path:"/leaderboard" },
+                { emoji:"📊", label:"My Analytics",         sub:"Performance insights",         path:"/performance" },
+                { emoji:"🔔", label:"Notification Settings",sub:"Manage alerts",                path:"/profile" },
+                { emoji:"💬", label:"Support",              sub:"Get help & contact us",        path:"/profile" },
+              ].map((m,i,arr)=>(
+                <div key={i} onClick={()=>nav(m.path)}
+                  style={{ display:"flex", alignItems:"center", gap:14, padding:"14px 16px", borderBottom: i<arr.length-1 ? `1px solid ${C.border}` : "none", cursor:"pointer" }}>
+                  <div style={{ width:40, height:40, background:`${C.purple}18`, borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, flexShrink:0 }}>{m.emoji}</div>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontWeight:700, fontSize:14, color:C.text }}>{m.label}</div>
+                    <div style={{ fontSize:11, color:C.textMuted, marginTop:2 }}>{m.sub}</div>
+                  </div>
+                  <span style={{ color:C.textMuted, fontSize:18 }}>›</span>
+                </div>
+              ))}
+            </GlassCard>
+
+            {/* Upgrade */}
+            <GlowBtn gradient={`linear-gradient(135deg,${C.purple},${C.blue})`} glow={C.purple}
+              onClick={()=>nav("/upgrade")}
+              style={{ width:"100%", padding:"14px 0", fontSize:14, borderRadius:14, marginBottom:10 }}>
+              👑 Upgrade to Pro — Unlock Everything
+            </GlowBtn>
+
+            {/* Logout */}
+            <div onClick={logout} style={{ background:"transparent", border:`1.5px solid ${C.red}44`, borderRadius:14, padding:"14px 0", textAlign:"center", color:C.red, fontWeight:800, fontSize:14, cursor:"pointer" }}>
+              🚪 Log Out
+            </div>
+          </div>
         )}
 
-        {/* ── BOTTOM NAV ── */}
-        <nav style={s.bottomNav}>
+        {/* ════ BOTTOM NAV — Floating Cyber Style ════ */}
+        <nav style={{
+          position:"fixed", bottom:16, left:"50%", transform:"translateX(-50%)",
+          width:"calc(100% - 32px)", maxWidth:488,
+          background:"rgba(8,13,26,0.92)", backdropFilter:"blur(20px)",
+          border:`1px solid ${C.border}`,
+          borderRadius:24, padding:"8px 8px",
+          display:"flex", alignItems:"center",
+          boxShadow:`0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px ${C.purple}22`,
+          zIndex:50,
+        }}>
           {[
             { id:"home",     label:"Home",     emoji:"🏠" },
             { id:"learn",    label:"Learn",    emoji:"📚" },
+          ].map(t=>(
+            <button key={t.id} className="nav-btn"
+              onClick={()=>setActiveTab(t.id)}
+              style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", padding:"8px 0", background:"none", border:"none", cursor:"pointer",
+                color: activeTab===t.id ? C.purpleGlow : C.textMuted,
+                filter: activeTab===t.id ? `drop-shadow(0 0 8px ${C.purple})` : "none",
+              }}>
+              <span style={{ fontSize:22 }}>{t.emoji}</span>
+              <span style={{ fontSize:10, marginTop:2, fontWeight: activeTab===t.id ? 800 : 400 }}>{t.label}</span>
+            </button>
+          ))}
+
+          {/* Center Arena Button */}
+          <div style={{ flex:"0 0 auto", margin:"0 6px" }}>
+            <GlowBtn gradient={`linear-gradient(135deg,${C.purple},${C.blue})`} glow={C.purple}
+              onClick={()=>nav("/arena")}
+              style={{
+                width:58, height:58, borderRadius:"50%",
+                fontSize:26, display:"flex", alignItems:"center", justifyContent:"center",
+                padding:0, animation:"glow-pulse 2.5s infinite",
+                boxShadow:`0 0 20px ${C.purple}88, 0 0 40px ${C.purple}44`,
+              }}>
+              ⚔️
+            </GlowBtn>
+          </div>
+
+          {[
             { id:"progress", label:"Progress", emoji:"📊" },
             { id:"profile",  label:"Profile",  emoji:"👤" },
-          ].map(t => (
-            <button key={t.id}
-              style={{ ...s.bottomBtn, ...(activeTab === t.id ? s.bottomBtnActive : {}) }}
-              onClick={() => setActiveTab(t.id)}>
+          ].map(t=>(
+            <button key={t.id} className="nav-btn"
+              onClick={()=>setActiveTab(t.id)}
+              style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", padding:"8px 0", background:"none", border:"none", cursor:"pointer",
+                color: activeTab===t.id ? C.purpleGlow : C.textMuted,
+                filter: activeTab===t.id ? `drop-shadow(0 0 8px ${C.purple})` : "none",
+              }}>
               <span style={{ fontSize:22 }}>{t.emoji}</span>
-              <span style={{ fontSize:10, marginTop:2, fontWeight: activeTab === t.id ? 700 : 400 }}>{t.label}</span>
+              <span style={{ fontSize:10, marginTop:2, fontWeight: activeTab===t.id ? 800 : 400 }}>{t.label}</span>
             </button>
           ))}
         </nav>
-      </main>
+      </div>
     </div>
   );
 }
-
-const s = {
-  root:           { display:"flex", minHeight:"100vh", background:"#f5f6fa", fontFamily:"'Segoe UI',sans-serif" },
-
-  // Sidebar
-  overlay:        { position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:98 },
-  sidebar:        { width:220, background:"#0f0e1a", display:"flex", flexDirection:"column", padding:"20px 0 16px", position:"fixed", top:0, left:0, bottom:0, zIndex:99, transform:"translateX(-100%)", transition:"transform 0.25s ease" },
-  sidebarOpen:    { transform:"translateX(0)" },
-  logoBox:        { display:"flex", alignItems:"center", gap:10, padding:"0 16px 20px", borderBottom:"1px solid rgba(255,255,255,0.08)", marginBottom:8 },
-  logoName:       { fontWeight:900, fontSize:14, color:"#fff", letterSpacing:1 },
-  logoSub:        { fontSize:9, color:"rgba(255,255,255,0.4)", letterSpacing:2 },
-  navItem:        { display:"flex", alignItems:"center", gap:12, padding:"11px 18px", cursor:"pointer", color:"rgba(255,255,255,0.55)", marginRight:10, borderRadius:"0 12px 12px 0", marginBottom:2, transition:"all 0.15s" },
-  navItemActive:  { background:"linear-gradient(135deg,#6c63ff,#a29bfe)", color:"#fff" },
-  upgradeCTA:     { margin:"12px 12px 0", background:"rgba(108,99,255,0.15)", border:"1px solid rgba(108,99,255,0.3)", borderRadius:16, padding:"16px 14px", textAlign:"center" },
-  upgradeBtn:     { width:"100%", padding:"10px 0", background:"linear-gradient(135deg,#6c63ff,#a29bfe)", color:"#fff", border:"none", borderRadius:10, fontWeight:800, fontSize:12, cursor:"pointer" },
-
-  // Main
-  main:           { flex:1, display:"flex", flexDirection:"column", minHeight:"100vh", maxWidth:520, margin:"0 auto", width:"100%" },
-
-  // Header
-  header:         { background:"#fff", padding:"14px 16px", display:"flex", alignItems:"center", gap:10, borderBottom:"1px solid #f0f0f0", position:"sticky", top:0, zIndex:50 },
-  hamburger:      { background:"none", border:"none", fontSize:22, cursor:"pointer", color:"#2d3436", padding:"2px 6px", flexShrink:0 },
-  headerTitle:    { fontWeight:700, fontSize:13, color:"#636e72", lineHeight:1.2 },
-  headerTitle2:   { fontWeight:900, fontSize:18, color:"#2d3436" },
-  headerSub:      { fontSize:12, color:"#b2bec3", marginTop:2 },
-  iconBtn:        { position:"relative", background:"#f8f9fa", border:"none", borderRadius:10, width:38, height:38, fontSize:16, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" },
-  notifBadge:     { position:"absolute", top:-4, right:-4, background:"#e17055", color:"#fff", borderRadius:"50%", width:16, height:16, fontSize:9, fontWeight:800, display:"flex", alignItems:"center", justifyContent:"center" },
-  avatarCircle:   { width:40, height:40, background:"#f0edff", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", border:"2px solid #6c63ff33", overflow:"hidden", flexShrink:0 },
-  notifDrop:      { position:"absolute", top:46, right:0, background:"#fff", borderRadius:14, boxShadow:"0 8px 32px rgba(0,0,0,0.12)", width:280, border:"1px solid #f0f0f0", zIndex:200 },
-  notifHead:      { fontWeight:800, fontSize:14, padding:"14px 16px 10px", borderBottom:"1px solid #f0f0f0" },
-  notifItem:      { padding:"12px 16px", borderBottom:"1px solid #f0f0f0" },
-
-  // Content
-  content:        { flex:1, padding:"16px 16px 0", overflowY:"auto" },
-  sectionLbl:     { fontSize:11, fontWeight:800, color:"#b2bec3", letterSpacing:1.5, textTransform:"uppercase", margin:"16px 0 10px" },
-
-  // Hero
-  heroCard:       { background:"linear-gradient(135deg,#6c63ff,#5a52d5)", borderRadius:20, padding:"20px 20px 18px", marginBottom:14 },
-  heroTop:        { display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:20 },
-  heroGreet:      { fontWeight:900, fontSize:20, color:"#fff", marginBottom:4 },
-  heroSub:        { fontSize:12, color:"rgba(255,255,255,0.8)" },
-  xpChip:         { background:"rgba(255,165,0,0.25)", border:"1px solid rgba(255,165,0,0.5)", color:"#ffd700", borderRadius:20, padding:"5px 14px", fontSize:13, fontWeight:800, whiteSpace:"nowrap" },
-  statsRow:       { display:"flex", background:"rgba(255,255,255,0.12)", borderRadius:16, padding:"16px 0" },
-  statCol:        { flex:1, textAlign:"center" },
-  statEmoji:      { fontSize:24, display:"block", marginBottom:6 },
-  statNum:        { fontWeight:900, fontSize:22, color:"#fff" },
-  statLbl:        { fontSize:10, color:"rgba(255,255,255,0.7)", marginTop:3 },
-  statDiv:        { width:1, background:"rgba(255,255,255,0.15)", margin:"4px 0" },
-
-  // Challenge
-  challengeCard:  { background:"#fff", borderRadius:16, padding:"14px 16px", display:"flex", alignItems:"center", gap:12, marginBottom:14, boxShadow:"0 2px 12px rgba(0,0,0,0.06)" },
-  challengeIconBox:{ width:50, height:50, background:"linear-gradient(135deg,#6c63ff,#a29bfe)", borderRadius:14, display:"flex", alignItems:"center", justifyContent:"center", fontSize:26, flexShrink:0 },
-  challengeTitle: { fontWeight:800, fontSize:15, color:"#2d3436" },
-  challengeSub:   { fontSize:12, color:"#636e72", marginTop:2 },
-  challengeBtn:   { background:"#6c63ff", color:"#fff", border:"none", borderRadius:10, padding:"10px 16px", fontWeight:800, fontSize:13, cursor:"pointer", whiteSpace:"nowrap", flexShrink:0 },
-
-  // Exam cards
-  examGrid:       { display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:14 },
-  jambCard:       { background:"linear-gradient(135deg,#6c63ff,#5a52d5)", borderRadius:18, padding:"20px 14px", cursor:"pointer" },
-  postCard:       { background:"linear-gradient(135deg,#00b894,#00a381)", borderRadius:18, padding:"20px 14px", cursor:"pointer" },
-  examTitle:      { fontWeight:900, fontSize:15, color:"#fff", marginBottom:6 },
-  examDesc:       { fontSize:11, color:"rgba(255,255,255,0.8)", lineHeight:1.5, marginBottom:16 },
-  examBtn:        { width:"100%", background:"rgba(255,255,255,0.95)", border:"none", borderRadius:10, padding:"10px 0", fontWeight:800, fontSize:12, cursor:"pointer", color:"#6c63ff" },
-
-  // Arena
-  arenaCard:      { background:"linear-gradient(135deg,#2d1b2e,#4a1942)", borderRadius:18, padding:"18px 16px", display:"flex", alignItems:"center", gap:14, marginBottom:18, cursor:"pointer" },
-  arenaTitle:     { fontWeight:900, fontSize:16, color:"#fff", marginBottom:4 },
-  arenaSub:       { fontSize:11, color:"rgba(255,255,255,0.7)", lineHeight:1.5, whiteSpace:"pre-line" },
-  arenaBtn:       { background:"rgba(255,255,255,0.15)", border:"1.5px solid rgba(255,255,255,0.3)", color:"#fff", borderRadius:10, padding:"10px 14px", fontWeight:800, fontSize:12, cursor:"pointer", flexShrink:0, whiteSpace:"nowrap" },
-
-  // Recent
-  recentBox:      { background:"#fff", borderRadius:16, padding:"4px 0", boxShadow:"0 2px 12px rgba(0,0,0,0.05)", marginBottom:14 },
-  recentRow:      { display:"flex", alignItems:"center", gap:12, padding:"14px 16px" },
-  recentIconBox:  { width:44, height:44, background:"#f8f9fa", borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, flexShrink:0 },
-  recentTitle:    { fontWeight:700, fontSize:13, color:"#2d3436", marginBottom:3 },
-  recentMeta:     { fontSize:11, color:"#b2bec3" },
-  viewAllBtn:     { background:"none", border:"none", color:"#6c63ff", fontWeight:700, fontSize:13, cursor:"pointer" },
-
-  // Tools
-  toolGrid:       { display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:16 },
-  toolCard:       { background:"#fff", borderRadius:16, padding:"16px 14px", cursor:"pointer", boxShadow:"0 1px 6px rgba(0,0,0,0.05)" },
-  toolEmoji:      { fontSize:28, marginBottom:10, display:"block" },
-  toolTitle:      { fontWeight:800, fontSize:13, color:"#2d3436", marginBottom:4 },
-  toolDesc:       { fontSize:11, color:"#636e72", lineHeight:1.4 },
-
-  // Progress
-  progressHero:   { background:"linear-gradient(135deg,#6c63ff,#5a52d5)", borderRadius:20, padding:"20px", marginBottom:14 },
-  progressHeroTop:{ marginBottom:16 },
-  progressMainRow:{ display:"flex", alignItems:"center", gap:16 },
-  progressStats:  { flex:1, display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 },
-  progStat:       { background:"rgba(255,255,255,0.12)", borderRadius:12, padding:"10px 8px", textAlign:"center" },
-  progStatNum:    { fontWeight:900, fontSize:16, color:"#fff", marginBottom:3 },
-  progStatLbl:    { fontSize:10, color:"rgba(255,255,255,0.65)" },
-  chartCard:      { background:"linear-gradient(135deg,#1a1a2e,#2d2b55)", borderRadius:20, padding:"18px 16px", marginBottom:14 },
-  chartHeader:    { display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 },
-  chartAxis:      { display:"flex", justifyContent:"space-between", marginTop:4 },
-  whiteCard:      { background:"#fff", borderRadius:16, padding:"16px", boxShadow:"0 2px 12px rgba(0,0,0,0.05)", marginBottom:14 },
-  cardHeader:     { display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 },
-  progressBarBg:  { height:8, background:"#f0f0f0", borderRadius:10, overflow:"hidden" },
-  progressBarFill:{ height:"100%", borderRadius:10, transition:"width 0.6s ease" },
-
-  // Profile
-  profileHero:    { background:"linear-gradient(135deg,#6c63ff,#5a52d5)", borderRadius:20, padding:"24px 20px", textAlign:"center", marginBottom:14 },
-  profileAvatar:  { width:80, height:80, background:"rgba(255,255,255,0.2)", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 12px", border:"3px solid rgba(255,255,255,0.3)", overflow:"hidden" },
-  profileName:    { fontWeight:900, fontSize:18, color:"#fff", marginBottom:4 },
-  profileEmail:   { fontSize:12, color:"rgba(255,255,255,0.7)", marginBottom:14 },
-  profileChips:   { display:"flex", gap:8, justifyContent:"center", marginBottom:16 },
-  chip:           { background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.25)", color:"#fff", borderRadius:20, padding:"5px 14px", fontSize:12, fontWeight:700 },
-  editProfileBtn: { background:"rgba(255,255,255,0.15)", border:"1.5px solid rgba(255,255,255,0.4)", color:"#fff", borderRadius:10, padding:"10px 28px", fontWeight:800, fontSize:13, cursor:"pointer" },
-  menuBox:        { background:"#fff", borderRadius:16, overflow:"hidden", boxShadow:"0 2px 12px rgba(0,0,0,0.05)", marginBottom:14 },
-  menuRow:        { display:"flex", alignItems:"center", gap:14, padding:"14px 16px", borderBottom:"1px solid #f8f9fa", cursor:"pointer" },
-  menuIconBox:    { width:40, height:40, background:"#f5f5f5", borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, flexShrink:0 },
-  menuLabel:      { fontWeight:700, fontSize:14, color:"#2d3436", marginBottom:2 },
-  menuSub:        { fontSize:11, color:"#b2bec3" },
-  upgradeInline:  { background:"linear-gradient(135deg,#6c63ff,#a29bfe)", borderRadius:16, padding:"20px 16px", textAlign:"center", marginBottom:14 },
-  logoutBtn:      { background:"#fff", border:"1.5px solid #e17055", color:"#e17055", borderRadius:14, padding:"14px 0", textAlign:"center", fontWeight:800, fontSize:14, cursor:"pointer", marginBottom:8 },
-
-  // Bottom nav
-  bottomNav:      { display:"flex", background:"#fff", borderTop:"1px solid #f0f0f0", position:"sticky", bottom:0, zIndex:50 },
-  bottomBtn:      { flex:1, display:"flex", flexDirection:"column", alignItems:"center", padding:"10px 0 8px", background:"none", border:"none", cursor:"pointer", color:"#b2bec3" },
-  bottomBtnActive:{ color:"#6c63ff" },
-};
