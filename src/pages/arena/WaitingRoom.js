@@ -321,7 +321,7 @@ export default function WaitingRoom() {
                           onKick={() => setKickConfirm(p)}
                         />
                       ))}
-                      {Array.from({ length: Math.max(0, 2 - squad.length) }).map((_, i) => (
+                      {Array.from({ length: Math.max(0, (room.mode === "clash_squad" ? 4 : 2) - squad.length) }).map((_, i) => (
                         <div key={i} style={s.emptySlot}>
                           <span style={{ fontSize: 20 }}>❓</span>
                           <span style={{ color: "#636e72", fontSize: 12 }}>Waiting...</span>
