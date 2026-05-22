@@ -40,6 +40,8 @@ const BeatYourself       = lazy(() => import("./pages/BeatYourself"));
 const VideoLibrary     = lazy(() => import("./pages/VideoLibrary"));
 const Missions         = lazy(() => import("./pages/Missions"));
 const ThemeSettings    = lazy(() => import("./pages/ThemeSettings"));
+const ClassroomLobby   = lazy(() => import("./pages/classroom/ClassroomLobby"));
+const ClassroomSession = lazy(() => import("./pages/classroom/ClassroomSession"));
 
 // ── ADMIN ─────────────────────────────────────────────────
 const AdminLogin       = lazy(() => import("./pages/admin/AdminLogin"));
@@ -80,6 +82,7 @@ function AdminGuard({ children }) {
 // ── APP ───────────────────────────────────────────────────
 export default function App() {
   return (
+    <ThemeProvider>
     <AuthProvider>
       <BrowserRouter>
         <Suspense fallback={<PageLoader />}>
@@ -116,9 +119,11 @@ export default function App() {
             <Route path="/admission"  element={<Private><AdmissionChecker /></Private>} />
 
             {/* New Features */}
-            <Route path="/videos"       element={<Private><VideoLibrary /></Private>} />
-            <Route path="/missions"     element={<Private><Missions /></Private>} />
-            <Route path="/theme"        element={<Private><ThemeSettings /></Private>} />
+            <Route path="/videos"          element={<Private><VideoLibrary /></Private>} />
+            <Route path="/missions"        element={<Private><Missions /></Private>} />
+            <Route path="/theme"           element={<Private><ThemeSettings /></Private>} />
+            <Route path="/classroom"       element={<Private><ClassroomLobby /></Private>} />
+            <Route path="/classroom/session" element={<Private><ClassroomSession /></Private>} />
 
             {/* Phase 2 Innovations */}
             <Route path="/personality"   element={<Private><PersonalityProfile /></Private>} />
@@ -134,6 +139,7 @@ export default function App() {
         </Suspense>
       </BrowserRouter>
     </AuthProvider>
+    </ThemeProvider>
   );
 }
 

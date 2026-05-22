@@ -627,9 +627,10 @@ export default function Dashboard() {
                 { emoji:"🧠", title:"Weakness Mode",  desc:"Target your weak areas",        path:"/exam-select",  color:C.purple },
               ]},
               { label:"ARENA & COMMUNITY", items:[
-                { emoji:"⚔️", title:"Enter Arena",    desc:"Live battles · All modes",      path:"/arena",    color:C.purple, wide:true },
-                { emoji:"🎯", title:"Daily Missions", desc:"Earn XP, coins & level up",    path:"/missions", color:C.gold },
-                { emoji:"📺", title:"Video Library",  desc:"Learn from top educators",     path:"/videos",   color:"#fd79a8" },
+                { emoji:"⚔️", title:"Enter Arena",      desc:"Live battles · All modes",        path:"/arena",      color:C.purple, wide:true },
+                { emoji:"📚", title:"Scholar Sessions", desc:"Live classroom · Whiteboard · Voice", path:"/classroom", color:C.blue },
+                { emoji:"🎯", title:"Daily Missions",   desc:"Earn XP, coins & level up",       path:"/missions",   color:C.gold },
+                { emoji:"📺", title:"Video Library",    desc:"Learn from top educators",         path:"/videos",     color:"#fd79a8" },
               ]},
             ].map(section => (
               <div key={section.label}>
