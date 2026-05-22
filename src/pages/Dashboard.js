@@ -267,6 +267,7 @@ export default function Dashboard() {
   const [notifications, setNotifications] = useState([]);
   const [activeTab,     setActiveTab]     = useState("home");
   const [notifOpen,     setNotifOpen]     = useState(false);
+  const [unreadCount,   setUnreadCount]   = useState(0);
   const [xpFloat,       setXpFloat]       = useState(null);
   const [sideOpen,      setSideOpen]      = useState(false);
 
@@ -293,12 +294,20 @@ export default function Dashboard() {
     Promise.all([
       API.get("/exam/history").catch(() => ({ data:[] })),
       API.get("/innovations/challenge/today").catch(() => null),
-      API.get("/auth/notifications").catch(() => ({ data:[] })),
+      API.get("/auth/notifications").catch(() => ({ data:{ notifications:[], unread:0 } })),
       API.get("/missions/level").catch(() => null),
     ]).then(([h,c,n,lv]) => {
       if (h?.data)                         setHistory(h.data.slice(0,5));
       if (c?.data)                         setChallenge(c.data);
-      if (n?.data && Array.isArray(n.data))setNotifications(n.data);
+      if (n?.data) {
+        const notifData = n.data;
+        if (Array.isArray(notifData)) {
+          setNotifications(notifData);
+        } else {
+          setNotifications(notifData.notifications || []);
+          setUnreadCount(notifData.unread || 0);
+        }
+      }
       if (lv?.data)                        setLevelData(lv.data);
     }).catch(() => {});
   }, []);
@@ -429,13 +438,19 @@ export default function Dashboard() {
 
       {/* Notif */}
       <div style={{ position:"relative" }}>
-        <button className="nav-btn" onClick={()=>setNotifOpen(!notifOpen)} style={{
+        <button className="nav-btn" onClick={()=>{
+          setNotifOpen(!notifOpen);
+          if (!notifOpen && unreadCount > 0) {
+            setUnreadCount(0);
+            API.post("/auth/notifications/read").catch(()=>{});
+          }
+        }} style={{
           position:"relative", background:"rgba(255,255,255,0.06)",
           border:`1px solid ${C.border}`, borderRadius:10, width:38, height:38,
           fontSize:16, cursor:"pointer", color:C.text, display:"flex", alignItems:"center", justifyContent:"center",
         }}>
           🔔
-          {notifications.length>0 && <span style={{ position:"absolute", top:-4, right:-4, background:C.red, color:"#fff", borderRadius:"50%", width:16, height:16, fontSize:9, fontWeight:800, display:"flex", alignItems:"center", justifyContent:"center" }}>{notifications.length}</span>}
+          {unreadCount>0 && <span style={{ position:"absolute", top:-4, right:-4, background:C.red, color:"#fff", borderRadius:"50%", width:16, height:16, fontSize:9, fontWeight:800, display:"flex", alignItems:"center", justifyContent:"center" }}>{unreadCount}</span>}
         </button>
         {notifOpen && (
           <div style={{ position:"absolute", top:46, right:0, background:C.bg2, border:`1px solid ${C.border}`, borderRadius:16, width:280, zIndex:200, boxShadow:`0 16px 48px rgba(0,0,0,0.5)` }}>
@@ -771,56 +786,39 @@ export default function Dashboard() {
 
         {/* ════ BOTTOM NAV — Floating Cyber Style ════ */}
         <nav style={{
-          position:"fixed", bottom:16, left:"50%", transform:"translateX(-50%)",
-          width:"calc(100% - 32px)", maxWidth:488,
-          background:"rgba(8,13,26,0.92)", backdropFilter:"blur(20px)",
-          border:`1px solid ${C.border}`,
-          borderRadius:24, padding:"8px 8px",
+          position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)",
+          width:"100%", maxWidth:520,
+          background:"rgba(8,13,26,0.98)", backdropFilter:"blur(20px)",
+          borderTop:`1px solid ${C.border}`,
+          padding:"8px 0 12px",
           display:"flex", alignItems:"center",
-          boxShadow:`0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px ${C.purple}22`,
+          boxShadow:`0 -4px 24px rgba(0,0,0,0.4)`,
           zIndex:50,
         }}>
           {[
             { id:"home",     label:"Home",     emoji:"🏠" },
-            { id:"learn",    label:"Learn",    emoji:"📚" },
-          ].map(t=>(
-            <button key={t.id} className="nav-btn"
-              onClick={()=>setActiveTab(t.id)}
-              style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", padding:"8px 0", background:"none", border:"none", cursor:"pointer",
-                color: activeTab===t.id ? C.purpleGlow : C.textMuted,
-                filter: activeTab===t.id ? `drop-shadow(0 0 8px ${C.purple})` : "none",
-              }}>
-              <span style={{ fontSize:22 }}>{t.emoji}</span>
-              <span style={{ fontSize:10, marginTop:2, fontWeight: activeTab===t.id ? 800 : 400 }}>{t.label}</span>
-            </button>
-          ))}
-
-          {/* Center Arena Button */}
-          <div style={{ flex:"0 0 auto", margin:"0 6px" }}>
-            <GlowBtn gradient={`linear-gradient(135deg,${C.purple},${C.blue})`} glow={C.purple}
-              onClick={()=>nav("/arena")}
-              style={{
-                width:58, height:58, borderRadius:"50%",
-                fontSize:26, display:"flex", alignItems:"center", justifyContent:"center",
-                padding:0, animation:"glow-pulse 2.5s infinite",
-                boxShadow:`0 0 20px ${C.purple}88, 0 0 40px ${C.purple}44`,
-              }}>
-              ⚔️
-            </GlowBtn>
-          </div>
-
-          {[
+            { id:"learn",    label:"Study",    emoji:"📚" },
             { id:"progress", label:"Progress", emoji:"📊" },
             { id:"profile",  label:"Profile",  emoji:"👤" },
           ].map(t=>(
             <button key={t.id} className="nav-btn"
               onClick={()=>setActiveTab(t.id)}
-              style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", padding:"8px 0", background:"none", border:"none", cursor:"pointer",
+              style={{
+                flex:1, display:"flex", flexDirection:"column", alignItems:"center",
+                padding:"6px 0", background:"none", border:"none", cursor:"pointer",
                 color: activeTab===t.id ? C.purpleGlow : C.textMuted,
-                filter: activeTab===t.id ? `drop-shadow(0 0 8px ${C.purple})` : "none",
               }}>
-              <span style={{ fontSize:22 }}>{t.emoji}</span>
-              <span style={{ fontSize:10, marginTop:2, fontWeight: activeTab===t.id ? 800 : 400 }}>{t.label}</span>
+              <div style={{
+                width:36, height:36, borderRadius:10,
+                background: activeTab===t.id ? `${C.purple}22` : "transparent",
+                display:"flex", alignItems:"center", justifyContent:"center",
+                marginBottom:2,
+                transition:"all 0.2s ease",
+              }}>
+                <span style={{ fontSize:20 }}>{t.emoji}</span>
+              </div>
+              <span style={{ fontSize:10, fontWeight: activeTab===t.id ? 800 : 500, letterSpacing:0.3 }}>{t.label}</span>
+              {activeTab===t.id && <div style={{ width:20, height:2, background:C.purple, borderRadius:2, marginTop:3, boxShadow:`0 0 8px ${C.purple}` }} />}
             </button>
           ))}
         </nav>
