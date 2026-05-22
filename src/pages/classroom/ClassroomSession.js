@@ -77,6 +77,7 @@ export default function ClassroomSession() {
 
   // ── CONNECT SOCKET ────────────────────────────────────
   useEffect(() => {
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token") || "";
     const sock = io(`${BACKEND}/classroom`, {
       path:                 "/socket.io",
       transports:           ["websocket", "polling"],
@@ -84,10 +85,17 @@ export default function ClassroomSession() {
       reconnectionAttempts: 10,
       reconnectionDelay:    2000,
       timeout:              20000,
+      auth:                 { token },
     });
     socketRef.current = sock;
 
+    sock.on("connect_error", (e) => {
+      console.error("🔴 Classroom connect error:", e.message);
+      setError(`Connection failed: ${e.message}. Retrying...`);
+    });
+
     sock.on("connect", () => {
+      setError(null); // clear any previous error
       setConnected(true);
       if (role === "teacher") {
         sock.emit("create_session", {
