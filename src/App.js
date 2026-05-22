@@ -61,6 +61,23 @@ function PageLoader() {
   );
 }
 
+// ── ROUTE GUARDS ──────────────────────────────────────────
+function Private({ children }) {
+  const { student } = useAuth();
+  return student ? children : <Navigate to="/login" replace />;
+}
+
+function Public({ children }) {
+  const { student } = useAuth();
+  return !student ? children : <Navigate to="/dashboard" replace />;
+}
+
+function AdminGuard({ children }) {
+  return localStorage.getItem("admin_token")
+    ? children
+    : <Navigate to="/admin/login" replace />;
+}
+
 export default function App() {
   return (
     <ThemeProvider>
