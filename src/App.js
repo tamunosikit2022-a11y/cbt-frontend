@@ -50,36 +50,17 @@ const AdminDashboard   = lazy(() => import("./pages/admin/AdminDashboard"));
 // ── LOADING FALLBACK ──────────────────────────────────────
 function PageLoader() {
   return (
-    <div style={{
-      minHeight: "100vh", display: "flex", alignItems: "center",
-      justifyContent: "center", background: "#f8f9fa", fontFamily: "sans-serif"
-    }}>
-      <div style={{ textAlign: "center" }}>
-        <div style={{ fontSize: 36, marginBottom: 12 }}>🎓</div>
-        <p style={{ color: "#636e72" }}>Loading...</p>
+    <div style={{ minHeight:"100vh", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:16, background:"#0B1020", fontFamily:"sans-serif" }}>
+      <div style={{ width:64, height:64, borderRadius:18, background:"linear-gradient(135deg,#7C5CFF,#5B8CFF)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:32 }}>🎓</div>
+      <div style={{ display:"flex", gap:6 }}>
+        {[0,1,2].map(i => (
+          <div key={i} style={{ width:8, height:8, borderRadius:"50%", background:"#7C5CFF", opacity: 0.8 }} />
+        ))}
       </div>
     </div>
   );
 }
 
-// ── ROUTE GUARDS ──────────────────────────────────────────
-function Private({ children }) {
-  const { student } = useAuth();
-  return student ? children : <Navigate to="/login" replace />;
-}
-
-function Public({ children }) {
-  const { student } = useAuth();
-  return !student ? children : <Navigate to="/dashboard" replace />;
-}
-
-function AdminGuard({ children }) {
-  return localStorage.getItem("admin_token")
-    ? children
-    : <Navigate to="/admin/login" replace />;
-}
-
-// ── APP ───────────────────────────────────────────────────
 export default function App() {
   return (
     <ThemeProvider>
