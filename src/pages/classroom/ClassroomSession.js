@@ -3,7 +3,11 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { io } from "socket.io-client";
 
-const BACKEND = process.env.REACT_APP_API_URL?.replace("/api","") || "https://cbt-backend-dujo.onrender.com";
+function getBackendUrl() {
+  const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:3000/api";
+  return apiUrl.replace(/\/api\/?$/, "");
+}
+const BACKEND = getBackendUrl();
 
 const COLORS = ["#000000","#ffffff","#e17055","#6c63ff","#00b894","#0984e3","#fdcb6e","#fd79a8","#2d3436","#636e72"];
 const SIZES  = [2, 4, 8, 14, 20];
@@ -74,7 +78,12 @@ export default function ClassroomSession() {
   // ── CONNECT SOCKET ────────────────────────────────────
   useEffect(() => {
     const sock = io(`${BACKEND}/classroom`, {
-      transports: ["websocket","polling"],
+      path:                 "/socket.io",
+      transports:           ["websocket", "polling"],
+      reconnection:         true,
+      reconnectionAttempts: 10,
+      reconnectionDelay:    2000,
+      timeout:              20000,
     });
     socketRef.current = sock;
 

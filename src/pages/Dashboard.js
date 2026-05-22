@@ -283,19 +283,24 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
+    // Load critical data first (profile), then secondary data
+    API.get("/auth/profile")
+      .then(p => { if (p?.data) setProfile(p.data); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+
+    // Load secondary data in parallel - don't block initial render
     Promise.all([
-      API.get("/auth/profile").catch(() => null),
       API.get("/exam/history").catch(() => ({ data:[] })),
       API.get("/innovations/challenge/today").catch(() => null),
       API.get("/auth/notifications").catch(() => ({ data:[] })),
       API.get("/missions/level").catch(() => null),
-    ]).then(([p,h,c,n,lv]) => {
-      if (p?.data)                         setProfile(p.data);
+    ]).then(([h,c,n,lv]) => {
       if (h?.data)                         setHistory(h.data.slice(0,5));
       if (c?.data)                         setChallenge(c.data);
       if (n?.data && Array.isArray(n.data))setNotifications(n.data);
       if (lv?.data)                        setLevelData(lv.data);
-    }).finally(() => setLoading(false));
+    }).catch(() => {});
   }, []);
 
   const streak   = profile?.current_streak || 0;

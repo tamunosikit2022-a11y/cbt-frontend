@@ -113,8 +113,14 @@ export default function Missions() {
   const load = useCallback(async () => {
     try {
       const r = await API.get("/missions/daily");
-      setData(r.data);
-    } catch { } finally { setLoading(false); }
+      if (r.data) setData(r.data);
+    } catch (err) {
+      console.error("Missions load error:", err?.response?.data || err.message);
+      // Set empty data so page still renders
+      setData({ daily: [], weekly: [], level: null, coins: 0 });
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { load(); }, [load]);
