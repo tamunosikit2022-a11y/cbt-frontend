@@ -1,7 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { getClassroomSocket, disconnectClassroom } from "../../utils/classroomSocket";
+import { io } from "socket.io-client";
+
+function getBackendUrl() {
+  const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:3000/api";
+  return apiUrl.replace(/\/api\/?$/, "");
+}
+const BACKEND = getBackendUrl();
 
 const COLORS = ["#000000","#ffffff","#e17055","#6c63ff","#00b894","#0984e3","#fdcb6e","#fd79a8","#2d3436","#636e72"];
 const SIZES  = [2, 4, 8, 14, 20];
@@ -47,63 +53,40 @@ export default function ClassroomSession() {
   const audioEls   = useRef({}); // socketId → <audio>
 
   // ── INIT CANVAS ───────────────────────────────────────
-  const initCanvas = () => {
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    // Use explicit pixel size — fallback to 600x450 if offsetWidth is 0
-    const w = canvas.offsetWidth  || canvas.parentElement?.offsetWidth  || 600;
-    const h = canvas.offsetHeight || canvas.parentElement?.offsetHeight || 450;
-    if (canvas.width !== w || canvas.height !== h) {
-      canvas.width  = w;
-      canvas.height = h;
-    }
+    canvas.width  = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
     const ctx = canvas.getContext("2d");
     ctx.lineCap   = "round";
     ctx.lineJoin  = "round";
-    ctx.lineWidth = 3;
     ctxRef.current = ctx;
-  };
-
-  useEffect(() => {
-    // Try immediately, then retry after render completes
-    initCanvas();
-    const t1 = setTimeout(initCanvas, 100);
-    const t2 = setTimeout(initCanvas, 500);
 
     const onResize = () => {
-      const canvas = canvasRef.current;
-      const ctx    = ctxRef.current;
-      if (!canvas || !ctx) return;
       const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const w = canvas.offsetWidth  || 600;
-      const h = canvas.offsetHeight || 450;
-      canvas.width  = w;
-      canvas.height = h;
+      canvas.width  = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
       ctx.putImageData(img, 0, 0);
       ctx.lineCap  = "round";
       ctx.lineJoin = "round";
     };
     window.addEventListener("resize", onResize);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      window.removeEventListener("resize", onResize);
-    };
-  }, [student]);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
-  // ── CONNECT SOCKET — wait for student to load ──────────
+  // ── CONNECT SOCKET ────────────────────────────────────
   useEffect(() => {
-    // Read student directly from localStorage as fallback (immediate, no async)
-    let studentData = null;
-    try {
-      studentData = JSON.parse(localStorage.getItem("student") || "null");
-    } catch {}
-    const resolvedStudent = student || studentData;
-
-    // Don't connect until we have student info
-    if (!resolvedStudent?.id) return;
-
-    const sock = getClassroomSocket();
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token") || "";
+    const sock = io(`${BACKEND}/classroom`, {
+      path:                 "/socket.io",
+      transports:           ["websocket", "polling"],
+      reconnection:         true,
+      reconnectionAttempts: 10,
+      reconnectionDelay:    2000,
+      timeout:              20000,
+      auth:                 { token },
+    });
     socketRef.current = sock;
 
     sock.on("connect_error", (e) => {
@@ -115,9 +98,9 @@ export default function ClassroomSession() {
       setError(null); // clear any previous error
       setConnected(true);
       if (role === "teacher") {
-        sock.emit("classroom_create", {
-          teacherId:   resolvedStudent?.id,
-          teacherName: resolvedStudent?.full_name || "Teacher",
+        sock.emit("create_session", {
+          teacherId:   student?.id,
+          teacherName: student?.full_name || "Teacher",
           title, subject,
         }, res => {
           if (res.success) {
@@ -127,10 +110,10 @@ export default function ClassroomSession() {
           } else setError(res.error);
         });
       } else {
-        sock.emit("classroom_join", {
+        sock.emit("join_session", {
           code,
-          studentId:   resolvedStudent?.id,
-          studentName: resolvedStudent?.full_name || "Student",
+          studentId:   student?.id,
+          studentName: student?.full_name || "Student",
         }, res => {
           if (res.success) {
             setSession(res.session);
@@ -144,23 +127,23 @@ export default function ClassroomSession() {
     });
 
     // Board events
-    sock.on("classroom_draw",    d => drawRemoteStroke(d));
+    sock.on("draw_stroke",    d => drawRemoteStroke(d));
     sock.on("add_text",       d => drawRemoteText(d));
-    sock.on("classroom_clear_board",    () => clearCanvas());
-    sock.on("classroom_undo",    () => {}); // handled by replay
+    sock.on("clear_board",    () => clearCanvas());
+    sock.on("undo_stroke",    () => {}); // handled by replay
 
     // Chat
-    sock.on("classroom_chat_message", msg => {
+    sock.on("chat_message", msg => {
       setChat(prev => [...prev, msg]);
-      setUnreadChat(prev => panel !== "classroom_chat" ? prev + 1 : 0);
+      setUnreadChat(prev => panel !== "chat" ? prev + 1 : 0);
     });
 
     // Participants
-    sock.on("classroom_participant_joined", d => setParticipants(d.participants || []));
-    sock.on("classroom_participant_left",   d => setParticipants(d.participants || []));
+    sock.on("participant_joined", d => setParticipants(d.participants || []));
+    sock.on("participant_left",   d => setParticipants(d.participants || []));
 
     // Session control
-    sock.on("classroom_ended", d => { setSessionEnded(true); setError(d.message); });
+    sock.on("session_ended", d => { setSessionEnded(true); setError(d.message); });
     sock.on("teacher_left",  d => setError(d.message));
     sock.on("kicked",        d => { setSessionEnded(true); setError(d.message); });
     sock.on("draw_permission", d => {
@@ -168,18 +151,18 @@ export default function ClassroomSession() {
     });
 
     // Question shared
-    sock.on("classroom_question_shared", q => setSharedQuestion(q));
+    sock.on("question_shared", q => setSharedQuestion(q));
 
     // Voice signaling
-    sock.on("classroom_voice_join",   async d => { if (voiceActive) await createPeer(d.socketId, false); });
-    sock.on("classroom_voice_offer",  async d => { await handleOffer(d); });
-    sock.on("classroom_voice_answer", async d => { await peers.current[d.from]?.setRemoteDescription(d.answer); });
-    sock.on("classroom_voice_ice",    async d => { await peers.current[d.from]?.addIceCandidate(d.candidate).catch(()=>{}); });
-    sock.on("classroom_voice_leave",  d => { cleanupPeer(d.socketId); });
+    sock.on("voice_join",   async d => { if (voiceActive) await createPeer(d.socketId, false); });
+    sock.on("voice_offer",  async d => { await handleOffer(d); });
+    sock.on("voice_answer", async d => { await peers.current[d.from]?.setRemoteDescription(d.answer); });
+    sock.on("voice_ice",    async d => { await peers.current[d.from]?.addIceCandidate(d.candidate).catch(()=>{}); });
+    sock.on("voice_leave",  d => { cleanupPeer(d.socketId); });
 
     sock.on("disconnect", () => setConnected(false));
 
-    return () => { disconnectClassroom(); stopVoice(); };
+    return () => { sock.disconnect(); stopVoice(); };
   }, []);
 
   // Auto-scroll chat
@@ -221,7 +204,7 @@ export default function ClassroomSession() {
     ctx.globalCompositeOperation = "source-over";
 
     // Emit normalized stroke
-    socketRef.current?.emit("classroom_draw", {
+    socketRef.current?.emit("draw_stroke", {
       tool, color, size,
       fx: from.x / canvas.width, fy: from.y / canvas.height,
       tx: pos.x  / canvas.width, ty: pos.y  / canvas.height,
@@ -289,13 +272,13 @@ export default function ClassroomSession() {
 
   const handleClear = () => {
     clearCanvas();
-    socketRef.current?.emit("classroom_clear_board");
+    socketRef.current?.emit("clear_board");
   };
 
   // ── CHAT ─────────────────────────────────────────────
   const sendChat = () => {
     if (!chatInput.trim()) return;
-    socketRef.current?.emit("classroom_chat_message", { text: chatInput });
+    socketRef.current?.emit("chat_message", { text: chatInput });
     setChatInput("");
   };
 
@@ -305,7 +288,7 @@ export default function ClassroomSession() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
       localStream.current = stream;
       setVoiceActive(true);
-      socketRef.current?.emit("classroom_voice_join");
+      socketRef.current?.emit("voice_join");
     } catch { setError("Microphone access denied. Please allow mic access."); }
   };
 
@@ -317,7 +300,7 @@ export default function ClassroomSession() {
     Object.values(audioEls.current).forEach(el => el.remove());
     audioEls.current = {};
     setVoiceActive(false);
-    socketRef.current?.emit("classroom_voice_leave");
+    socketRef.current?.emit("voice_leave");
   };
 
   const toggleMute = () => {
@@ -347,14 +330,14 @@ export default function ClassroomSession() {
 
     pc.onicecandidate = e => {
       if (e.candidate) {
-        socketRef.current?.emit("classroom_voice_ice", { to: targetId, candidate: e.candidate });
+        socketRef.current?.emit("voice_ice", { to: targetId, candidate: e.candidate });
       }
     };
 
     if (isInitiator) {
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
-      socketRef.current?.emit("classroom_voice_offer", { to: targetId, offer });
+      socketRef.current?.emit("voice_offer", { to: targetId, offer });
     }
     return pc;
   };
@@ -364,7 +347,7 @@ export default function ClassroomSession() {
     await pc.setRemoteDescription(d.offer);
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
-    socketRef.current?.emit("classroom_voice_answer", { to: d.from, answer });
+    socketRef.current?.emit("voice_answer", { to: d.from, answer });
   };
 
   const cleanupPeer = (id) => {
@@ -376,7 +359,7 @@ export default function ClassroomSession() {
 
   // ── END SESSION ───────────────────────────────────────
   const handleEnd = () => {
-    if (role === "teacher") socketRef.current?.emit("classroom_end");
+    if (role === "teacher") socketRef.current?.emit("end_session");
     nav("/classroom");
   };
 
@@ -503,7 +486,7 @@ export default function ClassroomSession() {
         )}
 
         {/* CHAT */}
-        {panel === "classroom_chat" && (
+        {panel === "chat" && (
           <div style={s.chatPanel}>
             <div style={s.chatMessages}>
               {chat.length === 0 && <div style={s.chatEmpty}>No messages yet. Say hello! 👋</div>}
@@ -593,12 +576,12 @@ export default function ClassroomSession() {
       <nav style={s.bottomNav}>
         {[
           { id:"board",        icon:"✏️",  label:"Board" },
-          { id:"classroom_chat",         icon:"💬",  label:"Chat",  badge: unreadChat },
+          { id:"chat",         icon:"💬",  label:"Chat",  badge: unreadChat },
           { id:"participants", icon:"👥",  label:"People" },
           { id:"voice",        icon: voiceActive ? "🎙️" : "🎤", label:"Voice" },
         ].map(tab => (
           <button key={tab.id} style={{ ...s.navBtn, ...(panel === tab.id ? s.navActive : {}) }}
-            onClick={() => { setPanel(tab.id); if (tab.id === "classroom_chat") setUnreadChat(0); }}>
+            onClick={() => { setPanel(tab.id); if (tab.id === "chat") setUnreadChat(0); }}>
             <span style={{ fontSize:20, position:"relative" }}>
               {tab.icon}
               {tab.badge > 0 && <span style={s.badge}>{tab.badge}</span>}
@@ -626,7 +609,7 @@ const s = {
   colorDot:       { width:22, height:22, borderRadius:"50%", cursor:"pointer", flexShrink:0 },
   main:           { flex:1, overflow:"hidden", position:"relative" },
   boardContainer: { width:"100%", height:"100%", position:"relative", background:"#fff" },
-  canvas:         { width:"100%", height:"100%", minHeight:450, touchAction:"none", display:"block", cursor:"crosshair" },
+  canvas:         { width:"100%", height:"100%", touchAction:"none", display:"block" },
   viewOnlyBadge:  { position:"absolute", top:8, left:"50%", transform:"translateX(-50%)", background:"rgba(0,0,0,0.6)", color:"#fff", fontSize:11, padding:"4px 12px", borderRadius:20, zIndex:10, whiteSpace:"nowrap" },
   questionBanner: { position:"absolute", top:8, left:8, right:8, background:"#6c63ff", color:"#fff", borderRadius:12, padding:"12px 14px", zIndex:20, boxShadow:"0 4px 20px rgba(0,0,0,0.3)" },
   chatPanel:      { height:"100%", display:"flex", flexDirection:"column", background:"#f4f6fb" },
