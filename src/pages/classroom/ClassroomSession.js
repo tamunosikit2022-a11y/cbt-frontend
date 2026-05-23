@@ -47,27 +47,49 @@ export default function ClassroomSession() {
   const audioEls   = useRef({}); // socketId → <audio>
 
   // ── INIT CANVAS ───────────────────────────────────────
-  useEffect(() => {
+  const initCanvas = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    canvas.width  = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
+    // Use explicit pixel size — fallback to 600x450 if offsetWidth is 0
+    const w = canvas.offsetWidth  || canvas.parentElement?.offsetWidth  || 600;
+    const h = canvas.offsetHeight || canvas.parentElement?.offsetHeight || 450;
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width  = w;
+      canvas.height = h;
+    }
     const ctx = canvas.getContext("2d");
     ctx.lineCap   = "round";
     ctx.lineJoin  = "round";
+    ctx.lineWidth = 3;
     ctxRef.current = ctx;
+  };
+
+  useEffect(() => {
+    // Try immediately, then retry after render completes
+    initCanvas();
+    const t1 = setTimeout(initCanvas, 100);
+    const t2 = setTimeout(initCanvas, 500);
 
     const onResize = () => {
+      const canvas = canvasRef.current;
+      const ctx    = ctxRef.current;
+      if (!canvas || !ctx) return;
       const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      canvas.width  = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
+      const w = canvas.offsetWidth  || 600;
+      const h = canvas.offsetHeight || 450;
+      canvas.width  = w;
+      canvas.height = h;
       ctx.putImageData(img, 0, 0);
       ctx.lineCap  = "round";
       ctx.lineJoin = "round";
     };
     window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, [student]));
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      window.removeEventListener("resize", onResize);
+    };
+  }, [student]);
 
   // ── CONNECT SOCKET — wait for student to load ──────────
   useEffect(() => {
@@ -604,7 +626,7 @@ const s = {
   colorDot:       { width:22, height:22, borderRadius:"50%", cursor:"pointer", flexShrink:0 },
   main:           { flex:1, overflow:"hidden", position:"relative" },
   boardContainer: { width:"100%", height:"100%", position:"relative", background:"#fff" },
-  canvas:         { width:"100%", height:"100%", touchAction:"none", display:"block" },
+  canvas:         { width:"100%", height:"100%", minHeight:450, touchAction:"none", display:"block", cursor:"crosshair" },
   viewOnlyBadge:  { position:"absolute", top:8, left:"50%", transform:"translateX(-50%)", background:"rgba(0,0,0,0.6)", color:"#fff", fontSize:11, padding:"4px 12px", borderRadius:20, zIndex:10, whiteSpace:"nowrap" },
   questionBanner: { position:"absolute", top:8, left:8, right:8, background:"#6c63ff", color:"#fff", borderRadius:12, padding:"12px 14px", zIndex:20, boxShadow:"0 4px 20px rgba(0,0,0,0.3)" },
   chatPanel:      { height:"100%", display:"flex", flexDirection:"column", background:"#f4f6fb" },
