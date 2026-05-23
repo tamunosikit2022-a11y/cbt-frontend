@@ -17,9 +17,10 @@ export function getClassroomSocket() {
   }
 
   const baseUrl = getBaseUrl();
-  console.log("📚 Classroom connecting to:", baseUrl);
+  console.log("📚 Classroom connecting to:", baseUrl + "/arena");
 
-  socket = io(`${baseUrl}/classroom`, {
+  // Use /arena namespace (already works) with classroom_ prefixed events
+  socket = io(`${baseUrl}/arena`, {
     path:                 "/socket.io",
     transports:           ["websocket", "polling"],
     reconnection:         true,

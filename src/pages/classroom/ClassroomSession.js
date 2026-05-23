@@ -93,7 +93,7 @@ export default function ClassroomSession() {
       setError(null); // clear any previous error
       setConnected(true);
       if (role === "teacher") {
-        sock.emit("create_session", {
+        sock.emit("classroom_create", {
           teacherId:   resolvedStudent?.id,
           teacherName: resolvedStudent?.full_name || "Teacher",
           title, subject,
@@ -105,7 +105,7 @@ export default function ClassroomSession() {
           } else setError(res.error);
         });
       } else {
-        sock.emit("join_session", {
+        sock.emit("classroom_join", {
           code,
           studentId:   resolvedStudent?.id,
           studentName: resolvedStudent?.full_name || "Student",
@@ -122,23 +122,23 @@ export default function ClassroomSession() {
     });
 
     // Board events
-    sock.on("draw_stroke",    d => drawRemoteStroke(d));
+    sock.on("classroom_draw",    d => drawRemoteStroke(d));
     sock.on("add_text",       d => drawRemoteText(d));
-    sock.on("clear_board",    () => clearCanvas());
-    sock.on("undo_stroke",    () => {}); // handled by replay
+    sock.on("classroom_clear_board",    () => clearCanvas());
+    sock.on("classroom_undo",    () => {}); // handled by replay
 
     // Chat
-    sock.on("chat_message", msg => {
+    sock.on("classroom_chat_message", msg => {
       setChat(prev => [...prev, msg]);
-      setUnreadChat(prev => panel !== "chat" ? prev + 1 : 0);
+      setUnreadChat(prev => panel !== "classroom_chat" ? prev + 1 : 0);
     });
 
     // Participants
-    sock.on("participant_joined", d => setParticipants(d.participants || []));
-    sock.on("participant_left",   d => setParticipants(d.participants || []));
+    sock.on("classroom_participant_joined", d => setParticipants(d.participants || []));
+    sock.on("classroom_participant_left",   d => setParticipants(d.participants || []));
 
     // Session control
-    sock.on("session_ended", d => { setSessionEnded(true); setError(d.message); });
+    sock.on("classroom_ended", d => { setSessionEnded(true); setError(d.message); });
     sock.on("teacher_left",  d => setError(d.message));
     sock.on("kicked",        d => { setSessionEnded(true); setError(d.message); });
     sock.on("draw_permission", d => {
@@ -146,14 +146,14 @@ export default function ClassroomSession() {
     });
 
     // Question shared
-    sock.on("question_shared", q => setSharedQuestion(q));
+    sock.on("classroom_question_shared", q => setSharedQuestion(q));
 
     // Voice signaling
-    sock.on("voice_join",   async d => { if (voiceActive) await createPeer(d.socketId, false); });
-    sock.on("voice_offer",  async d => { await handleOffer(d); });
-    sock.on("voice_answer", async d => { await peers.current[d.from]?.setRemoteDescription(d.answer); });
-    sock.on("voice_ice",    async d => { await peers.current[d.from]?.addIceCandidate(d.candidate).catch(()=>{}); });
-    sock.on("voice_leave",  d => { cleanupPeer(d.socketId); });
+    sock.on("classroom_voice_join",   async d => { if (voiceActive) await createPeer(d.socketId, false); });
+    sock.on("classroom_voice_offer",  async d => { await handleOffer(d); });
+    sock.on("classroom_voice_answer", async d => { await peers.current[d.from]?.setRemoteDescription(d.answer); });
+    sock.on("classroom_voice_ice",    async d => { await peers.current[d.from]?.addIceCandidate(d.candidate).catch(()=>{}); });
+    sock.on("classroom_voice_leave",  d => { cleanupPeer(d.socketId); });
 
     sock.on("disconnect", () => setConnected(false));
 
@@ -199,7 +199,7 @@ export default function ClassroomSession() {
     ctx.globalCompositeOperation = "source-over";
 
     // Emit normalized stroke
-    socketRef.current?.emit("draw_stroke", {
+    socketRef.current?.emit("classroom_draw", {
       tool, color, size,
       fx: from.x / canvas.width, fy: from.y / canvas.height,
       tx: pos.x  / canvas.width, ty: pos.y  / canvas.height,
@@ -267,13 +267,13 @@ export default function ClassroomSession() {
 
   const handleClear = () => {
     clearCanvas();
-    socketRef.current?.emit("clear_board");
+    socketRef.current?.emit("classroom_clear_board");
   };
 
   // ── CHAT ─────────────────────────────────────────────
   const sendChat = () => {
     if (!chatInput.trim()) return;
-    socketRef.current?.emit("chat_message", { text: chatInput });
+    socketRef.current?.emit("classroom_chat_message", { text: chatInput });
     setChatInput("");
   };
 
@@ -283,7 +283,7 @@ export default function ClassroomSession() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
       localStream.current = stream;
       setVoiceActive(true);
-      socketRef.current?.emit("voice_join");
+      socketRef.current?.emit("classroom_voice_join");
     } catch { setError("Microphone access denied. Please allow mic access."); }
   };
 
@@ -295,7 +295,7 @@ export default function ClassroomSession() {
     Object.values(audioEls.current).forEach(el => el.remove());
     audioEls.current = {};
     setVoiceActive(false);
-    socketRef.current?.emit("voice_leave");
+    socketRef.current?.emit("classroom_voice_leave");
   };
 
   const toggleMute = () => {
@@ -325,14 +325,14 @@ export default function ClassroomSession() {
 
     pc.onicecandidate = e => {
       if (e.candidate) {
-        socketRef.current?.emit("voice_ice", { to: targetId, candidate: e.candidate });
+        socketRef.current?.emit("classroom_voice_ice", { to: targetId, candidate: e.candidate });
       }
     };
 
     if (isInitiator) {
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
-      socketRef.current?.emit("voice_offer", { to: targetId, offer });
+      socketRef.current?.emit("classroom_voice_offer", { to: targetId, offer });
     }
     return pc;
   };
@@ -342,7 +342,7 @@ export default function ClassroomSession() {
     await pc.setRemoteDescription(d.offer);
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
-    socketRef.current?.emit("voice_answer", { to: d.from, answer });
+    socketRef.current?.emit("classroom_voice_answer", { to: d.from, answer });
   };
 
   const cleanupPeer = (id) => {
@@ -354,7 +354,7 @@ export default function ClassroomSession() {
 
   // ── END SESSION ───────────────────────────────────────
   const handleEnd = () => {
-    if (role === "teacher") socketRef.current?.emit("end_session");
+    if (role === "teacher") socketRef.current?.emit("classroom_end");
     nav("/classroom");
   };
 
@@ -481,7 +481,7 @@ export default function ClassroomSession() {
         )}
 
         {/* CHAT */}
-        {panel === "chat" && (
+        {panel === "classroom_chat" && (
           <div style={s.chatPanel}>
             <div style={s.chatMessages}>
               {chat.length === 0 && <div style={s.chatEmpty}>No messages yet. Say hello! 👋</div>}
@@ -571,12 +571,12 @@ export default function ClassroomSession() {
       <nav style={s.bottomNav}>
         {[
           { id:"board",        icon:"✏️",  label:"Board" },
-          { id:"chat",         icon:"💬",  label:"Chat",  badge: unreadChat },
+          { id:"classroom_chat",         icon:"💬",  label:"Chat",  badge: unreadChat },
           { id:"participants", icon:"👥",  label:"People" },
           { id:"voice",        icon: voiceActive ? "🎙️" : "🎤", label:"Voice" },
         ].map(tab => (
           <button key={tab.id} style={{ ...s.navBtn, ...(panel === tab.id ? s.navActive : {}) }}
-            onClick={() => { setPanel(tab.id); if (tab.id === "chat") setUnreadChat(0); }}>
+            onClick={() => { setPanel(tab.id); if (tab.id === "classroom_chat") setUnreadChat(0); }}>
             <span style={{ fontSize:20, position:"relative" }}>
               {tab.icon}
               {tab.badge > 0 && <span style={s.badge}>{tab.badge}</span>}
