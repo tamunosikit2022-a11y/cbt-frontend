@@ -1,10 +1,10 @@
 {
-  "name": "cbt-frontend",
+  "name": "scholars-syndicate",
   "version": "1.0.0",
   "private": true,
+  "description": "Scholars Syndicate - JAMB & Post-UTME Practice Platform",
   "dependencies": {
     "axios": "^1.6.0",
-    "cors": "^2.8.6",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.20.0",
@@ -19,9 +19,11 @@
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
-    "extends": [
-      "react-app"
-    ]
+    "extends": ["react-app"],
+    "rules": {
+      "no-unused-vars": "warn",
+      "react-hooks/exhaustive-deps": "warn"
+    }
   },
   "browserslist": {
     "production": [
