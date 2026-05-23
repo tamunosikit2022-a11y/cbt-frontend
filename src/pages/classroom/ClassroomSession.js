@@ -73,11 +73,21 @@ export default function ClassroomSession() {
     };
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, []);
+  }, [student]));
 
-  // ── CONNECT SOCKET ────────────────────────────────────
+  // ── CONNECT SOCKET — wait for student to load ──────────
   useEffect(() => {
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token") || "";
+    // Read student directly from localStorage as fallback (immediate, no async)
+    let studentData = null;
+    try {
+      studentData = JSON.parse(localStorage.getItem("student") || "null");
+    } catch {}
+    const resolvedStudent = student || studentData;
+
+    // Don't connect until we have student info
+    if (!resolvedStudent?.id) return;
+
+    const token = localStorage.getItem("token") || "";
     const sock = io(`${BACKEND}/classroom`, {
       path:                 "/socket.io",
       transports:           ["websocket", "polling"],
@@ -99,8 +109,8 @@ export default function ClassroomSession() {
       setConnected(true);
       if (role === "teacher") {
         sock.emit("create_session", {
-          teacherId:   student?.id,
-          teacherName: student?.full_name || "Teacher",
+          teacherId:   resolvedStudent?.id,
+          teacherName: resolvedStudent?.full_name || "Teacher",
           title, subject,
         }, res => {
           if (res.success) {
@@ -112,8 +122,8 @@ export default function ClassroomSession() {
       } else {
         sock.emit("join_session", {
           code,
-          studentId:   student?.id,
-          studentName: student?.full_name || "Student",
+          studentId:   resolvedStudent?.id,
+          studentName: resolvedStudent?.full_name || "Student",
         }, res => {
           if (res.success) {
             setSession(res.session);
