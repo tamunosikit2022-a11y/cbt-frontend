@@ -1,13 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { io } from "socket.io-client";
-
-function getBackendUrl() {
-  const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:3000/api";
-  return apiUrl.replace(/\/api\/?$/, "");
-}
-const BACKEND = getBackendUrl();
+import { getClassroomSocket, disconnectClassroom } from "../../utils/classroomSocket";
 
 const COLORS = ["#000000","#ffffff","#e17055","#6c63ff","#00b894","#0984e3","#fdcb6e","#fd79a8","#2d3436","#636e72"];
 const SIZES  = [2, 4, 8, 14, 20];
@@ -87,16 +81,7 @@ export default function ClassroomSession() {
     // Don't connect until we have student info
     if (!resolvedStudent?.id) return;
 
-    const token = localStorage.getItem("token") || "";
-    const sock = io(`${BACKEND}/classroom`, {
-      path:                 "/socket.io",
-      transports:           ["websocket", "polling"],
-      reconnection:         true,
-      reconnectionAttempts: 10,
-      reconnectionDelay:    2000,
-      timeout:              20000,
-      auth:                 { token },
-    });
+    const sock = getClassroomSocket();
     socketRef.current = sock;
 
     sock.on("connect_error", (e) => {
@@ -172,7 +157,7 @@ export default function ClassroomSession() {
 
     sock.on("disconnect", () => setConnected(false));
 
-    return () => { sock.disconnect(); stopVoice(); };
+    return () => { disconnectClassroom(); stopVoice(); };
   }, []);
 
   // Auto-scroll chat
