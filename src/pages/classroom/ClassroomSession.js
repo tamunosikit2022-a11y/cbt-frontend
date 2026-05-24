@@ -396,8 +396,15 @@ export default function ClassroomSession() {
 
   // ── END SESSION ───────────────────────────────────────
   const handleEnd = () => {
-    if (role === "teacher") socketRef.current?.emit("end_session");
-    nav("/classroom");
+    if (role === "teacher") {
+      // Emit end_session then wait briefly for broadcast to reach students
+      socketRef.current?.emit("end_session");
+      setTimeout(() => nav("/classroom"), 800);
+    } else {
+      // Student leaving - just disconnect and go back
+      socketRef.current?.disconnect();
+      nav("/classroom");
+    }
   };
 
   if (sessionEnded) return (
