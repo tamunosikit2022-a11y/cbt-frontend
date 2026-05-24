@@ -1,13 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { io } from "socket.io-client";
-
-function getBackendUrl() {
-  const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:3000/api";
-  return apiUrl.replace(/\/api\/?$/, "");
-}
-const BACKEND = getBackendUrl();
+import { getClassroomSocket, disconnectClassroom } from "../../utils/classroomSocket";
 
 const COLORS = ["#000000","#ffffff","#e17055","#6c63ff","#00b894","#0984e3","#fdcb6e","#fd79a8","#2d3436","#636e72"];
 const SIZES  = [2, 4, 8, 14, 20];
@@ -53,40 +47,64 @@ export default function ClassroomSession() {
   const audioEls   = useRef({}); // socketId → <audio>
 
   // ── INIT CANVAS ───────────────────────────────────────
-  useEffect(() => {
+  const initCanvas = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    canvas.width  = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
+    const w = canvas.offsetWidth  || canvas.parentElement?.offsetWidth  || 600;
+    const h = canvas.offsetHeight || canvas.parentElement?.offsetHeight || 450;
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width  = w;
+      canvas.height = h;
+    }
     const ctx = canvas.getContext("2d");
+    // ✅ FIX: assign ctx to ref so drawing functions can use it
+    ctxRef.current = ctx;
     ctx.lineCap   = "round";
     ctx.lineJoin  = "round";
+    ctx.lineWidth = 3;
     ctxRef.current = ctx;
+  };
+
+  useEffect(() => {
+    // Try immediately, then retry after render completes
+    initCanvas();
+    const t1 = setTimeout(initCanvas, 100);
+    const t2 = setTimeout(initCanvas, 500);
 
     const onResize = () => {
+      const canvas = canvasRef.current;
+      const ctx    = ctxRef.current;
+      if (!canvas || !ctx) return;
       const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      canvas.width  = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
+      const w = canvas.offsetWidth  || 600;
+      const h = canvas.offsetHeight || 450;
+      canvas.width  = w;
+      canvas.height = h;
       ctx.putImageData(img, 0, 0);
       ctx.lineCap  = "round";
       ctx.lineJoin = "round";
     };
     window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      window.removeEventListener("resize", onResize);
+    };
+  }, [student]);
 
-  // ── CONNECT SOCKET ────────────────────────────────────
+  // ── CONNECT SOCKET — wait for student to load ──────────
   useEffect(() => {
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token") || "";
-    const sock = io(`${BACKEND}/classroom`, {
-      path:                 "/socket.io",
-      transports:           ["websocket", "polling"],
-      reconnection:         true,
-      reconnectionAttempts: 10,
-      reconnectionDelay:    2000,
-      timeout:              20000,
-      auth:                 { token },
-    });
+    // Read student directly from localStorage as fallback (immediate, no async)
+    let studentData = null;
+    try {
+      studentData = JSON.parse(localStorage.getItem("student") || "null");
+    } catch {}
+    const resolvedStudent = student || studentData;
+
+    // Don't connect until we have student info
+    if (!resolvedStudent?.id) return;
+
+    const sock = getClassroomSocket();
     socketRef.current = sock;
 
     sock.on("connect_error", (e) => {
@@ -99,8 +117,8 @@ export default function ClassroomSession() {
       setConnected(true);
       if (role === "teacher") {
         sock.emit("create_session", {
-          teacherId:   student?.id,
-          teacherName: student?.full_name || "Teacher",
+          teacherId:   resolvedStudent?.id,
+          teacherName: resolvedStudent?.full_name || "Teacher",
           title, subject,
         }, res => {
           if (res.success) {
@@ -112,8 +130,8 @@ export default function ClassroomSession() {
       } else {
         sock.emit("join_session", {
           code,
-          studentId:   student?.id,
-          studentName: student?.full_name || "Student",
+          studentId:   resolvedStudent?.id,
+          studentName: resolvedStudent?.full_name || "Student",
         }, res => {
           if (res.success) {
             setSession(res.session);
@@ -135,7 +153,7 @@ export default function ClassroomSession() {
     // Chat
     sock.on("chat_message", msg => {
       setChat(prev => [...prev, msg]);
-      setUnreadChat(prev => panel !== "chat" ? prev + 1 : 0);
+      setUnreadChat(prev => panel !== "classroom_chat" ? prev + 1 : 0);
     });
 
     // Participants
@@ -154,7 +172,10 @@ export default function ClassroomSession() {
     sock.on("question_shared", q => setSharedQuestion(q));
 
     // Voice signaling
-    sock.on("voice_join",   async d => { if (voiceActive) await createPeer(d.socketId, false); });
+    sock.on("voice_join",   async d => {
+      // Use ref to avoid stale closure — check localStream instead
+      if (localStream.current) await createPeer(d.socketId, false);
+    });
     sock.on("voice_offer",  async d => { await handleOffer(d); });
     sock.on("voice_answer", async d => { await peers.current[d.from]?.setRemoteDescription(d.answer); });
     sock.on("voice_ice",    async d => { await peers.current[d.from]?.addIceCandidate(d.candidate).catch(()=>{}); });
@@ -162,11 +183,18 @@ export default function ClassroomSession() {
 
     sock.on("disconnect", () => setConnected(false));
 
-    return () => { sock.disconnect(); stopVoice(); };
+    return () => { disconnectClassroom(); stopVoice(); };
   }, []);
 
   // Auto-scroll chat
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior:"smooth" }); }, [chat]);
+
+  // Reinitialize canvas whenever board panel becomes visible
+  useEffect(() => {
+    if (panel === "board") {
+      setTimeout(initCanvas, 50);
+    }
+  }, [panel]);
 
   // ── DRAWING ───────────────────────────────────────────
   const getPos = (e, canvas) => {
@@ -181,6 +209,8 @@ export default function ClassroomSession() {
   const startDraw = useCallback(e => {
     if (!canDraw || tool === "text") return;
     e.preventDefault();
+    // Ensure canvas is initialized
+    if (!ctxRef.current) initCanvas();
     drawing.current = true;
     const pos = getPos(e, canvasRef.current);
     lastPt.current = pos;
@@ -191,8 +221,10 @@ export default function ClassroomSession() {
     e.preventDefault();
     const canvas = canvasRef.current;
     const ctx    = ctxRef.current;
+    if (!canvas || !ctx) return;
     const pos    = getPos(e, canvas);
     const from   = lastPt.current;
+    if (!from) return; // safety check
 
     ctx.beginPath();
     ctx.moveTo(from.x, from.y);
@@ -312,7 +344,12 @@ export default function ClassroomSession() {
 
   const createPeer = async (targetId, isInitiator) => {
     const pc = new RTCPeerConnection({
-      iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" },
+        { urls: "stun:stun2.l.google.com:19302" },
+        { urls: "stun:stun.cloudflare.com:3478" },
+      ]
     });
     peers.current[targetId] = pc;
 
@@ -486,7 +523,7 @@ export default function ClassroomSession() {
         )}
 
         {/* CHAT */}
-        {panel === "chat" && (
+        {panel === "classroom_chat" && (
           <div style={s.chatPanel}>
             <div style={s.chatMessages}>
               {chat.length === 0 && <div style={s.chatEmpty}>No messages yet. Say hello! 👋</div>}
@@ -576,12 +613,12 @@ export default function ClassroomSession() {
       <nav style={s.bottomNav}>
         {[
           { id:"board",        icon:"✏️",  label:"Board" },
-          { id:"chat",         icon:"💬",  label:"Chat",  badge: unreadChat },
+          { id:"classroom_chat",         icon:"💬",  label:"Chat",  badge: unreadChat },
           { id:"participants", icon:"👥",  label:"People" },
           { id:"voice",        icon: voiceActive ? "🎙️" : "🎤", label:"Voice" },
         ].map(tab => (
           <button key={tab.id} style={{ ...s.navBtn, ...(panel === tab.id ? s.navActive : {}) }}
-            onClick={() => { setPanel(tab.id); if (tab.id === "chat") setUnreadChat(0); }}>
+            onClick={() => { setPanel(tab.id); if (tab.id === "classroom_chat") setUnreadChat(0); }}>
             <span style={{ fontSize:20, position:"relative" }}>
               {tab.icon}
               {tab.badge > 0 && <span style={s.badge}>{tab.badge}</span>}
@@ -608,8 +645,8 @@ const s = {
   sizeBtn:        { width:26, height:26, border:"1px solid #3d3d5c", borderRadius:6, background:"#1a1a2e", color:"#fff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", padding:0 },
   colorDot:       { width:22, height:22, borderRadius:"50%", cursor:"pointer", flexShrink:0 },
   main:           { flex:1, overflow:"hidden", position:"relative" },
-  boardContainer: { width:"100%", height:"100%", position:"relative", background:"#fff" },
-  canvas:         { width:"100%", height:"100%", touchAction:"none", display:"block" },
+  boardContainer: { width:"100%", height:"100%", minHeight:450, position:"relative", background:"#fff", overflow:"hidden" },
+  canvas:         { width:"100%", height:"100%", minHeight:450, touchAction:"none", display:"block", cursor:"crosshair", userSelect:"none" },
   viewOnlyBadge:  { position:"absolute", top:8, left:"50%", transform:"translateX(-50%)", background:"rgba(0,0,0,0.6)", color:"#fff", fontSize:11, padding:"4px 12px", borderRadius:20, zIndex:10, whiteSpace:"nowrap" },
   questionBanner: { position:"absolute", top:8, left:8, right:8, background:"#6c63ff", color:"#fff", borderRadius:12, padding:"12px 14px", zIndex:20, boxShadow:"0 4px 20px rgba(0,0,0,0.3)" },
   chatPanel:      { height:"100%", display:"flex", flexDirection:"column", background:"#f4f6fb" },
