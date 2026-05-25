@@ -563,6 +563,16 @@ export default function Dashboard() {
               </GlowBtn>
             </div>
 
+            {/* Spin Wheel CTA */}
+            <div style={{ background:"linear-gradient(135deg,#7C5CFF,#00D4FF)", borderRadius:14, padding:"14px 16px", marginBottom:14, display:"flex", alignItems:"center", gap:12, cursor:"pointer" }} onClick={()=>nav("/spin")}>
+              <div style={{ width:46, height:46, background:"rgba(255,255,255,0.15)", borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center", fontSize:26, flexShrink:0 }}>🎰</div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontWeight:900, fontSize:15, color:"#fff" }}>Scholar Spin</div>
+                <div style={{ fontSize:12, color:"rgba(255,255,255,0.8)", marginTop:2 }}>Free daily spin — win coins, gems & boosts!</div>
+              </div>
+              <div style={{ background:"rgba(255,255,255,0.2)", borderRadius:8, padding:"6px 14px", fontWeight:800, fontSize:12, color:"#fff" }}>Spin →</div>
+            </div>
+
             {/* Start Exam cards */}
             <div style={{ fontSize:11, fontWeight:800, color:C.textMuted, letterSpacing:1.5, textTransform:"uppercase", marginBottom:10 }}>Start Exam</div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:14 }}>

@@ -39,6 +39,7 @@ const BeatYourself       = lazy(() => import("./pages/BeatYourself"));
 // ── NEW FEATURES ──────────────────────────────────────────
 const VideoLibrary     = lazy(() => import("./pages/VideoLibrary"));
 const Missions         = lazy(() => import("./pages/Missions"));
+const SpinWheel        = lazy(() => import("./pages/SpinWheel"));
 const ThemeSettings    = lazy(() => import("./pages/ThemeSettings"));
 const ClassroomLobby   = lazy(() => import("./pages/classroom/ClassroomLobby"));
 const ClassroomSession = lazy(() => import("./pages/classroom/ClassroomSession"));
@@ -59,23 +60,6 @@ function PageLoader() {
       </div>
     </div>
   );
-}
-
-// ── ROUTE GUARDS ──────────────────────────────────────────
-function Private({ children }) {
-  const { student } = useAuth();
-  return student ? children : <Navigate to="/login" replace />;
-}
-
-function Public({ children }) {
-  const { student } = useAuth();
-  return !student ? children : <Navigate to="/dashboard" replace />;
-}
-
-function AdminGuard({ children }) {
-  return localStorage.getItem("admin_token")
-    ? children
-    : <Navigate to="/admin/login" replace />;
 }
 
 export default function App() {
@@ -119,6 +103,7 @@ export default function App() {
             {/* New Features */}
             <Route path="/videos"          element={<Private><VideoLibrary /></Private>} />
             <Route path="/missions"        element={<Private><Missions /></Private>} />
+            <Route path="/spin"            element={<Private><SpinWheel /></Private>} />
             <Route path="/theme"           element={<Private><ThemeSettings /></Private>} />
             <Route path="/classroom"       element={<Private><ClassroomLobby /></Private>} />
             <Route path="/classroom/session" element={<Private><ClassroomSession /></Private>} />
