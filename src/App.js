@@ -1,12 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "./context/ThemeContext";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import { lazy, Suspense } from "react";
-
-// ── ROUTE GUARDS ──────────────────────────────────────────
-import Public from "./components/Public";
-import Private from "./components/Private";
-import AdminGuard from "./components/AdminGuard";
 
 // ── CORE ──────────────────────────────────────────────────
 const Landing          = lazy(() => import("./pages/Landing"));
@@ -67,66 +62,83 @@ function PageLoader() {
   );
 }
 
+// ── ROUTE GUARDS ──────────────────────────────────────────
+function Private({ children }) {
+  const { student } = useAuth();
+  return student ? children : <Navigate to="/login" replace />;
+}
+
+function Public({ children }) {
+  const { student } = useAuth();
+  return student ? <Navigate to="/dashboard" replace /> : children;
+}
+
+function AdminGuard({ children }) {
+  const token = localStorage.getItem("admin_token");
+  return token ? children : <Navigate to="/admin/login" replace />;
+}
+
 export default function App() {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <BrowserRouter>
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-              {/* Public */}
-              <Route path="/"                element={<Landing />} />
-              <Route path="/login"           element={<Public><Login /></Public>} />
-              <Route path="/register"        element={<Public><Register /></Public>} />
-              <Route path="/forgot-password" element={<Public><ForgotPassword /></Public>} />
+    <AuthProvider>
+      <BrowserRouter>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            {/* Public */}
+            <Route path="/"                element={<Landing />} />
+            <Route path="/login"           element={<Public><Login /></Public>} />
+            <Route path="/register"        element={<Public><Register /></Public>} />
+            <Route path="/forgot-password" element={<Public><ForgotPassword /></Public>} />
 
-              {/* Student */}
-              <Route path="/dashboard"    element={<Private><Dashboard /></Private>} />
-              <Route path="/profile"      element={<Private><Profile /></Private>} />
-              <Route path="/exam-select"  element={<Private><ExamSelect /></Private>} />
-              <Route path="/exam"         element={<Private><Exam /></Private>} />
-              <Route path="/results"      element={<Private><Results /></Private>} />
-              <Route path="/history"      element={<Private><History /></Private>} />
-              <Route path="/leaderboard"  element={<Private><Leaderboard /></Private>} />
-              <Route path="/performance"  element={<Private><Performance /></Private>} />
-              <Route path="/error-review" element={<Private><ErrorReview /></Private>} />
-              <Route path="/upgrade"      element={<Private><Upgrade /></Private>} />
+            {/* Student */}
+            <Route path="/dashboard"    element={<Private><Dashboard /></Private>} />
+            <Route path="/profile"      element={<Private><Profile /></Private>} />
+            <Route path="/exam-select"  element={<Private><ExamSelect /></Private>} />
+            <Route path="/exam"         element={<Private><Exam /></Private>} />
+            <Route path="/results"      element={<Private><Results /></Private>} />
+            <Route path="/history"      element={<Private><History /></Private>} />
+            <Route path="/leaderboard"  element={<Private><Leaderboard /></Private>} />
+            <Route path="/performance"  element={<Private><Performance /></Private>} />
+            <Route path="/error-review" element={<Private><ErrorReview /></Private>} />
+            <Route path="/upgrade"      element={<Private><Upgrade /></Private>} />
 
-              {/* Arena */}
-              <Route path="/arena"         element={<Private><Arena /></Private>} />
-              <Route path="/arena/waiting" element={<Private><WaitingRoom /></Private>} />
-              <Route path="/arena/match"   element={<Private><Match /></Private>} />
-              <Route path="/arena/results" element={<Private><ArenaResults /></Private>} />
+            {/* Arena */}
+            <Route path="/arena"         element={<Private><Arena /></Private>} />
+            <Route path="/arena/waiting" element={<Private><WaitingRoom /></Private>} />
+            <Route path="/arena/match"   element={<Private><Match /></Private>} />
+            <Route path="/arena/results" element={<Private><ArenaResults /></Private>} />
 
-              {/* Phase 1 Innovations */}
-              <Route path="/challenge"  element={<Private><DailyChallenge /></Private>} />
-              <Route path="/predicted"  element={<Private><PredictedScore /></Private>} />
-              <Route path="/badges"     element={<Private><Badges /></Private>} />
-              <Route path="/resume"     element={<Private><ResumeExam /></Private>} />
-              <Route path="/admission"  element={<Private><AdmissionChecker /></Private>} />
+            {/* Phase 1 Innovations */}
+            <Route path="/challenge"  element={<Private><DailyChallenge /></Private>} />
+            <Route path="/predicted"  element={<Private><PredictedScore /></Private>} />
+            <Route path="/badges"     element={<Private><Badges /></Private>} />
+            <Route path="/resume"     element={<Private><ResumeExam /></Private>} />
+            <Route path="/admission"  element={<Private><AdmissionChecker /></Private>} />
 
-              {/* New Features */}
-              <Route path="/videos"          element={<Private><VideoLibrary /></Private>} />
-              <Route path="/missions"        element={<Private><Missions /></Private>} />
-              <Route path="/spin"            element={<Private><SpinWheel /></Private>} />
-              <Route path="/theme"           element={<Private><ThemeSettings /></Private>} />
-              <Route path="/classroom"       element={<Private><ClassroomLobby /></Private>} />
-              <Route path="/classroom/session" element={<Private><ClassroomSession /></Private>} />
+            {/* New Features */}
+            <Route path="/videos"          element={<Private><VideoLibrary /></Private>} />
+            <Route path="/missions"        element={<Private><Missions /></Private>} />
+            <Route path="/spin"            element={<Private><SpinWheel /></Private>} />
+            <Route path="/theme"           element={<Private><ThemeSettings /></Private>} />
+            <Route path="/classroom"       element={<Private><ClassroomLobby /></Private>} />
+            <Route path="/classroom/session" element={<Private><ClassroomSession /></Private>} />
 
-              {/* Phase 2 Innovations */}
-              <Route path="/personality"   element={<Private><PersonalityProfile /></Private>} />
-              <Route path="/beat-yourself" element={<Private><BeatYourself /></Private>} />
+            {/* Phase 2 Innovations */}
+            <Route path="/personality"   element={<Private><PersonalityProfile /></Private>} />
+            <Route path="/beat-yourself" element={<Private><BeatYourself /></Private>} />
 
-              {/* Admin */}
-              <Route path="/admin/login" element={<AdminLogin />} />
-              <Route path="/admin"       element={<AdminGuard><AdminDashboard /></AdminGuard>} />
+            {/* Admin */}
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin"       element={<AdminGuard><AdminDashboard /></AdminGuard>} />
 
-              {/* 404 */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </Suspense>
-        </BrowserRouter>
-      </AuthProvider>
+            {/* 404 */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
+      </BrowserRouter>
+    </AuthProvider>
     </ThemeProvider>
   );
 }
+

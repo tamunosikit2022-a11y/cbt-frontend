@@ -64,7 +64,7 @@ export function AuthProvider({ children }) {
   }, [logout]);
 
   // Don't render until we know auth state
-  if (loading) return null;
+  if (loading) return <div style={{ minHeight: "100vh", background: "#0B1020" }} />;
 
   return (
     <AuthContext.Provider value={{ student, login, register, logout, refreshStudent }}>
