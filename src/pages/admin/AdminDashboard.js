@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
-const API_URL = process.env.REACT_APP_API_URL || "https://cbt-backend-3rwr.onrender.com/api";
+const API_URL = process.env.REACT_APP_API_URL || "https://cbt-backend-dujo.onrender.com/api";
 
 function adminFetch(path) {
   return fetch(`${API_URL}/admin${path}`, {
@@ -162,9 +162,6 @@ const TABS = [
   { id: "keys",          icon: "🔑", label: "Keys" },
   { id: "notifications", icon: "📣", label: "Broadcast" },
   { id: "revenue",       icon: "💰", label: "Revenue" },
-  { id: "questions",     icon: "❓", label: "Questions" },
-  { id: "spin",          icon: "🎰", label: "Spin Wheel" },
-  { id: "gems",          icon: "💎", label: "Gems" },
 ];
 
 export default function AdminDashboard() {
@@ -193,17 +190,6 @@ export default function AdminDashboard() {
   const [broadcast,    setBroadcast]    = useState({ title: "", body: "", type: "info" });
   const [revenue,      setRevenue]      = useState(null);
   const [sideCollapsed,setSideCollapsed]= useState(false);
-  const [questions,    setQuestions]    = useState([]);
-  const [qTotal,       setQTotal]       = useState(0);
-  const [qPage,        setQPage]        = useState(1);
-  const [qSearch,      setQSearch]      = useState("");
-  const [qSubject,     setQSubject]     = useState("");
-  const [qExamType,    setQExamType]    = useState("JAMB");
-  const [newQ,         setNewQ]         = useState({ exam_type:"JAMB", subject:"Mathematics", topic:"", question:"", option_a:"", option_b:"", option_c:"", option_d:"", correct_answer:"A", explanation:"", difficulty:"medium", year:"" });
-  const [showNewQ,     setShowNewQ]     = useState(false);
-  const [spinHistory,  setSpinHistory]  = useState([]);
-  const [spinStats,    setSpinStats]    = useState(null);
-  const [gemsAction,   setGemsAction]   = useState({ studentId:"", amount:"", action:"add" });
   const liveRef = useRef(null);
 
   const token = localStorage.getItem("admin_token");
@@ -249,13 +235,6 @@ export default function AdminDashboard() {
         setStudents(d.students || []);
         setStudentTotal(d.total || 0);
       }).catch(() => {});
-    }
-    if (tab === "questions") {
-      const q = new URLSearchParams({ page: qPage, subject: qSubject, exam_type: qExamType, search: qSearch });
-      adminFetch(`/questions?${q}`).then(r => { setQuestions(r.questions||[]); setQTotal(r.total||0); }).catch(()=>{});
-    }
-    if (tab === "spin") {
-      adminFetch("/spin-history").then(r => { setSpinHistory(r.history||[]); setSpinStats(r.stats||null); }).catch(()=>{});
     }
     if (tab === "keys") {
       adminFetch("/keys?page=1").then(d => {
@@ -1168,6 +1147,205 @@ export default function AdminDashboard() {
             </div>
           </>
         )}
+
+        {/* ── QUESTIONS MANAGER ──────────────────────────── */}
+        {tab === "questions" && (
+          <div>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+              <h2 style={{ fontSize:20, fontWeight:800, color:"#2d3436" }}>❓ Question Bank ({qTotal.toLocaleString()} total)</h2>
+              <button style={{ padding:"8px 16px", background:"#6c63ff", color:"#fff", border:"none", borderRadius:8, fontWeight:700, cursor:"pointer" }} onClick={() => setShowNewQ(!showNewQ)}>
+                {showNewQ ? "Cancel" : "+ Add Question"}
+              </button>
+            </div>
+
+            {showNewQ && (
+              <div style={{ background:"#f8f9fa", borderRadius:12, padding:16, marginBottom:16, border:"1px solid #e0e0e0" }}>
+                <h3 style={{ marginBottom:12, fontSize:14, fontWeight:700 }}>New Question</h3>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, marginBottom:8 }}>
+                  <select style={st.sel} value={newQ.exam_type} onChange={e=>setNewQ(p=>({...p,exam_type:e.target.value}))}>
+                    <option value="JAMB">JAMB</option><option value="POST-UTME">Post-UTME</option><option value="WAEC">WAEC</option>
+                  </select>
+                  <select style={st.sel} value={newQ.subject} onChange={e=>setNewQ(p=>({...p,subject:e.target.value}))}>
+                    {["Mathematics","English Language","Physics","Chemistry","Biology","Economics","Government","Literature","Geography"].map(s=><option key={s}>{s}</option>)}
+                  </select>
+                  <select style={st.sel} value={newQ.difficulty} onChange={e=>setNewQ(p=>({...p,difficulty:e.target.value}))}>
+                    <option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option>
+                  </select>
+                </div>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:8 }}>
+                  <input style={st.sel} placeholder="Topic" value={newQ.topic} onChange={e=>setNewQ(p=>({...p,topic:e.target.value}))} />
+                  <input style={st.sel} placeholder="Year (e.g. 2023)" value={newQ.year} onChange={e=>setNewQ(p=>({...p,year:e.target.value}))} />
+                </div>
+                <textarea style={{ ...st.sel, width:"100%", boxSizing:"border-box", height:80, resize:"vertical", fontFamily:"inherit" }} placeholder="Question text..." value={newQ.question} onChange={e=>setNewQ(p=>({...p,question:e.target.value}))} />
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginTop:8 }}>
+                  {["a","b","c","d"].map(opt=>(
+                    <input key={opt} style={st.sel} placeholder={`Option ${opt.toUpperCase()}`} value={newQ[`option_${opt}`]} onChange={e=>setNewQ(p=>({...p,[`option_${opt}`]:e.target.value}))} />
+                  ))}
+                </div>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginTop:8 }}>
+                  <select style={st.sel} value={newQ.correct_answer} onChange={e=>setNewQ(p=>({...p,correct_answer:e.target.value}))}>
+                    {["A","B","C","D"].map(o=><option key={o} value={o}>Correct: {o}</option>)}
+                  </select>
+                  <input style={st.sel} placeholder="Explanation (optional)" value={newQ.explanation} onChange={e=>setNewQ(p=>({...p,explanation:e.target.value}))} />
+                </div>
+                <button style={{ width:"100%", padding:12, background:"#00b894", color:"#fff", border:"none", borderRadius:8, fontWeight:700, cursor:"pointer", marginTop:12 }} onClick={async()=>{
+                  try {
+                    await adminPost("/questions", newQ);
+                    showMsg("Question added ✅");
+                    setShowNewQ(false);
+                    setNewQ({ exam_type:"JAMB", subject:"Mathematics", topic:"", question:"", option_a:"", option_b:"", option_c:"", option_d:"", correct_answer:"A", explanation:"", difficulty:"medium", year:"" });
+                    adminFetch(`/questions?page=1&exam_type=${qExamType}`).then(r=>{ setQuestions(r.questions||[]); setQTotal(r.total||0); });
+                  } catch { showMsg("Failed to add question","error"); }
+                }}>Save Question</button>
+              </div>
+            )}
+
+            <div style={{ display:"flex", gap:8, marginBottom:12, flexWrap:"wrap" }}>
+              <select style={st.sel} value={qExamType} onChange={e=>{ setQExamType(e.target.value); setQPage(1); }}>
+                <option value="JAMB">JAMB</option><option value="POST-UTME">Post-UTME</option><option value="WAEC">WAEC</option>
+              </select>
+              <select style={st.sel} value={qSubject} onChange={e=>{ setQSubject(e.target.value); setQPage(1); }}>
+                <option value="">All Subjects</option>
+                {["Mathematics","English Language","Physics","Chemistry","Biology","Economics","Government"].map(s=><option key={s}>{s}</option>)}
+              </select>
+              <input style={{ ...st.searchInput, flex:1 }} placeholder="Search questions..." value={qSearch} onChange={e=>setQSearch(e.target.value)} />
+              <button style={{ padding:"9px 16px", background:"#6c63ff", color:"#fff", border:"none", borderRadius:8, fontWeight:700, cursor:"pointer" }}
+                onClick={()=>adminFetch(`/questions?page=1&exam_type=${qExamType}&subject=${qSubject}&search=${qSearch}`).then(r=>{ setQuestions(r.questions||[]); setQTotal(r.total||0); setQPage(1); })}>
+                Search
+              </button>
+            </div>
+
+            <div style={{ background:"#fff", borderRadius:12, border:"1px solid #e0e0e0", overflow:"hidden" }}>
+              <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
+                <thead>
+                  <tr style={{ background:"#f8f9fa" }}>
+                    {["Subject","Topic","Question","Answer","Difficulty","Year","Actions"].map(h=><th key={h} style={st.th}>{h}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {questions.map((q,i)=>(
+                    <tr key={q.id} style={{ background:i%2===0?"#fff":"#f8f9fa", borderTop:"1px solid #e0e0e0" }}>
+                      <td style={st.td}><span style={{ background:"#e8f4fd", color:"#0984e3", borderRadius:6, padding:"2px 8px", fontSize:11 }}>{q.subject}</span></td>
+                      <td style={st.td}>{q.topic||"—"}</td>
+                      <td style={{ ...st.td, maxWidth:250 }}><div style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }} title={q.question}>{q.question}</div></td>
+                      <td style={st.td}><span style={{ fontWeight:700, color:"#00b894" }}>{q.correct_answer}</span></td>
+                      <td style={st.td}><span style={{ background:q.difficulty==="easy"?"#e8f8f5":q.difficulty==="hard"?"#ffeae9":"#fff3e0", color:q.difficulty==="easy"?"#00b894":q.difficulty==="hard"?"#e17055":"#f39c12", borderRadius:6, padding:"2px 8px", fontSize:11 }}>{q.difficulty}</span></td>
+                      <td style={st.td}>{q.year||"—"}</td>
+                      <td style={st.td}>
+                        <button style={{ padding:"3px 8px", background:"#e17055", color:"#fff", border:"none", borderRadius:6, cursor:"pointer", fontSize:11 }}
+                          onClick={async()=>{ if(window.confirm("Delete this question?")){ await adminDelete(`/questions/${q.id}`); setQuestions(prev=>prev.filter(x=>x.id!==q.id)); setQTotal(p=>p-1); } }}>🗑</button>
+                      </td>
+                    </tr>
+                  ))}
+                  {questions.length===0 && <tr><td colSpan={7} style={{ textAlign:"center", padding:24, color:"#636e72" }}>No questions found</td></tr>}
+                </tbody>
+              </table>
+            </div>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:12 }}>
+              <span style={{ fontSize:13, color:"#636e72" }}>Page {qPage} · {qTotal} total questions</span>
+              <div style={{ display:"flex", gap:8 }}>
+                <button style={st.pageBtn} disabled={qPage<=1} onClick={()=>setQPage(p=>p-1)}>← Prev</button>
+                <button style={st.pageBtn} disabled={questions.length<50} onClick={()=>setQPage(p=>p+1)}>Next →</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── SPIN WHEEL MANAGER ─────────────────────────── */}
+        {tab === "spin" && (
+          <div>
+            <h2 style={{ fontSize:20, fontWeight:800, color:"#2d3436", marginBottom:16 }}>🎰 Spin Wheel Stats</h2>
+            {spinStats && (
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", gap:12, marginBottom:20 }}>
+                {[
+                  { label:"Total Spins",   value:spinStats.total_spins||0,                  color:"#6c63ff" },
+                  { label:"Coins Awarded", value:(spinStats.total_coins||0).toLocaleString(), color:"#FFC857" },
+                  { label:"Gems Awarded",  value:spinStats.total_gems||0,                   color:"#00D4FF" },
+                  { label:"XP Awarded",    value:(spinStats.total_xp||0).toLocaleString(),   color:"#7C5CFF" },
+                ].map((s,i)=>(
+                  <div key={i} style={{ background:"#fff", borderRadius:12, padding:16, border:`2px solid ${s.color}22` }}>
+                    <div style={{ fontSize:22, fontWeight:900, color:s.color }}>{s.value}</div>
+                    <div style={{ fontSize:12, color:"#636e72", marginTop:4 }}>{s.label}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{ background:"#fff", borderRadius:12, border:"1px solid #e0e0e0", overflow:"hidden" }}>
+              <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
+                <thead>
+                  <tr style={{ background:"#f8f9fa" }}>
+                    {["Student","Reward Type","Amount","Spun At"].map(h=><th key={h} style={st.th}>{h}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {spinHistory.map((s,i)=>(
+                    <tr key={s.id} style={{ background:i%2===0?"#fff":"#f8f9fa", borderTop:"1px solid #e0e0e0" }}>
+                      <td style={st.td}>{s.full_name||s.student_id}</td>
+                      <td style={st.td}><span style={{ background:s.reward_type==="gems"?"#e0f9ff":s.reward_type==="xp"?"#ede9ff":"#fff9e6", color:s.reward_type==="gems"?"#00D4FF":s.reward_type==="xp"?"#7C5CFF":"#FFC857", borderRadius:6, padding:"2px 8px", fontSize:11, fontWeight:700 }}>{s.reward_type}</span></td>
+                      <td style={st.td}><strong>{s.reward_value}</strong></td>
+                      <td style={st.td}>{new Date(s.spun_at).toLocaleString("en-NG",{dateStyle:"short",timeStyle:"short"})}</td>
+                    </tr>
+                  ))}
+                  {spinHistory.length===0 && <tr><td colSpan={4} style={{ textAlign:"center", padding:24, color:"#636e72" }}>No spins yet</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* ── GEMS MANAGER ───────────────────────────────── */}
+        {tab === "gems" && (
+          <div>
+            <h2 style={{ fontSize:20, fontWeight:800, color:"#2d3436", marginBottom:8 }}>💎 Gems Manager</h2>
+            <p style={{ color:"#636e72", marginBottom:20, fontSize:14 }}>Manually award or remove gems, coins, or XP from any student account.</p>
+            <div style={{ background:"#fff", borderRadius:14, padding:20, border:"1px solid #e0e0e0", maxWidth:480 }}>
+              <label style={st.label}>Student ID or Email</label>
+              <input style={{ ...st.sel, width:"100%", boxSizing:"border-box" }} placeholder="Enter student ID or email" value={gemsAction.studentId} onChange={e=>setGemsAction(p=>({...p,studentId:e.target.value}))} />
+              <label style={st.label}>Action</label>
+              <select style={{ ...st.sel, width:"100%", boxSizing:"border-box" }} value={gemsAction.action} onChange={e=>setGemsAction(p=>({...p,action:e.target.value}))}>
+                <option value="add">Add Gems</option>
+                <option value="remove">Remove Gems</option>
+                <option value="set">Set Gems (exact)</option>
+                <option value="add_coins">Add Coins</option>
+                <option value="add_xp">Add XP</option>
+              </select>
+              <label style={st.label}>Amount</label>
+              <input style={{ ...st.sel, width:"100%", boxSizing:"border-box" }} type="number" placeholder="e.g. 50" value={gemsAction.amount} onChange={e=>setGemsAction(p=>({...p,amount:e.target.value}))} />
+              <button style={{ width:"100%", padding:14, background:"linear-gradient(135deg,#00D4FF,#7C5CFF)", color:"#fff", border:"none", borderRadius:8, fontWeight:800, cursor:"pointer", marginTop:16, fontSize:15 }}
+                onClick={async()=>{
+                  if (!gemsAction.studentId || !gemsAction.amount) { showMsg("Fill all fields","error"); return; }
+                  try { await adminPost("/manage-currency", gemsAction); showMsg(`✅ Done! ${gemsAction.action} ${gemsAction.amount}`); setGemsAction({ studentId:"", amount:"", action:"add" }); }
+                  catch { showMsg("Failed. Check student ID.","error"); }
+                }}>Apply Change</button>
+            </div>
+
+            <div style={{ marginTop:24 }}>
+              <h3 style={{ fontSize:15, fontWeight:700, marginBottom:12 }}>Find Student Balance</h3>
+              <div style={{ display:"flex", gap:8 }}>
+                <input style={{ ...st.searchInput, flex:1 }} placeholder="Search by name or email..." value={search} onChange={e=>setSearch(e.target.value)} />
+                <button style={{ padding:"9px 16px", background:"#6c63ff", color:"#fff", border:"none", borderRadius:8, fontWeight:700, cursor:"pointer" }}
+                  onClick={()=>adminFetch(`/students?search=${search}&page=1`).then(r=>setStudents(r.students||[]))}>Search</button>
+              </div>
+              {students.slice(0,5).map(s=>(
+                <div key={s.id} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px", background:"#fff", borderRadius:10, border:"1px solid #e0e0e0", marginTop:8 }}>
+                  <div style={{ width:36, height:36, background:"linear-gradient(135deg,#6c63ff,#3f51b5)", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontWeight:800, fontSize:14, flexShrink:0 }}>{s.full_name?.[0]||"?"}</div>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontWeight:700, fontSize:13 }}>{s.full_name}</div>
+                    <div style={{ fontSize:12, color:"#636e72" }}>{s.email}</div>
+                  </div>
+                  <div style={{ display:"flex", gap:8, fontSize:12 }}>
+                    <span style={{ background:"#fff9e6", color:"#FFC857", borderRadius:8, padding:"3px 8px", fontWeight:700 }}>🪙 {s.coins||0}</span>
+                    <span style={{ background:"#e0f9ff", color:"#00D4FF", borderRadius:8, padding:"3px 8px", fontWeight:700 }}>💎 {s.gems||0}</span>
+                    <span style={{ background:"#ede9ff", color:"#7C5CFF", borderRadius:8, padding:"3px 8px", fontWeight:700 }}>⚡ {s.points||0}</span>
+                  </div>
+                  <button style={{ padding:"4px 10px", background:"#6c63ff", color:"#fff", border:"none", borderRadius:6, cursor:"pointer", fontSize:11, fontWeight:700 }}
+                    onClick={()=>setGemsAction(p=>({...p,studentId:s.id.toString()}))}>Select</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
@@ -1235,223 +1413,3 @@ const st = {
   alertLink:    { background: "none", border: "none", color: "#e17055", fontWeight: 700, cursor: "pointer", fontSize: 12, padding: 0, marginTop: 4 },
   examTypeCard: { background: "#f8f9fa", borderRadius: 10, padding: "16px 20px", textAlign: "center", flex: 1, minWidth: 140 },
 };
-        {/* ── QUESTIONS MANAGER ──────────────────────────── */}
-        {tab === "questions" && (
-          <div>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
-              <h2 style={st.sectionTitle}>❓ Question Bank ({qTotal.toLocaleString()} total)</h2>
-              <button style={{ ...st.btn, background:"#6c63ff" }} onClick={() => setShowNewQ(!showNewQ)}>
-                {showNewQ ? "Cancel" : "+ Add Question"}
-              </button>
-            </div>
-
-            {/* Add Question Form */}
-            {showNewQ && (
-              <div style={{ background:"#f8f9fa", borderRadius:12, padding:16, marginBottom:16, border:"1px solid #e0e0e0" }}>
-                <h3 style={{ marginBottom:12, fontSize:14, fontWeight:700 }}>New Question</h3>
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, marginBottom:8 }}>
-                  <select style={st.input} value={newQ.exam_type} onChange={e=>setNewQ(p=>({...p,exam_type:e.target.value}))}>
-                    <option value="JAMB">JAMB</option>
-                    <option value="POST-UTME">Post-UTME</option>
-                    <option value="WAEC">WAEC</option>
-                  </select>
-                  <select style={st.input} value={newQ.subject} onChange={e=>setNewQ(p=>({...p,subject:e.target.value}))}>
-                    {["Mathematics","English Language","Physics","Chemistry","Biology","Economics","Government","Literature","Geography"].map(s=><option key={s}>{s}</option>)}
-                  </select>
-                  <select style={st.input} value={newQ.difficulty} onChange={e=>setNewQ(p=>({...p,difficulty:e.target.value}))}>
-                    <option value="easy">Easy</option>
-                    <option value="medium">Medium</option>
-                    <option value="hard">Hard</option>
-                  </select>
-                </div>
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:8 }}>
-                  <input style={st.input} placeholder="Topic" value={newQ.topic} onChange={e=>setNewQ(p=>({...p,topic:e.target.value}))} />
-                  <input style={st.input} placeholder="Year (e.g. 2023)" value={newQ.year} onChange={e=>setNewQ(p=>({...p,year:e.target.value}))} />
-                </div>
-                <textarea style={{ ...st.input, height:80, resize:"vertical" }} placeholder="Question text..." value={newQ.question} onChange={e=>setNewQ(p=>({...p,question:e.target.value}))} />
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginTop:8 }}>
-                  {["a","b","c","d"].map(opt => (
-                    <input key={opt} style={st.input} placeholder={`Option ${opt.toUpperCase()}`} value={newQ[`option_${opt}`]} onChange={e=>setNewQ(p=>({...p,[`option_${opt}`]:e.target.value}))} />
-                  ))}
-                </div>
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginTop:8 }}>
-                  <select style={st.input} value={newQ.correct_answer} onChange={e=>setNewQ(p=>({...p,correct_answer:e.target.value}))}>
-                    <option value="A">Correct: A</option>
-                    <option value="B">Correct: B</option>
-                    <option value="C">Correct: C</option>
-                    <option value="D">Correct: D</option>
-                  </select>
-                  <textarea style={{ ...st.input, resize:"none" }} placeholder="Explanation (optional)" value={newQ.explanation} onChange={e=>setNewQ(p=>({...p,explanation:e.target.value}))} />
-                </div>
-                <button style={{ ...st.btn, background:"#00b894", marginTop:12, width:"100%" }} onClick={async () => {
-                  try {
-                    await adminPost("/questions", newQ);
-                    showMsg("success","Question added ✅");
-                    setShowNewQ(false);
-                    setNewQ({ exam_type:"JAMB", subject:"Mathematics", topic:"", question:"", option_a:"", option_b:"", option_c:"", option_d:"", correct_answer:"A", explanation:"", difficulty:"medium", year:"" });
-                    adminFetch(`/questions?page=1&exam_type=${qExamType}`).then(r=>{ setQuestions(r.questions||[]); setQTotal(r.total||0); });
-                  } catch { showMsg("error","Failed to add question"); }
-                }}>Save Question</button>
-              </div>
-            )}
-
-            {/* Filters */}
-            <div style={{ display:"flex", gap:8, marginBottom:12, flexWrap:"wrap" }}>
-              <select style={{ ...st.input, flex:"0 0 auto" }} value={qExamType} onChange={e=>{ setQExamType(e.target.value); setQPage(1); }}>
-                <option value="JAMB">JAMB</option><option value="POST-UTME">Post-UTME</option><option value="WAEC">WAEC</option>
-              </select>
-              <select style={{ ...st.input, flex:"0 0 auto" }} value={qSubject} onChange={e=>{ setQSubject(e.target.value); setQPage(1); }}>
-                <option value="">All Subjects</option>
-                {["Mathematics","English Language","Physics","Chemistry","Biology","Economics","Government"].map(s=><option key={s}>{s}</option>)}
-              </select>
-              <input style={{ ...st.input, flex:1 }} placeholder="Search questions..." value={qSearch} onChange={e=>setQSearch(e.target.value)} />
-              <button style={st.btn} onClick={()=>adminFetch(`/questions?page=1&exam_type=${qExamType}&subject=${qSubject}&search=${qSearch}`).then(r=>{ setQuestions(r.questions||[]); setQTotal(r.total||0); setQPage(1); })}>Search</button>
-            </div>
-
-            {/* Questions table */}
-            <div style={{ background:"#fff", borderRadius:12, border:"1px solid #e0e0e0", overflow:"hidden" }}>
-              <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
-                <thead>
-                  <tr style={{ background:"#f8f9fa" }}>
-                    <th style={st.th}>Subject</th>
-                    <th style={st.th}>Topic</th>
-                    <th style={st.th}>Question</th>
-                    <th style={st.th}>Answer</th>
-                    <th style={st.th}>Difficulty</th>
-                    <th style={st.th}>Year</th>
-                    <th style={st.th}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {questions.map((q,i) => (
-                    <tr key={q.id} style={{ background: i%2===0?"#fff":"#f8f9fa", borderTop:"1px solid #e0e0e0" }}>
-                      <td style={st.td}><span style={{ background:"#e8f4fd", color:"#0984e3", borderRadius:6, padding:"2px 8px", fontSize:11 }}>{q.subject}</span></td>
-                      <td style={st.td}>{q.topic||"—"}</td>
-                      <td style={{ ...st.td, maxWidth:250 }}><div style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }} title={q.question}>{q.question}</div></td>
-                      <td style={st.td}><span style={{ fontWeight:700, color:"#00b894" }}>{q.correct_answer}</span></td>
-                      <td style={st.td}><span style={{ background: q.difficulty==="easy"?"#e8f8f5":q.difficulty==="hard"?"#ffeae9":"#fff3e0", color: q.difficulty==="easy"?"#00b894":q.difficulty==="hard"?"#e17055":"#f39c12", borderRadius:6, padding:"2px 8px", fontSize:11 }}>{q.difficulty}</span></td>
-                      <td style={st.td}>{q.year||"—"}</td>
-                      <td style={st.td}>
-                        <button style={{ ...st.miniBtn, background:"#e17055" }} onClick={async()=>{ if(window.confirm("Delete this question?")){ await adminDelete(`/questions/${q.id}`); setQuestions(prev=>prev.filter(x=>x.id!==q.id)); setQTotal(p=>p-1); } }}>🗑</button>
-                      </td>
-                    </tr>
-                  ))}
-                  {questions.length===0 && <tr><td colSpan={7} style={{ textAlign:"center", padding:24, color:"#636e72" }}>No questions found</td></tr>}
-                </tbody>
-              </table>
-            </div>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:12 }}>
-              <span style={{ fontSize:13, color:"#636e72" }}>Page {qPage} · {qTotal} total questions</span>
-              <div style={{ display:"flex", gap:8 }}>
-                <button style={st.btn} disabled={qPage<=1} onClick={()=>setQPage(p=>p-1)}>← Prev</button>
-                <button style={st.btn} disabled={questions.length<50} onClick={()=>setQPage(p=>p+1)}>Next →</button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── SPIN WHEEL MANAGER ──────────────────────────── */}
-        {tab === "spin" && (
-          <div>
-            <h2 style={st.sectionTitle}>🎰 Spin Wheel Stats</h2>
-            {spinStats && (
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", gap:12, marginBottom:20 }}>
-                {[
-                  { label:"Total Spins", value:spinStats.total_spins||0, color:"#6c63ff" },
-                  { label:"Coins Awarded", value:(spinStats.total_coins||0).toLocaleString(), color:"#FFC857" },
-                  { label:"Gems Awarded", value:spinStats.total_gems||0, color:"#00D4FF" },
-                  { label:"XP Awarded", value:(spinStats.total_xp||0).toLocaleString(), color:"#7C5CFF" },
-                ].map((s,i)=>(
-                  <div key={i} style={{ background:"#fff", borderRadius:12, padding:16, border:`2px solid ${s.color}22` }}>
-                    <div style={{ fontSize:22, fontWeight:900, color:s.color }}>{s.value}</div>
-                    <div style={{ fontSize:12, color:"#636e72", marginTop:4 }}>{s.label}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div style={{ background:"#fff", borderRadius:12, border:"1px solid #e0e0e0", overflow:"hidden" }}>
-              <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
-                <thead>
-                  <tr style={{ background:"#f8f9fa" }}>
-                    <th style={st.th}>Student</th>
-                    <th style={st.th}>Reward Type</th>
-                    <th style={st.th}>Amount</th>
-                    <th style={st.th}>Spun At</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {spinHistory.map((s,i)=>(
-                    <tr key={s.id} style={{ background:i%2===0?"#fff":"#f8f9fa", borderTop:"1px solid #e0e0e0" }}>
-                      <td style={st.td}>{s.full_name||s.student_id}</td>
-                      <td style={st.td}><span style={{ background: s.reward_type==="gems"?"#e0f9ff":s.reward_type==="xp"?"#ede9ff":"#fff9e6", color: s.reward_type==="gems"?"#00D4FF":s.reward_type==="xp"?"#7C5CFF":"#FFC857", borderRadius:6, padding:"2px 8px", fontSize:11, fontWeight:700 }}>{s.reward_type}</span></td>
-                      <td style={st.td}><strong>{s.reward_value}</strong></td>
-                      <td style={st.td}>{new Date(s.spun_at).toLocaleString("en-NG",{dateStyle:"short",timeStyle:"short"})}</td>
-                    </tr>
-                  ))}
-                  {spinHistory.length===0 && <tr><td colSpan={4} style={{ textAlign:"center", padding:24, color:"#636e72" }}>No spins yet</td></tr>}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* ── GEMS MANAGER ─────────────────────────────────── */}
-        {tab === "gems" && (
-          <div>
-            <h2 style={st.sectionTitle}>💎 Gems Manager</h2>
-            <p style={{ color:"#636e72", marginBottom:20, fontSize:14 }}>Manually award or remove gems from any student account.</p>
-            <div style={{ background:"#fff", borderRadius:14, padding:20, border:"1px solid #e0e0e0", maxWidth:480 }}>
-              <div style={{ marginBottom:12 }}>
-                <label style={{ fontSize:13, fontWeight:600, color:"#2d3436", display:"block", marginBottom:6 }}>Student ID or Email</label>
-                <input style={st.input} placeholder="Enter student ID or email" value={gemsAction.studentId} onChange={e=>setGemsAction(p=>({...p,studentId:e.target.value}))} />
-              </div>
-              <div style={{ marginBottom:12 }}>
-                <label style={{ fontSize:13, fontWeight:600, color:"#2d3436", display:"block", marginBottom:6 }}>Action</label>
-                <select style={st.input} value={gemsAction.action} onChange={e=>setGemsAction(p=>({...p,action:e.target.value}))}>
-                  <option value="add">Add Gems</option>
-                  <option value="remove">Remove Gems</option>
-                  <option value="set">Set Gems (exact amount)</option>
-                  <option value="add_coins">Add Coins</option>
-                  <option value="add_xp">Add XP</option>
-                </select>
-              </div>
-              <div style={{ marginBottom:16 }}>
-                <label style={{ fontSize:13, fontWeight:600, color:"#2d3436", display:"block", marginBottom:6 }}>Amount</label>
-                <input style={st.input} type="number" placeholder="e.g. 50" value={gemsAction.amount} onChange={e=>setGemsAction(p=>({...p,amount:e.target.value}))} />
-              </div>
-              <button style={{ ...st.btn, background:"linear-gradient(135deg,#00D4FF,#7C5CFF)", width:"100%", padding:14 }} onClick={async()=>{
-                if (!gemsAction.studentId || !gemsAction.amount) { showMsg("error","Fill all fields"); return; }
-                try {
-                  await adminPost("/manage-currency", gemsAction);
-                  showMsg("success",`✅ Done! ${gemsAction.action} ${gemsAction.amount}`);
-                  setGemsAction({ studentId:"", amount:"", action:"add" });
-                } catch { showMsg("error","Failed. Check student ID."); }
-              }}>Apply Change</button>
-            </div>
-
-            {/* Quick search to find student */}
-            <div style={{ marginTop:24 }}>
-              <h3 style={{ fontSize:15, fontWeight:700, marginBottom:12 }}>Find Student Balance</h3>
-              <div style={{ display:"flex", gap:8 }}>
-                <input style={{ ...st.input, flex:1 }} placeholder="Search by name or email..." value={search} onChange={e=>setSearch(e.target.value)} />
-                <button style={st.btn} onClick={()=>adminFetch(`/students?search=${search}&page=1`).then(r=>setStudents(r.students||[]))}>Search</button>
-              </div>
-              {students.slice(0,5).map(s=>(
-                <div key={s.id} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px", background:"#fff", borderRadius:10, border:"1px solid #e0e0e0", marginTop:8 }}>
-                  <div style={{ width:36, height:36, background:"linear-gradient(135deg,#6c63ff,#3f51b5)", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontWeight:800, fontSize:14, flexShrink:0 }}>{s.full_name?.[0]||"?"}</div>
-                  <div style={{ flex:1 }}>
-                    <div style={{ fontWeight:700, fontSize:13 }}>{s.full_name}</div>
-                    <div style={{ fontSize:12, color:"#636e72" }}>{s.email}</div>
-                  </div>
-                  <div style={{ display:"flex", gap:8, fontSize:12 }}>
-                    <span style={{ background:"#fff9e6", color:"#FFC857", borderRadius:8, padding:"3px 8px", fontWeight:700 }}>🪙 {s.coins||0}</span>
-                    <span style={{ background:"#e0f9ff", color:"#00D4FF", borderRadius:8, padding:"3px 8px", fontWeight:700 }}>💎 {s.gems||0}</span>
-                    <span style={{ background:"#ede9ff", color:"#7C5CFF", borderRadius:8, padding:"3px 8px", fontWeight:700 }}>⚡ {s.points||0}</span>
-                  </div>
-                  <button style={{ ...st.miniBtn, background:"#6c63ff" }} onClick={()=>setGemsAction(p=>({...p,studentId:s.id.toString()}))}>Select</button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
