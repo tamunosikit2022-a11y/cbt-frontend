@@ -262,6 +262,17 @@ export default function AdminDashboard() {
   const [broadcast,    setBroadcast]    = useState({ title: "", body: "", type: "info" });
   const [revenue,      setRevenue]      = useState(null);
   const [sideCollapsed,setSideCollapsed]= useState(false);
+  const [questions,    setQuestions]    = useState([]);
+  const [qTotal,       setQTotal]       = useState(0);
+  const [qPage,        setQPage]        = useState(1);
+  const [qSearch,      setQSearch]      = useState("");
+  const [qSubject,     setQSubject]     = useState("");
+  const [qExamType,    setQExamType]    = useState("JAMB");
+  const [newQ,         setNewQ]         = useState({ exam_type:"JAMB", subject:"Mathematics", topic:"", question:"", option_a:"", option_b:"", option_c:"", option_d:"", correct_answer:"A", explanation:"", difficulty:"medium", year:"" });
+  const [showNewQ,     setShowNewQ]     = useState(false);
+  const [spinHistory,  setSpinHistory]  = useState([]);
+  const [spinStats,    setSpinStats]    = useState(null);
+  const [gemsAction,   setGemsAction]   = useState({ studentId:"", amount:"", action:"add", packageId:"gem_350", qty:"1", note:"", generatedVouchers:[] });
   const liveRef = useRef(null);
 
   const token = localStorage.getItem("admin_token");
@@ -331,6 +342,13 @@ export default function AdminDashboard() {
       // Fetch arena leaderboard via regular API
       fetch(`${API_URL}/arena/leaderboard`, { headers: { Authorization: `Bearer ${token}` } })
         .then(r => r.json()).then(setArenaStats).catch(() => {});
+    }
+    if (tab === "questions") {
+      const q = new URLSearchParams({ page: qPage, subject: qSubject, exam_type: qExamType, search: qSearch });
+      adminFetch(`/questions?${q}`).then(r => { setQuestions(r.questions||[]); setQTotal(r.total||0); }).catch(()=>{});
+    }
+    if (tab === "spin") {
+      adminFetch("/spin-history").then(r => { setSpinHistory(r.history||[]); setSpinStats(r.stats||null); }).catch(()=>{});
     }
   }, [tab, search, sort, filterP, filterB, studentPage]);
 
