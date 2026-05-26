@@ -162,6 +162,9 @@ const TABS = [
   { id: "keys",          icon: "🔑", label: "Keys" },
   { id: "notifications", icon: "📣", label: "Broadcast" },
   { id: "revenue",       icon: "💰", label: "Revenue" },
+  { id: "questions",     icon: "❓", label: "Questions" },
+  { id: "spin",          icon: "🎰", label: "Spin Wheel" },
+  { id: "gems",          icon: "💎", label: "Gems & Vouchers" },
 ];
 
 function VoucherStats({ API_URL, token }) {
