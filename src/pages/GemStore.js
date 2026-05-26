@@ -77,6 +77,8 @@ export default function GemStore() {
       showToast(err.response?.data?.error || "Invalid code", "error");
     } finally { setRedeemBusy(false); }
   };
+
+  const handleBuy = (pkg, e) => {
     spawnParticles(e.clientX, e.clientY);
     const message = encodeURIComponent(
       `Hi! I want to purchase the *${pkg.label}* gem pack.\n\n💎 ${pkg.gems.toLocaleString()} Gems — ₦${pkg.price.toLocaleString()}\n\nPlease confirm my order.`
