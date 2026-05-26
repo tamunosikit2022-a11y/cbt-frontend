@@ -64,16 +64,10 @@ export default function GemStore() {
 
   const handleBuy = async (pkg, e) => {
     spawnParticles(e.clientX, e.clientY);
-    setBuying(pkg.id);
-    try {
-      // In production: open Paystack/Flutterwave payment modal here
-      // For now: direct credit (demo mode)
-      const r = await API.post("/gems/purchase", { package_id: pkg.id });
-      setData(d => ({ ...d, gems: r.data.total_gems }));
-      showToast(`+${pkg.gems} Gems added! 💎`, "success");
-    } catch (err) {
-      showToast(err.response?.data?.error || "Purchase failed", "error");
-    } finally { setBuying(null); }
+    const message = encodeURIComponent(
+      `Hi! I want to purchase the *${pkg.label}* gem pack.\n\n💎 ${pkg.gems.toLocaleString()} Gems — ₦${pkg.price.toLocaleString()}\n\nPlease confirm my order.`
+    );
+    window.open(`https://wa.me/2349036995642?text=${message}`, "_blank");
   };
 
   if (loading) return (
@@ -187,35 +181,40 @@ export default function GemStore() {
               </div>
 
               <button className="cyber-btn" onClick={(e) => handleBuy(pkg, e)}
-                disabled={buying === pkg.id}
                 style={{ width:"100%", padding:"12px 0", borderRadius:12, fontWeight:800, fontSize:15,
                   background: pkg.popular
-                    ? "linear-gradient(135deg,#FFC857,#FF9500)"
-                    : "linear-gradient(135deg,#7C5CFF,#5B8CFF)",
-                  color: pkg.popular ? "#000" : "#fff",
-                  opacity: buying === pkg.id ? .6 : 1 }}>
-                {buying === pkg.id ? "…" : `₦${pkg.price.toLocaleString()}`}
+                    ? "linear-gradient(135deg,#25D366,#128C7E)"
+                    : "linear-gradient(135deg,#25D366,#128C7E)",
+                  color:"#fff" }}>
+                📱 Buy on WhatsApp — ₦{pkg.price.toLocaleString()}
               </button>
             </div>
           ))}
         </div>
 
         {/* How to earn gems */}
-        <div style={{ background:"rgba(124,92,255,.06)", border:"1px solid rgba(124,92,255,.2)", borderRadius:16,
-          padding:20, marginTop:28 }}>
-          <h3 style={{ color:"#7C5CFF", fontWeight:800, fontSize:14, marginBottom:12 }}>💡 Earn Gems Free</h3>
+        <div style={{ background:"rgba(37,211,102,.06)", border:"1px solid rgba(37,211,102,.3)", borderRadius:16, padding:20, marginTop:28 }}>
+          <h3 style={{ color:"#25D366", fontWeight:800, fontSize:14, marginBottom:12 }}>📱 How to Buy Gems</h3>
           {[
-            ["🏆", "Win tournaments", "+50 Gems"],
-            ["🎰", "Spin Wheel rare drops", "Up to +50 Gems"],
-            ["🏅", "Unlock achievements", "+10–100 Gems"],
-            ["📅", "Seasonal events", "Special rewards"],
-          ].map(([icon, label, val]) => (
-            <div key={label} style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+            ["1️⃣", "Tap any gem pack above"],
+            ["2️⃣", "WhatsApp opens with your order details"],
+            ["3️⃣", "Send the message to complete your order"],
+            ["4️⃣", "Gems are credited to your account after payment"],
+          ].map(([step, label]) => (
+            <div key={label} style={{ display:"flex", alignItems:"center", gap:12,
               padding:"8px 0", borderBottom:"1px solid rgba(255,255,255,.04)" }}>
-              <span style={{ color:"rgba(255,255,255,.7)", fontSize:13 }}>{icon} {label}</span>
-              <span style={{ color:"#00D4FF", fontWeight:700, fontSize:13 }}>{val}</span>
+              <span style={{ fontSize:16 }}>{step}</span>
+              <span style={{ color:"rgba(255,255,255,.7)", fontSize:13 }}>{label}</span>
             </div>
           ))}
+          <div style={{ marginTop:14, padding:"12px 16px", background:"rgba(37,211,102,.1)", borderRadius:10,
+            display:"flex", alignItems:"center", gap:12 }}>
+            <span style={{ fontSize:24 }}>📞</span>
+            <div>
+              <p style={{ color:"#25D366", fontWeight:800, fontSize:13, margin:0 }}>WhatsApp: 09036995642</p>
+              <p style={{ color:"rgba(255,255,255,.5)", fontSize:11, margin:0 }}>Message us to purchase gems</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
