@@ -369,6 +369,10 @@ export default function Dashboard() {
             { id:"videos",   label:"Videos",     emoji:"📺" },
             { id:"leaderboard",label:"Leaderboard",emoji:"🏆" },
             { id:"profile",  label:"Profile",    emoji:"👤" },
+            { id:"gems",     label:"Gem Store",  emoji:"💎", external:"/gems" },
+            { id:"spirits",  label:"Spirits",    emoji:"🐉", external:"/spirits" },
+            { id:"vault",    label:"Knowledge Vault", emoji:"📚", external:"/vault" },
+            { id:"factions", label:"Factions",   emoji:"🌍", external:"/factions" },
           ].map(item => (
             <div key={item.id}
               style={{
@@ -384,6 +388,7 @@ export default function Dashboard() {
               }}
               onClick={() => {
                 setSideOpen(false);
+                if (item.external)         { nav(item.external);    return; }
                 if (item.id==="arena")       { nav("/arena");       return; }
                 if (item.id==="videos")      { nav("/videos");      return; }
                 if (item.id==="leaderboard") { nav("/leaderboard"); return; }
@@ -607,6 +612,45 @@ export default function Dashboard() {
                 style={{ padding:"10px 16px", fontSize:12, borderRadius:10, flexShrink:0 }}>
                 Enter →
               </GlowBtn>
+            </div>
+
+            {/* ── METAVERSE FEATURES ─────────────────────────── */}
+            <div style={{ fontSize:11, fontWeight:800, color:C.textMuted, letterSpacing:1.5, textTransform:"uppercase", marginBottom:10, marginTop:4 }}>⚡ Scholar Metaverse</div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14 }}>
+              {[
+                { emoji:"💎", title:"Gem Store",       desc:"Buy gems & power up",     path:"/gems",     color:"#00D4FF" },
+                { emoji:"🐉", title:"Scholar Spirits", desc:"Pets, evolve & battle",   path:"/spirits",  color:"#7C5CFF" },
+                { emoji:"🧠", title:"Skills & Boosts", desc:"Tactical advantages",     path:"/skills",   color:"#00D084" },
+                { emoji:"📚", title:"Knowledge Vault", desc:"Premium study materials", path:"/vault",    color:"#FFC857" },
+              ].map((item,i)=>(
+                <GlassCard key={i} onClick={()=>nav(item.path)}
+                  style={{ padding:"16px 14px", borderRadius:16, border:`1px solid ${item.color}33`, background:`${item.color}08` }}>
+                  <div style={{ width:44, height:44, borderRadius:12, background:`${item.color}20`,
+                    display:"flex", alignItems:"center", justifyContent:"center", fontSize:24,
+                    marginBottom:8, boxShadow:`0 4px 12px ${item.color}30` }}>
+                    {item.emoji}
+                  </div>
+                  <div style={{ fontWeight:800, fontSize:13, color:C.text, marginBottom:3 }}>{item.title}</div>
+                  <div style={{ fontSize:11, color:C.textMuted }}>{item.desc}</div>
+                </GlassCard>
+              ))}
+            </div>
+
+            {/* School Factions - full width */}
+            <div onClick={()=>nav("/factions")} style={{
+              background:"linear-gradient(135deg,rgba(255,107,53,0.12),rgba(255,200,87,0.06))",
+              border:"1px solid rgba(255,107,53,0.35)", borderRadius:16,
+              padding:"16px 18px", marginBottom:14, display:"flex", alignItems:"center", gap:14, cursor:"pointer",
+            }}>
+              <div style={{ fontSize:40 }}>🌍</div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontWeight:900, fontSize:15, color:C.text, marginBottom:3 }}>School Factions</div>
+                <div style={{ fontSize:12, color:C.textMuted }}>School wars, clan rivalry & state rankings</div>
+              </div>
+              <div style={{ background:"rgba(255,107,53,0.2)", border:"1px solid rgba(255,107,53,0.4)",
+                borderRadius:8, padding:"6px 14px", color:"#FF6B35", fontWeight:800, fontSize:12 }}>
+                Enter →
+              </div>
             </div>
 
             {/* Recent Exams */}
