@@ -164,6 +164,78 @@ const TABS = [
   { id: "revenue",       icon: "💰", label: "Revenue" },
 ];
 
+function VoucherStats({ API_URL, token }) {
+  const [vouchers, setVouchers] = useState([]);
+  const [stats,    setStats]    = useState(null);
+  const [filter,   setFilter]   = useState("all");
+
+  useEffect(() => {
+    fetch(`${API_URL}/vouchers/list?status=${filter}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }).then(r => r.json()).then(d => {
+      setVouchers(d.vouchers || []);
+      setStats(d.stats || null);
+    }).catch(() => {});
+  }, [filter]);
+
+  return (
+    <div>
+      {stats && (
+        <div style={{ display:"flex", gap:10, marginBottom:14, flexWrap:"wrap" }}>
+          {[
+            { label:"Total",    value:stats.total    || 0, color:"#6c63ff" },
+            { label:"Available",value:stats.available|| 0, color:"#00b894" },
+            { label:"Redeemed", value:stats.redeemed || 0, color:"#636e72" },
+            { label:"Revenue",  value:`₦${(stats.revenue||0).toLocaleString()}`, color:"#fdcb6e" },
+          ].map((s,i) => (
+            <div key={i} style={{ background:"#f8f9fa", borderRadius:8, padding:"8px 12px", textAlign:"center", flex:1, minWidth:70 }}>
+              <div style={{ fontWeight:800, fontSize:16, color:s.color }}>{s.value}</div>
+              <div style={{ fontSize:10, color:"#636e72" }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={{ display:"flex", gap:6, marginBottom:10 }}>
+        {["all","unused","redeemed"].map(f => (
+          <button key={f} onClick={() => setFilter(f)}
+            style={{ padding:"4px 12px", border:"none", borderRadius:20, cursor:"pointer", fontSize:12, fontWeight:700,
+              background: filter===f ? "#6c63ff" : "#f0f0f0", color: filter===f ? "#fff" : "#636e72" }}>
+            {f.charAt(0).toUpperCase()+f.slice(1)}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ maxHeight:380, overflowY:"auto", display:"flex", flexDirection:"column", gap:6 }}>
+        {vouchers.map(v => (
+          <div key={v.id} style={{ background: v.redeemed_by ? "#f8f9fa" : "#f0fdf4",
+            border:`1px solid ${v.redeemed_by ? "#e0e0e0" : "#86efac"}`, borderRadius:8, padding:"10px 12px" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+              <div style={{ fontFamily:"monospace", fontWeight:800, fontSize:14, letterSpacing:1,
+                color: v.redeemed_by ? "#636e72" : "#166534", flex:1 }}>{v.code}</div>
+              <span style={{ fontSize:11, fontWeight:700, padding:"2px 8px", borderRadius:10,
+                background: v.redeemed_by ? "#e0e0e0" : "#dcfce7",
+                color: v.redeemed_by ? "#636e72" : "#16a34a" }}>
+                {v.redeemed_by ? "Used" : "Available"}
+              </span>
+            </div>
+            <div style={{ fontSize:11, color:"#636e72", marginTop:3 }}>
+              {v.gems} Gems · {v.label} · ₦{v.price_naira?.toLocaleString()}
+              {v.note && <span style={{ marginLeft:6, color:"#a29bfe" }}>· {v.note}</span>}
+            </div>
+            {v.redeemed_by_name && (
+              <div style={{ fontSize:11, color:"#0984e3", marginTop:2 }}>
+                ✅ Redeemed by {v.redeemed_by_name} · {new Date(v.redeemed_at).toLocaleDateString("en-NG")}
+              </div>
+            )}
+          </div>
+        ))}
+        {!vouchers.length && <Empty text="No vouchers yet" />}
+      </div>
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
   const nav = useNavigate();
   const [tab,          setTab]          = useState("overview");
@@ -1295,6 +1367,137 @@ export default function AdminDashboard() {
 
         {/* ── GEMS MANAGER ───────────────────────────────── */}
         {tab === "gems" && (
+          <div>
+            <h2 style={{ fontSize:20, fontWeight:800, color:"#2d3436", marginBottom:8 }}>💎 Gems & Vouchers</h2>
+            <p style={{ color:"#636e72", marginBottom:20, fontSize:14 }}>Generate voucher codes to send to students after WhatsApp payment.</p>
+
+            <div style={st.twoCol}>
+              {/* GENERATE VOUCHER */}
+              <div style={st.card}>
+                <div style={st.cardTitle}>🎟️ Generate Voucher Code</div>
+                <label style={st.label}>Gem Package</label>
+                <select style={{ ...st.sel, width:"100%", boxSizing:"border-box" }}
+                  value={gemsAction.packageId || "gem_350"}
+                  onChange={e => setGemsAction(p => ({ ...p, packageId: e.target.value }))}>
+                  <option value="gem_50">Starter Pack — 50 💎 (₦100)</option>
+                  <option value="gem_120">Scholar Pack — 120 💎 (₦200)</option>
+                  <option value="gem_350">Elite Pack — 350 💎 (₦500)</option>
+                  <option value="gem_800">Champion Pack — 800 💎 (₦1,000)</option>
+                  <option value="gem_1800">Legend Pack — 1,800 💎 (₦2,000)</option>
+                  <option value="gem_5000">Titan Pack — 5,000 💎 (₦5,000)</option>
+                  <option value="gem_17000">Metaverse Pack — 17,000 💎 (₦15,000)</option>
+                </select>
+
+                <label style={st.label}>Quantity</label>
+                <select style={{ ...st.sel, width:"100%", boxSizing:"border-box" }}
+                  value={gemsAction.qty || "1"}
+                  onChange={e => setGemsAction(p => ({ ...p, qty: e.target.value }))}>
+                  {[1,2,3,5,10].map(n => <option key={n} value={n}>{n} code{n>1?"s":""}</option>)}
+                </select>
+
+                <label style={st.label}>Note (optional — e.g. student name)</label>
+                <input style={{ ...st.sel, width:"100%", boxSizing:"border-box" }}
+                  placeholder="e.g. John Doe - paid via transfer"
+                  value={gemsAction.note || ""}
+                  onChange={e => setGemsAction(p => ({ ...p, note: e.target.value }))} />
+
+                <button style={{ width:"100%", padding:14, background:"linear-gradient(135deg,#00D4FF,#7C5CFF)",
+                  color:"#fff", border:"none", borderRadius:8, fontWeight:800, cursor:"pointer", marginTop:16, fontSize:15 }}
+                  onClick={async () => {
+                    try {
+                      const r = await fetch(`${API_URL}/admin/vouchers/generate`, {
+                        method:"POST",
+                        headers:{ Authorization:`Bearer ${localStorage.getItem("admin_token")}`, "Content-Type":"application/json" },
+                        body: JSON.stringify({ package_id: gemsAction.packageId || "gem_350", quantity: parseInt(gemsAction.qty||1), note: gemsAction.note }),
+                      });
+                      const data = await r.json();
+                      if (data.success) {
+                        setGemsAction(p => ({ ...p, generatedVouchers: data.vouchers }));
+                        showMsg(`✅ ${data.count} voucher code${data.count>1?"s":""} generated!`);
+                      } else showMsg(data.error || "Failed", "error");
+                    } catch { showMsg("Failed to generate", "error"); }
+                  }}>
+                  Generate Voucher Code →
+                </button>
+
+                {/* Generated codes display */}
+                {gemsAction.generatedVouchers?.length > 0 && (
+                  <div style={{ marginTop:16 }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+                      <div style={{ fontWeight:700, fontSize:13 }}>Generated Codes:</div>
+                      <button style={st.smBtn} onClick={() => {
+                        const text = gemsAction.generatedVouchers.map(v => `${v.code} — ${v.gems} Gems (${v.label})`).join("\n");
+                        navigator.clipboard.writeText(text);
+                        showMsg("Copied!");
+                      }}>Copy All</button>
+                    </div>
+                    {gemsAction.generatedVouchers.map((v,i) => (
+                      <div key={i} style={{ background:"#f0fdf4", border:"1px solid #86efac", borderRadius:10,
+                        padding:"12px 14px", marginBottom:8, display:"flex", alignItems:"center", gap:10 }}>
+                        <div style={{ flex:1 }}>
+                          <div style={{ fontFamily:"monospace", fontWeight:900, fontSize:16, letterSpacing:2, color:"#166534" }}>{v.code}</div>
+                          <div style={{ fontSize:12, color:"#636e72", marginTop:2 }}>{v.gems} Gems · {v.label} · ₦{v.price?.toLocaleString()}</div>
+                        </div>
+                        <button style={{ padding:"6px 14px", background:"#16a34a", color:"#fff", border:"none",
+                          borderRadius:8, cursor:"pointer", fontWeight:700, fontSize:13 }}
+                          onClick={() => { navigator.clipboard.writeText(v.code); showMsg("Code copied!"); }}>
+                          Copy
+                        </button>
+                      </div>
+                    ))}
+                    <div style={{ background:"#fffbeb", border:"1px solid #fcd34d", borderRadius:8, padding:"10px 14px", fontSize:12, color:"#92400e", marginTop:4 }}>
+                      💡 Send this code to the student on WhatsApp. They enter it in Gem Store → "Have a Voucher Code?"
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* VOUCHER LIST */}
+              <div style={st.card}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
+                  <div style={st.cardTitle}>All Vouchers</div>
+                  <div style={{ display:"flex", gap:6 }}>
+                    <Badge text="Available" color="#00b894" />
+                    <Badge text="Used" color="#636e72" />
+                  </div>
+                </div>
+
+                {/* Stats row */}
+                <VoucherStats adminFetch={adminFetch} API_URL={API_URL} token={localStorage.getItem("admin_token")} />
+              </div>
+            </div>
+
+            {/* Manual gems override (keep for emergencies) */}
+            <div style={{ ...st.card, marginTop:0 }}>
+              <div style={st.cardTitle}>⚡ Manual Gem Override (Emergency Only)</div>
+              <p style={{ fontSize:12, color:"#636e72", marginBottom:12 }}>Only use this if a voucher fails. Always use vouchers for normal payments.</p>
+              <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+                <input style={{ ...st.searchInput, flex:1 }} placeholder="Student ID or email"
+                  value={gemsAction.studentId || ""}
+                  onChange={e => setGemsAction(p => ({ ...p, studentId: e.target.value }))} />
+                <select style={st.sel} value={gemsAction.action || "add"}
+                  onChange={e => setGemsAction(p => ({ ...p, action: e.target.value }))}>
+                  <option value="add">Add Gems</option>
+                  <option value="add_coins">Add Coins</option>
+                  <option value="add_xp">Add XP</option>
+                </select>
+                <input style={{ ...st.sel, width:100 }} type="number" placeholder="Amount"
+                  value={gemsAction.amount || ""}
+                  onChange={e => setGemsAction(p => ({ ...p, amount: e.target.value }))} />
+                <button style={{ padding:"9px 16px", background:"#e17055", color:"#fff", border:"none",
+                  borderRadius:8, fontWeight:700, cursor:"pointer" }}
+                  onClick={async () => {
+                    if (!gemsAction.studentId || !gemsAction.amount) { showMsg("Fill all fields","error"); return; }
+                    try {
+                      await adminPost("/manage-currency", gemsAction);
+                      showMsg(`✅ Done! ${gemsAction.action} ${gemsAction.amount}`);
+                      setGemsAction({ studentId:"", amount:"", action:"add" });
+                    } catch { showMsg("Failed. Check student ID.","error"); }
+                  }}>Apply</button>
+              </div>
+            </div>
+          </div>
+        )}
           <div>
             <h2 style={{ fontSize:20, fontWeight:800, color:"#2d3436", marginBottom:8 }}>💎 Gems Manager</h2>
             <p style={{ color:"#636e72", marginBottom:20, fontSize:14 }}>Manually award or remove gems, coins, or XP from any student account.</p>

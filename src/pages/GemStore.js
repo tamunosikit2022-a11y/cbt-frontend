@@ -62,7 +62,21 @@ export default function GemStore() {
     setTimeout(() => setToast(null), 3500);
   };
 
-  const handleBuy = async (pkg, e) => {
+  const [voucherCode,  setVoucherCode]  = useState("");
+  const [redeemBusy,   setRedeemBusy]   = useState(false);
+
+  const handleRedeem = async () => {
+    if (!voucherCode.trim()) return showToast("Enter your voucher code", "error");
+    setRedeemBusy(true);
+    try {
+      const r = await API.post("/vouchers/redeem", { code: voucherCode.trim() });
+      setData(d => ({ ...d, gems: r.data.total_gems }));
+      setVoucherCode("");
+      showToast(r.data.message, "success");
+    } catch (err) {
+      showToast(err.response?.data?.error || "Invalid code", "error");
+    } finally { setRedeemBusy(false); }
+  };
     spawnParticles(e.clientX, e.clientY);
     const message = encodeURIComponent(
       `Hi! I want to purchase the *${pkg.label}* gem pack.\n\n💎 ${pkg.gems.toLocaleString()} Gems — ₦${pkg.price.toLocaleString()}\n\nPlease confirm my order.`
@@ -146,6 +160,36 @@ export default function GemStore() {
             <p style={{ color:"rgba(255,255,255,.4)", fontSize:12, margin:0, textAlign:"right" }}>
               Use gems to unlock<br/>Spirits, Skills & Vault items
             </p>
+          </div>
+        </div>
+
+        {/* Voucher Redeem Box */}
+        <div style={{ background:"rgba(0,208,132,.06)", border:"1px solid rgba(0,208,132,.3)",
+          borderRadius:16, padding:20, marginBottom:28 }}>
+          <h3 style={{ color:"#00D084", fontWeight:800, fontSize:14, marginBottom:12 }}>
+            🎟️ Have a Voucher Code?
+          </h3>
+          <p style={{ color:"rgba(255,255,255,.5)", fontSize:12, marginBottom:12 }}>
+            Enter the code you received after payment to instantly credit your gems.
+          </p>
+          <div style={{ display:"flex", gap:10 }}>
+            <input
+              value={voucherCode}
+              onChange={e => setVoucherCode(e.target.value.toUpperCase())}
+              placeholder="e.g. GEM-A3X9-K2P1"
+              maxLength={13}
+              style={{ flex:1, padding:"12px 16px", borderRadius:12, border:"1px solid rgba(0,208,132,.3)",
+                background:"rgba(255,255,255,.06)", color:"#fff", fontSize:14,
+                fontFamily:"monospace", letterSpacing:2, outline:"none" }}
+              onKeyDown={e => e.key === "Enter" && handleRedeem()}
+            />
+            <button onClick={handleRedeem} disabled={redeemBusy}
+              style={{ padding:"12px 20px", borderRadius:12, border:"none", cursor:"pointer",
+                background:"linear-gradient(135deg,#00D084,#00b894)", color:"#fff",
+                fontWeight:800, fontSize:14, opacity: redeemBusy ? .6 : 1,
+                fontFamily:"'Plus Jakarta Sans',sans-serif" }}>
+              {redeemBusy ? "…" : "Redeem"}
+            </button>
           </div>
         </div>
 
