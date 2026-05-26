@@ -44,6 +44,13 @@ const ThemeSettings    = lazy(() => import("./pages/ThemeSettings"));
 const ClassroomLobby   = lazy(() => import("./pages/classroom/ClassroomLobby"));
 const ClassroomSession = lazy(() => import("./pages/classroom/ClassroomSession"));
 
+// ── METAVERSE FEATURES ────────────────────────────────────
+const GemStore         = lazy(() => import("./pages/GemStore"));
+const Spirits          = lazy(() => import("./pages/Spirits"));
+const Skills           = lazy(() => import("./pages/Skills"));
+const KnowledgeVault   = lazy(() => import("./pages/KnowledgeVault"));
+const Factions         = lazy(() => import("./pages/Factions"));
+
 // ── ADMIN ─────────────────────────────────────────────────
 const AdminLogin       = lazy(() => import("./pages/admin/AdminLogin"));
 const AdminDashboard   = lazy(() => import("./pages/admin/AdminDashboard"));
@@ -127,6 +134,13 @@ export default function App() {
             {/* Phase 2 Innovations */}
             <Route path="/personality"   element={<Private><PersonalityProfile /></Private>} />
             <Route path="/beat-yourself" element={<Private><BeatYourself /></Private>} />
+
+            {/* Metaverse Features */}
+            <Route path="/gems"     element={<Private><GemStore /></Private>} />
+            <Route path="/spirits"  element={<Private><Spirits /></Private>} />
+            <Route path="/skills"   element={<Private><Skills /></Private>} />
+            <Route path="/vault"    element={<Private><KnowledgeVault /></Private>} />
+            <Route path="/factions" element={<Private><Factions /></Private>} />
 
             {/* Admin */}
             <Route path="/admin/login" element={<AdminLogin />} />
