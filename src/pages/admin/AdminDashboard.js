@@ -166,7 +166,7 @@ const TABS = [
   { id: "questions",     icon: "❓", label: "Questions" },
   { id: "spin",          icon: "🎰", label: "Spin Wheel" },
   { id: "gems",          icon: "💎", label: "Gems & Vouchers" },
-  { id: "pdf_vault",     icon: "🗂️", label: "PDF Vault" },
+  { id: "pdf_vault",     icon: "[PDF]", label: "PDF Vault" },
 ];
 
 function VoucherStats({ API_URL, token }) {
