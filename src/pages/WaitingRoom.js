@@ -260,6 +260,7 @@ export default function WaitingRoom() {
 
   return (
     <div style={s.page}>
+      <style>{`@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800;900&display=swap");::placeholder{color:rgba(255,255,255,.3)!important}*{box-sizing:border-box}`}</style>
       <div style={s.container}>
 
         {/* HEADER */}
@@ -480,9 +481,9 @@ function PlayerRow({ p, isSelf, isHost, canKick, onKick }) {
   return (
     <div style={{
       display: "flex", alignItems: "center", gap: 10,
-      background: isSelf ? "#6c63ff18" : "#0f0f1a",
+      background: isSelf ? "rgba(124,92,255,.12)" : "rgba(255,255,255,.03)",
       borderRadius: 10, padding: "9px 12px",
-      border: isSelf ? "1px solid #6c63ff" : "1px solid #2d2d44",
+      border: isSelf ? "1px solid #7C5CFF" : "1px solid rgba(255,255,255,.08)",
     }}>
       <span style={{ fontSize: 22 }}>{p.avatar || "🎓"}</span>
       <div style={{ flex: 1 }}>
@@ -509,7 +510,7 @@ function PlayerRow({ p, isSelf, isHost, canKick, onKick }) {
 
 function Loader({ text, isError, onBack }) {
   return (
-    <div style={{ minHeight: "100vh", background: "#0f0f1a", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: "sans-serif", gap: 16 }}>
+    <div style={{ minHeight: "100vh", background: "#0B1020", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: "'Plus Jakarta Sans', sans-serif", gap: 16 }}>
       <div style={{ fontSize: 40 }}>{isError ? "❌" : "⏳"}</div>
       <p style={{ color: isError ? "#e17055" : "#636e72" }}>{text}</p>
       {onBack && <button style={{ background: "#6c63ff", color: "#fff", border: "none", borderRadius: 8, padding: "10px 20px", cursor: "pointer" }} onClick={onBack}>← Back to Arena</button>}
@@ -518,35 +519,35 @@ function Loader({ text, isError, onBack }) {
 }
 
 const s = {
-  page:            { minHeight: "100vh", background: "#0f0f1a", fontFamily: "sans-serif", padding: 16 },
-  container:       { maxWidth: 900, margin: "0 auto" },
+  page:            { minHeight: "100vh", background: "#0B1020", fontFamily: "'Plus Jakarta Sans', sans-serif", padding: "14px 14px 30px" },
+  container:       { maxWidth: 540, margin: "0 auto" },
   header:          { display: "flex", alignItems: "center", gap: 12, marginBottom: 16, flexWrap: "wrap" },
   back:            { background: "none", border: "none", color: "#a29bfe", fontWeight: 700, cursor: "pointer", fontSize: 14 },
-  codeBox:         { background: "#1a1a2e", border: "2px solid #6c63ff", borderRadius: 12, padding: "8px 14px", textAlign: "center", cursor: "pointer", display: "flex", flexDirection: "column", gap: 2, minWidth: 130 },
+  codeBox:         { background: "rgba(124,92,255,.18)", border: "2px solid #7C5CFF", borderRadius: 12, padding: "8px 12px", textAlign: "center", cursor: "pointer", display: "flex", flexDirection: "column", gap: 2, minWidth: 110 },
   autoStartBanner: { background: "#fdcb6e22", border: "1px solid #fdcb6e", color: "#fdcb6e", textAlign: "center", padding: "10px", borderRadius: 8, marginBottom: 12, fontWeight: 700, fontSize: 14 },
   countdownOverlay:{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.9)", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", zIndex: 1000 },
-  countdownNum:    { fontSize: 130, fontWeight: 900, color: "#6c63ff", lineHeight: 1 },
+  countdownNum:    { fontSize: 100, fontWeight: 900, color: "#7C5CFF", lineHeight: 1 },
   errorBanner:     { background: "#e1705522", border: "1px solid #e17055", color: "#e17055", padding: "10px 14px", borderRadius: 8, marginBottom: 12, fontSize: 13, textAlign: "center" },
-  twoCol:          { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 },
-  panel:           { background: "#1a1a2e", borderRadius: 14, padding: "16px", border: "1px solid #2d2d44" },
-  panelTitle:      { color: "#fff", fontSize: 14, fontWeight: 700, marginBottom: 12 },
-  squadBox:        { background: "#0f0f1a", borderRadius: 10, padding: 10, border: "2px solid", display: "flex", flexDirection: "column", gap: 7 },
-  emptySlot:       { display: "flex", alignItems: "center", gap: 8, background: "#0f0f1a", borderRadius: 10, padding: "9px 12px", border: "1px dashed #2d2d44", opacity: 0.5 },
+  twoCol:          { display: "flex", flexDirection: "column", gap: 12 },
+  panel:           { background: "rgba(255,255,255,.045)", borderRadius: 16, padding: "16px", border: "1px solid rgba(255,255,255,.09)" },
+  panelTitle:      { color: "#F1F5F9", fontSize: 14, fontWeight: 800, marginBottom: 12 },
+  squadBox:        { background: "rgba(0,0,0,.25)", borderRadius: 12, padding: 10, border: "2px solid", display: "flex", flexDirection: "column", gap: 7 },
+  emptySlot:       { display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,.02)", borderRadius: 10, padding: "9px 12px", border: "1px dashed rgba(255,255,255,.14)", opacity: 0.6 },
   shareRow:        { marginTop: 12, borderTop: "1px solid #2d2d44", paddingTop: 12 },
   waBtn:           { display: "block", textAlign: "center", padding: "9px", background: "#25D366", color: "#fff", borderRadius: 8, fontWeight: 700, textDecoration: "none", fontSize: 13 },
   readyBtn:        { width: "100%", padding: 13, background: "#00b894", color: "#fff", border: "none", borderRadius: 10, fontWeight: 800, fontSize: 15, cursor: "pointer" },
   readyMsg:        { textAlign: "center", color: "#00b894", fontWeight: 700, fontSize: 14, padding: "10px 0" },
   startBtn:        { width: "100%", padding: 13, background: "linear-gradient(135deg,#6c63ff,#e17055)", color: "#fff", border: "none", borderRadius: 10, fontWeight: 800, fontSize: 15, cursor: "pointer" },
   reactRow:        { display: "flex", flexWrap: "wrap", gap: 6 },
-  reactBtn:        { fontSize: 22, background: "#0f0f1a", border: "1px solid #2d2d44", borderRadius: 8, padding: "6px 10px", cursor: "pointer" },
+  reactBtn:        { fontSize: 20, background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 8, padding: "6px 9px", cursor: "pointer" },
   chatList:        { display: "flex", flexDirection: "column", gap: 3, maxHeight: 180, overflowY: "auto", marginBottom: 10 },
   chatMsg:         { padding: "3px 0" },
   chatInputRow:    { display: "flex", gap: 8 },
-  chatInput:       { flex: 1, background: "#0f0f1a", border: "1px solid #2d2d44", borderRadius: 8, padding: "8px 10px", color: "#fff", fontSize: 13 },
+  chatInput:       { flex: 1, background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 8, padding: "8px 10px", color: "#fff", fontSize: 13, fontFamily: "inherit", outline: "none" },
   chatSendBtn:     { padding: "8px 14px", background: "#6c63ff", color: "#fff", border: "none", borderRadius: 8, fontWeight: 700, cursor: "pointer", fontSize: 13 },
   forceBtn:        { width: "100%", padding: 10, background: "transparent", color: "#fdcb6e", border: "2px solid #fdcb6e44", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer" },
   modalOverlay:    { position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000 },
-  modal:           { background: "#1a1a2e", border: "1px solid #6c63ff", borderRadius: 16, padding: "28px 32px", textAlign: "center", maxWidth: 340, width: "90%" },
+  modal:           { background: "#151B2E", border: "1px solid #7C5CFF", borderRadius: 20, padding: "24px 20px", textAlign: "center", maxWidth: 340, width: "92%" },
   kickCancelBtn:   { flex: 1, padding: "10px", background: "#2d2d44", color: "#fff", border: "none", borderRadius: 8, fontWeight: 700, cursor: "pointer", fontSize: 14 },
   kickConfirmBtn:  { flex: 1, padding: "10px", background: "#e17055", color: "#fff", border: "none", borderRadius: 8, fontWeight: 700, cursor: "pointer", fontSize: 14 },
 };

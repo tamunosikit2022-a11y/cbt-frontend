@@ -25,9 +25,9 @@ const ARENA_MODES = [
 
 const STATS = [
   { num:"50,000+", label:"Students" },
-  { num:"200,000+",label:"Questions" },
-  { num:"25+",     label:"Universities" },
-  { num:"100%",    label:"Free" },
+  { num:"5,000+",  label:"Questions" },
+  { num:"15+",     label:"Universities" },
+  { num:"₦100",    label:"to unlock all" },
 ];
 
 export default function Landing() {
@@ -83,7 +83,7 @@ export default function Landing() {
         <div style={{ position:"absolute", bottom:-60, right:"10%", width:260, height:260, borderRadius:"50%", background:"rgba(91,140,255,.09)", filter:"blur(70px)", animation:"blob-float 9s ease-in-out infinite reverse" }} />
         <div style={{ maxWidth:640, margin:"0 auto", position:"relative", zIndex:1 }}>
           <div style={{ display:"inline-block", background:"rgba(124,92,255,.15)", border:"1px solid rgba(124,92,255,.3)", color:"#a29bfe", padding:"6px 18px", borderRadius:20, fontSize:13, marginBottom:22, fontWeight:700, animation:"fade-up .5s ease" }}>
-            🇳🇬 Built for Nigerian Students · 100% Free
+            🇳🇬 Built for Nigerian Students · Free to start · Full access from ₦100
           </div>
           <h1 className="hero-title" style={{ color:"#fff", fontSize:46, fontWeight:900, lineHeight:1.15, marginBottom:18, animation:"fade-up .6s ease" }}>
             Score Higher in<br />
@@ -102,7 +102,7 @@ export default function Landing() {
               I have an account
             </button>
           </div>
-          <p style={{ color:"rgba(255,255,255,.3)", fontSize:12, marginTop:18 }}>Free to join · No credit card · No limits</p>
+          <p style={{ color:"rgba(255,255,255,.3)", fontSize:12, marginTop:18 }}>Free to join · Full access from ₦100 · No card needed</p>
         </div>
       </section>
 
@@ -120,7 +120,7 @@ export default function Landing() {
 
       {/* ── FREE BANNER ─────────────────────────────────────────── */}
       <section style={{ background:"linear-gradient(135deg,#00D084,#00b894)", padding:"22px 20px", textAlign:"center" }}>
-        <h2 style={{ color:"#fff", fontSize:20, fontWeight:900, marginBottom:6 }}>🎉 Everything is 100% Free</h2>
+        <h2 style={{ color:"#fff", fontSize:20, fontWeight:900, marginBottom:6 }}>🎓 Free to start. Built to win.</h2>
         <p style={{ color:"rgba(255,255,255,.9)", fontSize:14, maxWidth:480, margin:"0 auto" }}>
           Unlimited exams, all features, all modes, Scholar Spirits, Skills, Knowledge Vault — no subscription needed.
         </p>

@@ -364,13 +364,43 @@ export default function Results() {
 
         {/* ── ANSWER REVIEW ── */}
         <h3 style={s.reviewTitle}>Answer Review & Corrections</h3>
+
+        {/* Premium nudge — shown only to free users */}
+        {!student?.is_premium && (() => {
+          const wrongCount = safeAnswers.filter(a => !a.is_correct && a.selected_answer).length;
+          const explCount  = safeAnswers.filter(a => a.explanation).length;
+          return (
+            <div style={{ background:"linear-gradient(135deg,#6c63ff15,#e1700520)", border:"2px solid #6c63ff40", borderRadius:14, padding:"16px 16px", marginBottom:16, display:"flex", flexDirection:"column", gap:10 }}>
+              <div style={{ display:"flex", alignItems:"flex-start", gap:10 }}>
+                <span style={{ fontSize:28, flexShrink:0 }}>🔒</span>
+                <div>
+                  <div style={{ fontWeight:800, fontSize:14, color:"#2d3436", marginBottom:3 }}>
+                    You got {wrongCount} wrong — see exactly why
+                  </div>
+                  <div style={{ fontSize:12, color:"#636e72" }}>
+                    {explCount > 0
+                      ? `Premium unlocks full explanations for all ${safeAnswers.length} questions + your personal weakness heatmap.`
+                      : `Premium shows your full weak-topic breakdown and saves this to your error review bank.`}
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => nav("/upgrade")}
+                style={{ background:"linear-gradient(135deg,#6c63ff,#a29bfe)", border:"none", borderRadius:10, color:"#fff", fontWeight:800, fontSize:13, padding:"11px 0", cursor:"pointer", width:"100%" }}>
+                👑 Unlock Full Review — from ₦100
+              </button>
+            </div>
+          );
+        })()}
+
         <p style={{ color:"#636e72", fontSize:13, marginBottom:16 }}>
-          ✅ Correct answers and explanations shown below.
+          ✅ Correct answers shown below{student?.is_premium ? " · Full explanations included" : " · Upgrade to see explanations"}.
         </p>
         <div style={s.answerList}>
           {safeAnswers.map((a, i) => {
             const q = a?.question_id ? qMap[a.question_id] : null;
             if (!a) return null;
+            const isPremium = student?.is_premium;
             return (
               <div key={a.question_id || i}
                 style={{ ...s.answerRow, borderLeft:`4px solid ${a.is_correct ? "#00b894" : a.selected_answer ? "#e17055" : "#b2bec3"}` }}>
@@ -393,12 +423,26 @@ export default function Results() {
                     );
                   })}
                 </div>
-                {a.explanation && (
+                {/* Explanations — premium only */}
+                {isPremium && a.explanation && (
                   <div style={s.expl}>💡 <strong>Explanation:</strong> {a.explanation}</div>
                 )}
-                {!a.explanation && !a.is_correct && a.correct_answer && (
+                {isPremium && !a.explanation && !a.is_correct && a.correct_answer && (
                   <div style={{ ...s.expl, background:"#f8f9fa", color:"#636e72" }}>
                     ✓ Correct answer: <strong>{a.correct_answer}</strong>
+                  </div>
+                )}
+                {/* For free users: show correct answer but blur/lock explanation */}
+                {!isPremium && !a.is_correct && a.correct_answer && (
+                  <div style={{ ...s.expl, background:"#f8f9fa", color:"#636e72" }}>
+                    ✓ Correct answer: <strong>{a.correct_answer}</strong>
+                    {a.explanation && (
+                      <span
+                        onClick={() => nav("/upgrade")}
+                        style={{ display:"block", marginTop:6, color:"#6c63ff", fontWeight:700, fontSize:12, cursor:"pointer" }}>
+                        🔒 Explanation hidden — unlock with Premium
+                      </span>
+                    )}
                   </div>
                 )}
               </div>

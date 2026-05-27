@@ -291,6 +291,31 @@ export default function Dashboard() {
   const HomeTab = () => (
     <div style={{ padding:"16px 14px 100px", animation:"slide-in .3s ease" }}>
 
+      {/* ── Premium teaser — free users only ── */}
+      {!student?.is_premium && (
+        <div
+          onClick={() => nav("/upgrade")}
+          style={{
+            background:"linear-gradient(135deg,#6c63ff22,#e1700518)",
+            border:"1.5px solid #6c63ff44",
+            borderRadius:16, padding:"13px 14px", marginBottom:14,
+            display:"flex", alignItems:"center", gap:11, cursor:"pointer",
+          }}>
+          <div style={{ fontSize:28, flexShrink:0, filter:"drop-shadow(0 0 8px gold)" }}>👑</div>
+          <div style={{ flex:1, minWidth:0 }}>
+            <div style={{ fontWeight:800, fontSize:13, color:C.text, marginBottom:2 }}>
+              Unlock full access — from ₦100
+            </div>
+            <div style={{ fontSize:11, color:C.muted, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+              Full explanations · AI weakness mode · 2× XP · all Post-UTME
+            </div>
+          </div>
+          <div style={{ background:"linear-gradient(135deg,#6c63ff,#a29bfe)", borderRadius:9, padding:"8px 12px", color:"#fff", fontWeight:800, fontSize:12, flexShrink:0 }}>
+            Upgrade →
+          </div>
+        </div>
+      )}
+
       {/* Hero card */}
       <div style={{ background:`linear-gradient(135deg,${C.purple}cc,${C.blue}99)`, borderRadius:22, padding:"20px 18px", marginBottom:14, position:"relative", overflow:"hidden", boxShadow:`0 8px 36px ${C.purple}44`, border:`1px solid ${C.purple}44` }}>
         <div style={{ position:"absolute", top:-30, right:-30, width:100, height:100, borderRadius:"50%", background:`${C.blue}33`, filter:"blur(25px)" }} />
@@ -431,7 +456,7 @@ export default function Dashboard() {
     <div style={{ padding:"16px 14px 100px", animation:"slide-in .3s ease" }}>
       <div style={{ marginBottom:18 }}>
         <div style={{ fontSize:20, fontWeight:900, color:C.text }}>Practice Centre</div>
-        <div style={{ fontSize:12, color:C.muted, marginTop:2 }}>All modes — completely free</div>
+        <div style={{ fontSize:12, color:C.muted, marginTop:2 }}>Practice modes · unlock all with Premium</div>
       </div>
 
       {[
@@ -525,6 +550,30 @@ export default function Dashboard() {
           </div>
         ))}
       </div>
+
+      {/* Score-based upgrade nudge for free users */}
+      {!student?.is_premium && history.length > 0 && (
+        <div
+          onClick={() => nav("/upgrade")}
+          style={{ marginTop:16, background:"linear-gradient(135deg,#1a0a2e,#2d1060)", border:`1px solid ${C.purple}44`, borderRadius:16, padding:"16px 14px", cursor:"pointer", boxShadow:`0 6px 28px ${C.purple}22` }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
+            <span style={{ fontSize:26 }}>📊</span>
+            <div>
+              <div style={{ fontWeight:900, fontSize:14, color:C.text }}>Your avg score is {avgScore}%</div>
+              <div style={{ fontSize:11, color:C.muted, marginTop:2 }}>
+                {avgScore < 50
+                  ? "Premium's AI weakness mode targets your exact gaps — students who use it improve 30+ points."
+                  : avgScore < 70
+                  ? "You're close. Premium shows your exact weak topics so you can stop losing marks you shouldn't."
+                  : "You're performing well. Premium's 2× XP and error review will help you maintain it."}
+              </div>
+            </div>
+          </div>
+          <div style={{ background:`linear-gradient(135deg,${C.purple},#a29bfe)`, borderRadius:10, padding:"10px 0", textAlign:"center", color:"#fff", fontWeight:800, fontSize:13 }}>
+            👑 Unlock Premium — from ₦100
+          </div>
+        </div>
+      )}
     </div>
   );
 

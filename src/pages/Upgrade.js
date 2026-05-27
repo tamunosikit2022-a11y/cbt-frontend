@@ -12,8 +12,9 @@ const PLANS = [
     name:     "Trial",
     price:    "₦100",
     duration: "3 hours",
-    color:    "#636e72",
-    desc:     "Try everything risk-free",
+    color:    "#e17055",
+    trial:    true,
+    desc:     "Try everything — zero risk",
   },
   {
     id:       "daily",
@@ -169,6 +170,9 @@ export default function Upgrade() {
             <div style={{ fontSize:44 }}>👑</div>
             <h1 style={s.heroTitle}>Go Premium</h1>
             <p style={s.heroSub}>Everything you need to crush JAMB & Post-UTME</p>
+            <div style={{ display:"inline-block", background:"#e1700518", border:"1.5px solid #e1700560", borderRadius:20, padding:"5px 14px", marginTop:8, fontSize:12, fontWeight:700, color:"#e17055" }}>
+              🔥 200+ students upgraded this week
+            </div>
           </div>
 
           {/* Free vs Premium comparison */}
@@ -196,12 +200,20 @@ export default function Upgrade() {
 
           {/* Plans */}
           <h3 style={s.sectionLabel}>Choose Your Plan</h3>
+          <div style={{ background:"#e1700510", border:"1.5px solid #e1700540", borderRadius:12, padding:"10px 14px", marginBottom:14, display:"flex", alignItems:"center", gap:10 }}>
+            <span style={{ fontSize:20 }}>⚡</span>
+            <div>
+              <div style={{ fontWeight:800, fontSize:13, color:"#e17055" }}>Not sure? Start with the ₦100 Trial</div>
+              <div style={{ fontSize:11, color:"#636e72" }}>3 hours of full Premium access — less than a sachet of water</div>
+            </div>
+          </div>
           <div style={s.plansGrid}>
             {PLANS.map(p => (
               <div key={p.id}
                 style={{ ...s.planCard, borderColor: selected === p.id ? p.color : "#f0f0f0", background: selected === p.id ? p.color + "12" : "#fff" }}
                 onClick={() => setSelected(p.id)}>
                 {p.popular && <div style={{ ...s.popularBadge, background: p.color }}>⭐ Most Popular</div>}
+                {p.trial  && <div style={{ ...s.popularBadge, background: p.color }}>🔥 Try First</div>}
                 <div style={{ fontWeight:900, fontSize:20, color: p.color }}>{p.price}</div>
                 <div style={{ fontWeight:800, fontSize:14, marginTop:2 }}>{p.name}</div>
                 <div style={{ fontSize:11, color:"#636e72" }}>{p.duration}</div>
