@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import PremiumGate from "../components/PremiumGate";
 
 const ALL_COURSES = [
   "Medicine & Surgery","Dentistry","Pharmacy","Nursing","Physiotherapy","Radiography",
@@ -590,6 +592,7 @@ function calc(uni,course,jamb,post){
 
 export default function AdmissionChecker(){
   const nav=useNavigate();
+  const { student } = useAuth();
   const[jambScore,setJambScore]=useState("");
   const[postScore,setPostScore]=useState("");
   const[university,setUniversity]=useState("");
@@ -597,6 +600,8 @@ export default function AdmissionChecker(){
   const[result,setResult]=useState(null);
   const[allResults,setAllResults]=useState([]);
   const[compareMode,setCompareMode]=useState(false);
+
+  if (!student?.is_premium) return <PremiumGate feature="admission" />;
 
   const uniKeys=Object.keys(UNIVERSITIES);
   const selectedU=UNIVERSITIES[university];

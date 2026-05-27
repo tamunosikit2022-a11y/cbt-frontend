@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import API from "../utils/api";
+import PremiumGate from "../components/PremiumGate";
 
 export default function PredictedScore() {
   const nav = useNavigate();
+  const { student } = useAuth();
   const [data,    setData]    = useState(null);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState("");
@@ -15,6 +18,7 @@ export default function PredictedScore() {
       .finally(() => setLoading(false));
   }, []);
 
+  if (!student?.is_premium) return <PremiumGate feature="predicted" />;
   if (loading) return <Loader text="Calculating your predicted score..." />;
   if (error)   return <Loader text={error} isError onBack={() => nav("/dashboard")} />;
 
