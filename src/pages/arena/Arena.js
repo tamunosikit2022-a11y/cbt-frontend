@@ -105,7 +105,10 @@ export default function Arena() {
   const goWaiting = (config) =>
     nav("/arena/waiting", { state: { creating: true, config: { ...config, playerName, playerId, avatar: "🎓" } } });
 
+  const [showCreateGate, setShowCreateGate] = useState(false);
+
   const handleCreate = () => {
+    if (!student?.is_premium) return setShowCreateGate(true);
     if (!mode) return setError("Select a game mode first.");
     setError("");
     goWaiting({ mode, battleType, subject, difficulty, questionCount: parseInt(questionCount), timePerQuestion: parseInt(timePerQ), isPublic });
@@ -142,6 +145,39 @@ export default function Arena() {
   return (
     <div style={s.page}>
       <div style={s.container}>
+
+        {/* PREMIUM CREATE-ROOM GATE MODAL */}
+        {showCreateGate && (
+          <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.75)", zIndex:200, display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}
+            onClick={() => setShowCreateGate(false)}>
+            <div style={{ background:"#1a1a2e", border:"1.5px solid #6c63ff55", borderRadius:22, padding:"32px 24px", maxWidth:360, width:"100%", textAlign:"center" }}
+              onClick={e => e.stopPropagation()}>
+              <div style={{ fontSize:44, marginBottom:12 }}>🏟️</div>
+              <div style={{ display:"inline-flex", alignItems:"center", gap:6, background:"linear-gradient(135deg,#6c63ff,#a29bfe)", borderRadius:20, padding:"4px 14px", marginBottom:14, fontSize:11, fontWeight:800, color:"#fff" }}>
+                👑 PREMIUM ONLY
+              </div>
+              <h2 style={{ color:"#fff", fontSize:18, fontWeight:900, marginBottom:10 }}>Create Rooms with Premium</h2>
+              <p style={{ color:"rgba(255,255,255,0.5)", fontSize:13, lineHeight:1.7, marginBottom:20 }}>
+                Free players can join any open room — but creating and hosting battles is a Premium feature. Upgrade to challenge your friends, set custom rules, and earn host XP bonuses.
+              </p>
+              <div style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:12, padding:"12px 16px", marginBottom:18, display:"flex", justifyContent:"space-around" }}>
+                {[{ label:"Trial", price:"₦100", sub:"3 hrs" }, { label:"Weekly", price:"₦200", sub:"7 days" }, { label:"Monthly", price:"₦500", sub:"30 days" }].map((p,i) => (
+                  <div key={i} style={{ textAlign:"center" }}>
+                    <div style={{ fontWeight:900, fontSize:15, color:"#a29bfe" }}>{p.price}</div>
+                    <div style={{ fontSize:11, fontWeight:700, color:"#fff", marginTop:1 }}>{p.label}</div>
+                    <div style={{ fontSize:10, color:"rgba(255,255,255,0.4)" }}>{p.sub}</div>
+                  </div>
+                ))}
+              </div>
+              <button onClick={() => nav("/upgrade")} style={{ width:"100%", padding:"13px 0", background:"linear-gradient(135deg,#6c63ff,#a29bfe)", color:"#fff", border:"none", borderRadius:12, fontWeight:800, fontSize:14, cursor:"pointer", marginBottom:10, boxShadow:"0 6px 20px rgba(108,99,255,0.35)" }}>
+                👑 Upgrade to Create Rooms →
+              </button>
+              <button onClick={() => setShowCreateGate(false)} style={{ width:"100%", padding:"11px 0", background:"none", border:"1.5px solid rgba(255,255,255,0.12)", borderRadius:12, color:"rgba(255,255,255,0.45)", fontWeight:600, fontSize:13, cursor:"pointer" }}>
+                Continue Browsing
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* HEADER */}
         <div style={s.header}>
@@ -230,7 +266,19 @@ export default function Arena() {
 
               <div style={s.sectionLabel}>Select Game Mode</div>
 
-              {/* MODE SHELVES */}
+              {/* Free user notice */}
+              {!student?.is_premium && (
+                <div style={{ background:"rgba(108,99,255,0.1)", border:"1px solid rgba(108,99,255,0.3)", borderRadius:10, padding:"10px 13px", marginBottom:10, display:"flex", alignItems:"center", gap:10 }}>
+                  <span style={{ fontSize:18 }}>🔒</span>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:12, fontWeight:800, color:"#a29bfe" }}>Join free · Create with Premium</div>
+                    <div style={{ fontSize:11, color:"rgba(255,255,255,0.4)", marginTop:1 }}>You can join any open room. Hosting requires Premium from ₦100.</div>
+                  </div>
+                  <button onClick={() => nav("/upgrade")} style={{ background:"#6c63ff", border:"none", borderRadius:8, color:"#fff", fontWeight:800, fontSize:11, padding:"6px 10px", cursor:"pointer", flexShrink:0 }}>
+                    Upgrade
+                  </button>
+                </div>
+              )}
               {MODE_GROUPS.map(group => (
                 <div key={group.label} style={{ marginBottom: 8 }}>
 
@@ -370,7 +418,9 @@ export default function Arena() {
 
                   <button style={{ ...s.createBtn, background: `linear-gradient(135deg, ${selectedModeInfo?.color || "#6c63ff"}, #1a1a2e)` }}
                     onClick={handleCreate}>
-                    Create {selectedModeInfo?.name} Room →
+                    {student?.is_premium
+                      ? `Create ${selectedModeInfo?.name} Room →`
+                      : `🔒 Create Room — Premium only`}
                   </button>
                 </div>
               )}
