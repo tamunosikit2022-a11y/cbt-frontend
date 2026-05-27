@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import AdminPDFVault from "../../components/AdminPDFVault";
 
 const API_URL = process.env.REACT_APP_API_URL || "https://cbt-backend-dujo.onrender.com/api";
 
@@ -165,6 +166,7 @@ const TABS = [
   { id: "questions",     icon: "❓", label: "Questions" },
   { id: "spin",          icon: "🎰", label: "Spin Wheel" },
   { id: "gems",          icon: "💎", label: "Gems & Vouchers" },
+  { id: "pdf_vault",     icon: "🗂️", label: "PDF Vault" },
 ];
 
 function VoucherStats({ API_URL, token }) {
@@ -1568,6 +1570,13 @@ export default function AdminDashboard() {
               ))}
             </div>
           </div>
+        )}
+
+        {tab === "pdf_vault" && (
+          <AdminPDFVault
+            adminToken={localStorage.getItem("admin_token")}
+            apiBase={API_URL}
+          />
         )}
 
       </div>

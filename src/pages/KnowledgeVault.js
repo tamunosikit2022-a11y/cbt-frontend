@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../utils/api";
+import VaultPDFDownloads from "../components/VaultPDFDownloads";
 
 const RARITY_STYLE = {
   common:    { bg:"rgba(0,208,132,.08)",  border:"rgba(0,208,132,.3)",  text:"#00D084" },
@@ -198,8 +199,9 @@ export default function KnowledgeVault() {
         {/* Tabs */}
         <div style={{ display:"flex", gap:8, marginBottom:20, background:"rgba(255,255,255,.04)", borderRadius:14, padding:6 }}>
           {[
-            { key:"store",   label:`🏪 Store (${allItems.length})` },
-            { key:"library", label:`📖 My Library (${library.length})` },
+            { key:"store",     label:`🏪 Store (${allItems.length})` },
+            { key:"library",   label:`📖 My Library (${library.length})` },
+            { key:"downloads", label:"📥 Downloads" },
           ].map(t => (
             <button key={t.key} onClick={() => setTab(t.key)}
               style={{ flex:1, padding:"10px 0", borderRadius:10, border:"none", cursor:"pointer",
@@ -272,6 +274,8 @@ export default function KnowledgeVault() {
               </div>
             )}
           </>
+        ) : tab === "downloads" ? (
+          <VaultPDFDownloads />
         ) : (
           /* Library tab */
           <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
