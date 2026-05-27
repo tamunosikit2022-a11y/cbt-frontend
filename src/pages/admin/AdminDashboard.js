@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import AdminPDFVault from "../../components/AdminPDFVault"; // pdf-vault-v3
+import AdminPDFVault from "../../components/AdminPDFVault"; // pdf-vault-v4
 
 const API_URL = process.env.REACT_APP_API_URL || "https://cbt-backend-dujo.onrender.com/api";
 
@@ -1521,6 +1521,8 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
+
+        {tab === "gems" && (
           <div>
             <h2 style={{ fontSize:20, fontWeight:800, color:"#2d3436", marginBottom:8 }}>💎 Gems Manager</h2>
             <p style={{ color:"#636e72", marginBottom:20, fontSize:14 }}>Manually award or remove gems, coins, or XP from any student account.</p>
