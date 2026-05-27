@@ -197,6 +197,7 @@ export default function Match() {
 
   return (
     <div style={s.page}>
+      <style>{`@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800;900&display=swap")`}</style>
 
       {/* FLOATING REACTIONS */}
       <div style={s.reactionsFloat}>
@@ -337,10 +338,10 @@ export default function Match() {
 const diffColor = d => ({ easy: "#00b894", medium: "#fdcb6e", hard: "#e17055" })[d] || "#a29bfe";
 
 const s = {
-  page:            { minHeight: "100vh", background: "#0f0f1a", fontFamily: "sans-serif" },
+  page:            { minHeight: "100vh", background: "#0B1020", fontFamily: "'Plus Jakarta Sans', sans-serif" },
   reactionsFloat:  { position: "fixed", right: 16, top: "50%", transform: "translateY(-50%)", display: "flex", flexDirection: "column", gap: 8, zIndex: 200, pointerEvents: "none" },
   reactionFloat:   { display: "flex", flexDirection: "column", alignItems: "center", background: "rgba(0,0,0,0.5)", borderRadius: 10, padding: "4px 8px", animation: "fadeIn 0.3s" },
-  topBar:          { background: "#1a1a2e", padding: "10px 16px", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", borderBottom: "1px solid #2d2d44" },
+  topBar:          { background: "rgba(255,255,255,.04)", padding: "10px 12px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", borderBottom: "1px solid rgba(255,255,255,.08)" },
   qBadge:          { background: "#6c63ff", color: "#fff", padding: "3px 10px", borderRadius: 8, fontSize: 12, fontWeight: 700 },
   subjectBadge:    { background: "#2d2d44", color: "#a29bfe", padding: "3px 8px", borderRadius: 6, fontSize: 11 },
   livesRow:        { display: "flex", gap: 2 },
@@ -351,15 +352,15 @@ const s = {
   progressFill:    { height: "100%", background: "#6c63ff" },
   timeBg:          { height: 4, background: "#2d2d44" },
   timeFill:        { height: "100%", borderRadius: 2 },
-  scoreOverlay:    { background: "#1a1a2e", borderBottom: "1px solid #2d2d44", padding: "10px 16px", display: "flex", flexDirection: "column", gap: 6 },
+  scoreOverlay:    { background: "rgba(11,16,32,.97)", backdropFilter: "blur(10px)", borderBottom: "1px solid rgba(255,255,255,.1)", padding: "10px 14px", display: "flex", flexDirection: "column", gap: 6, maxHeight: "55vw", overflowY: "auto" },
   scoreRow:        { display: "flex", alignItems: "center", gap: 8 },
   eliminatedBanner:{ background: "#e1705533", border: "1px solid #e17055", color: "#e17055", textAlign: "center", padding: "8px", fontSize: 14, fontWeight: 700 },
-  main:            { maxWidth: 700, margin: "0 auto", padding: "20px 16px" },
-  qCard:           { background: "#1a1a2e", borderRadius: 14, padding: "22px 18px", border: "1px solid #2d2d44", marginBottom: 14 },
+  main:            { maxWidth: 520, margin: "0 auto", padding: "16px 14px" },
+  qCard:           { background: "rgba(255,255,255,.05)", borderRadius: 16, padding: "20px 16px", border: "1px solid rgba(255,255,255,.09)", marginBottom: 14 },
   metaTag:         { fontSize: 11, padding: "2px 8px", borderRadius: 6, background: "#2d2d44" },
   qText:           { fontSize: 17, lineHeight: 1.7, color: "#fff", marginBottom: 20, marginTop: 10 },
   options:         { display: "flex", flexDirection: "column", gap: 10 },
-  option:          { display: "flex", alignItems: "center", gap: 12, padding: "13px 16px", border: "2px solid", borderRadius: 10, cursor: "pointer", transition: "all 0.15s" },
+  option:          { display: "flex", alignItems: "center", gap: 10, padding: "12px 13px", border: "2px solid", borderRadius: 12, cursor: "pointer", transition: "all 0.15s" },
   optLabel:        { width: 32, height: 32, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, flexShrink: 0, color: "#fff" },
   resultBox:       { marginTop: 14, border: "2px solid", borderRadius: 10, padding: "10px 14px", textAlign: "center" },
   waitingBox:      { marginTop: 14, background: "#2d2d44", borderRadius: 10, padding: "10px 14px", textAlign: "center", color: "#a29bfe", fontSize: 14 },
