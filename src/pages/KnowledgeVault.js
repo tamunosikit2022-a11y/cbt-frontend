@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../utils/api";
 import VaultPDFDownloads from "../components/VaultPDFDownloads";
@@ -199,9 +199,9 @@ export default function KnowledgeVault() {
         {/* Tabs */}
         <div style={{ display:"flex", gap:8, marginBottom:20, background:"rgba(255,255,255,.04)", borderRadius:14, padding:6 }}>
           {[
-            { key:"store",     label:`🏪 Store (${allItems.length})` },
-            { key:"library",   label:`📖 My Library (${library.length})` },
-            { key:"downloads", label:"📥 Downloads" },
+            { key:"store",   label:`Store (${allItems.length})` },
+            { key:"library", label:`My Library (${library.length})` },
+            { key:"downloads", label:"Downloads" },
           ].map(t => (
             <button key={t.key} onClick={() => setTab(t.key)}
               style={{ flex:1, padding:"10px 0", borderRadius:10, border:"none", cursor:"pointer",
