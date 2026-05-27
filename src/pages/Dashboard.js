@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import OnboardingTour from "../components/OnboardingTour";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import API from "../utils/api";
@@ -270,6 +271,7 @@ export default function Dashboard() {
   const [unreadCount,   setUnreadCount]   = useState(0);
   const [xpFloat,       setXpFloat]       = useState(null);
   const [sideOpen,      setSideOpen]      = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(!localStorage.getItem("onboarding_done"));
 
   // Inject global CSS once
   useEffect(() => {
@@ -492,6 +494,13 @@ export default function Dashboard() {
   );
 
   return (
+    <>
+      {showOnboarding && (
+        <OnboardingTour
+          studentName={student?.full_name || profile?.full_name}
+          onComplete={() => setShowOnboarding(false)}
+        />
+      )}
     <div style={{ minHeight:"100vh", background:C.bg, fontFamily:"'Plus Jakarta Sans',sans-serif", maxWidth:520, margin:"0 auto", position:"relative" }}>
       <Particles />
       <Sidebar />
@@ -878,5 +887,6 @@ export default function Dashboard() {
         </nav>
       </div>
     </div>
+    </>
   );
 }

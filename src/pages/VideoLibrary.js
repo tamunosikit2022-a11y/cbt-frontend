@@ -329,8 +329,8 @@ export default function VideoLibrary() {
                   <div style={s.videoInfo}>
                     <div style={s.videoTitle}>{v.title}</div>
                     <div style={s.videoMeta}>
-                      <span style={{ ...s.tag, background:"#f0edff", color:"#6c63ff" }}>{v.subject}</span>
-                      <span style={{ ...s.tag, background:"#f8f9fa", color:"#636e72" }}>{v.topic}</span>
+                      <span style={{ ...s.tag, background:"rgba(124,92,255,.15)", color:"#a29bfe" }}>{v.subject}</span>
+                      <span style={{ ...s.tag, background:"rgba(255,255,255,.07)", color:"rgba(255,255,255,.5)" }}>{v.topic}</span>
                     </div>
                     <div style={{ fontSize:11, marginTop:3 }}>
                       <span style={{ color: c?.color, fontWeight:700 }}>{c?.avatar} {c?.name}</span>
@@ -362,16 +362,16 @@ export default function VideoLibrary() {
 }
 
 const s = {
-  page:          { maxWidth:480, margin:"0 auto", minHeight:"100vh", background:"#f4f6fb", fontFamily:"'Segoe UI',sans-serif", display:"flex", flexDirection:"column" },
+  page:          { maxWidth:480, margin:"0 auto", minHeight:"100vh", background:"#0B1020", fontFamily:"'Plus Jakarta Sans',sans-serif", display:"flex", flexDirection:"column" },
   header:        { background:"linear-gradient(135deg,#1a1a2e,#6c63ff)", padding:"16px 18px", display:"flex", alignItems:"center", gap:12, color:"#fff" },
   back:          { background:"rgba(255,255,255,0.15)", border:"none", color:"#fff", borderRadius:10, width:36, height:36, fontSize:18, cursor:"pointer", flexShrink:0 },
   headerTitle:   { fontSize:18, fontWeight:900 },
   headerSub:     { fontSize:11, opacity:0.8, marginTop:1 },
   searchRow:     { padding:"10px 16px 0" },
-  searchBox:     { background:"#fff", borderRadius:12, padding:"10px 14px", display:"flex", alignItems:"center", boxShadow:"0 2px 8px rgba(0,0,0,0.06)" },
-  searchInput:   { border:"none", outline:"none", flex:1, fontSize:14, background:"transparent" },
+  searchBox:     { background:"rgba(255,255,255,.06)", borderRadius:12, padding:"10px 14px", display:"flex", alignItems:"center", border:"1px solid rgba(255,255,255,.09)" },
+  searchInput:   { border:"none", outline:"none", flex:1, fontSize:14, background:"transparent", color:"#F1F5F9" },
   body:          { flex:1, padding:"12px 16px 80px" },
-  sectionLabel:  { fontSize:11, fontWeight:800, color:"#b2bec3", letterSpacing:1, textTransform:"uppercase", margin:"16px 0 8px" },
+  sectionLabel:  { fontSize:11, fontWeight:800, color:"rgba(255,255,255,.35)", letterSpacing:1, textTransform:"uppercase", margin:"16px 0 8px" },
 
   // Official Channel Card
   officialCard:  { background:"linear-gradient(135deg,#6c63ff,#1a1a2e)", borderRadius:20, padding:"18px 16px", marginBottom:4 },
@@ -402,13 +402,13 @@ const s = {
 
   // Channel chips
   channelScroll: { display:"flex", gap:8, overflowX:"auto", paddingBottom:4, scrollbarWidth:"none" },
-  channelChip:   { padding:"7px 14px", background:"#fff", border:"2px solid #f0f0f0", borderRadius:20, fontSize:12, fontWeight:600, cursor:"pointer", whiteSpace:"nowrap", color:"#636e72", flexShrink:0 },
-  chipActive:    { background:"#6c63ff", color:"#fff", borderColor:"#6c63ff" },
+  channelChip:   { padding:"7px 14px", background:"rgba(255,255,255,.06)", border:"1px solid rgba(255,255,255,.1)", borderRadius:20, fontSize:12, fontWeight:600, cursor:"pointer", whiteSpace:"nowrap", color:"rgba(255,255,255,.6)", flexShrink:0 },
+  chipActive:    { background:"#7C5CFF", color:"#fff", borderColor:"#7C5CFF" },
 
   // Subject chips
   subjectScroll: { display:"flex", gap:6, overflowX:"auto", paddingBottom:4, scrollbarWidth:"none" },
-  subjectChip:   { padding:"6px 14px", background:"#fff", border:"2px solid #f0f0f0", borderRadius:20, fontSize:12, fontWeight:600, cursor:"pointer", whiteSpace:"nowrap", flexShrink:0 },
-  subjectActive: { background:"#6c63ff", color:"#fff", borderColor:"#6c63ff" },
+  subjectChip:   { padding:"6px 14px", background:"rgba(255,255,255,.06)", border:"1px solid rgba(255,255,255,.1)", borderRadius:20, fontSize:12, fontWeight:600, cursor:"pointer", whiteSpace:"nowrap", flexShrink:0, color:"rgba(255,255,255,.6)" },
+  subjectActive: { background:"#7C5CFF", color:"#fff", borderColor:"#7C5CFF" },
 
   // Player
   playerCard:    { background:"#1a1a2e", borderRadius:16, overflow:"hidden", marginBottom:16, marginTop:8 },
@@ -418,17 +418,17 @@ const s = {
   closeBtn:      { background:"rgba(255,255,255,0.1)", border:"none", color:"#fff", borderRadius:8, width:30, height:30, cursor:"pointer", fontSize:14, flexShrink:0 },
   playerEmbed:   { width:"100%", height:210, background:"#000" },
   playerActions: { padding:"10px 14px" },
-  practiceBtn:   { width:"100%", padding:12, background:"linear-gradient(135deg,#6c63ff,#a29bfe)", color:"#fff", border:"none", borderRadius:10, fontWeight:800, fontSize:14, cursor:"pointer" },
+  practiceBtn:   { width:"100%", padding:12, background:"linear-gradient(135deg,#7C5CFF,#5B8CFF)", color:"#fff", border:"none", borderRadius:10, fontWeight:800, fontSize:14, cursor:"pointer" },
 
   // Video cards
   videoList:     { display:"flex", flexDirection:"column", gap:10 },
-  videoCard:     { background:"#fff", borderRadius:14, padding:12, display:"flex", gap:12, cursor:"pointer", boxShadow:"0 1px 6px rgba(0,0,0,0.05)", border:"2px solid transparent" },
-  videoCardActive:{ borderColor:"#6c63ff", background:"#f8f7ff" },
+  videoCard:     { background:"rgba(255,255,255,.05)", borderRadius:14, padding:12, display:"flex", gap:12, cursor:"pointer", border:"1px solid rgba(255,255,255,.08)" },
+  videoCardActive:{ borderColor:"#7C5CFF", background:"rgba(124,92,255,.1)" },
   thumbnail:     { width:88, height:66, borderRadius:10, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", position:"relative" },
   playBtn:       { position:"absolute", bottom:4, right:4, background:"rgba(0,0,0,0.65)", color:"#fff", borderRadius:6, fontSize:9, padding:"2px 6px", fontWeight:700 },
   duration:      { position:"absolute", bottom:4, left:4, background:"rgba(0,0,0,0.65)", color:"#fff", borderRadius:6, fontSize:9, padding:"2px 5px" },
   videoInfo:     { flex:1, minWidth:0 },
-  videoTitle:    { fontWeight:700, fontSize:13, color:"#2d3436", lineHeight:1.3, marginBottom:5 },
+  videoTitle:    { fontWeight:700, fontSize:13, color:"#F1F5F9", lineHeight:1.3, marginBottom:5 },
   videoMeta:     { display:"flex", gap:4, flexWrap:"wrap", marginBottom:3 },
   tag:           { fontSize:10, fontWeight:600, borderRadius:6, padding:"2px 7px" },
 

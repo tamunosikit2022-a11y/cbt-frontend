@@ -55,14 +55,31 @@ const Factions         = lazy(() => import("./pages/Factions"));
 const AdminLogin       = lazy(() => import("./pages/admin/AdminLogin"));
 const AdminDashboard   = lazy(() => import("./pages/admin/AdminDashboard"));
 
-// ── LOADING FALLBACK ──────────────────────────────────────
+// ── ANIMATED LOADING FALLBACK ─────────────────────────────
 function PageLoader() {
   return (
-    <div style={{ minHeight:"100vh", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:16, background:"#0B1020", fontFamily:"sans-serif" }}>
-      <div style={{ width:64, height:64, borderRadius:18, background:"linear-gradient(135deg,#7C5CFF,#5B8CFF)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:32 }}>🎓</div>
-      <div style={{ display:"flex", gap:6 }}>
-        {[0,1,2].map(i => (
-          <div key={i} style={{ width:8, height:8, borderRadius:"50%", background:"#7C5CFF", opacity: 0.8 }} />
+    <div style={{
+      minHeight: "100vh", display: "flex", flexDirection: "column",
+      alignItems: "center", justifyContent: "center", gap: 16,
+      background: "#0B1020", fontFamily: "'Plus Jakarta Sans', sans-serif",
+    }}>
+      <style>{`
+        @keyframes pl-pulse { 0%,80%,100%{transform:scale(0.6);opacity:0.35} 40%{transform:scale(1.1);opacity:1} }
+        @keyframes pl-spin  { to{transform:rotate(360deg)} }
+      `}</style>
+      <div style={{
+        width: 64, height: 64, borderRadius: 18,
+        background: "linear-gradient(135deg,#7C5CFF,#5B8CFF)",
+        display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30,
+        boxShadow: "0 0 30px rgba(124,92,255,0.5)",
+        animation: "pl-spin 3s linear infinite",
+      }}>🎓</div>
+      <div style={{ display: "flex", gap: 7 }}>
+        {[0, 1, 2].map(i => (
+          <div key={i} style={{
+            width: 9, height: 9, borderRadius: "50%", background: "#7C5CFF",
+            animation: `pl-pulse 1.2s ease-in-out ${i * 0.2}s infinite`,
+          }} />
         ))}
       </div>
     </div>
@@ -124,11 +141,11 @@ export default function App() {
             <Route path="/admission"  element={<Private><AdmissionChecker /></Private>} />
 
             {/* New Features */}
-            <Route path="/videos"          element={<Private><VideoLibrary /></Private>} />
-            <Route path="/missions"        element={<Private><Missions /></Private>} />
-            <Route path="/spin"            element={<Private><SpinWheel /></Private>} />
-            <Route path="/theme"           element={<Private><ThemeSettings /></Private>} />
-            <Route path="/classroom"       element={<Private><ClassroomLobby /></Private>} />
+            <Route path="/videos"            element={<Private><VideoLibrary /></Private>} />
+            <Route path="/missions"          element={<Private><Missions /></Private>} />
+            <Route path="/spin"              element={<Private><SpinWheel /></Private>} />
+            <Route path="/theme"             element={<Private><ThemeSettings /></Private>} />
+            <Route path="/classroom"         element={<Private><ClassroomLobby /></Private>} />
             <Route path="/classroom/session" element={<Private><ClassroomSession /></Private>} />
 
             {/* Phase 2 Innovations */}
@@ -155,4 +172,3 @@ export default function App() {
     </ThemeProvider>
   );
 }
-

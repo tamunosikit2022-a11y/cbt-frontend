@@ -2,120 +2,160 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
+const C = {
+  bg:     "#0B1020",
+  purple: "#7C5CFF",
+  blue:   "#5B8CFF",
+  gold:   "#FFC857",
+  green:  "#00D084",
+  red:    "#FF5A5F",
+  text:   "#F1F5F9",
+  muted:  "rgba(255,255,255,0.45)",
+  border: "rgba(255,255,255,0.09)",
+};
+
+function pwStrength(pw) {
+  if (!pw) return { pct: 0, color: "transparent", label: "" };
+  if (pw.length >= 10 && /[A-Z]/.test(pw) && /\d/.test(pw))
+    return { pct: 100, color: C.green, label: "Strong 💪" };
+  if (pw.length >= 8)
+    return { pct: 66, color: C.gold, label: "Good" };
+  if (pw.length >= 6)
+    return { pct: 33, color: "#FF9500", label: "Weak" };
+  return { pct: 10, color: C.red, label: "Too short" };
+}
+
 export default function Register() {
   const { register } = useAuth();
   const nav = useNavigate();
-
-  const [form,    setForm]    = useState({ full_name: "", email: "", phone: "", password: "", confirm: "" });
+  const [form, setForm] = useState({ full_name: "", email: "", phone: "", password: "", confirm: "" });
   const [error,   setError]   = useState("");
   const [loading, setLoading] = useState(false);
-  const [showPass,setShowPass]= useState(false);
+  const [showPass,setShowPass] = useState(false);
+  const [focused, setFocused]  = useState("");
 
   const handle = (k) => (e) => setForm(p => ({ ...p, [k]: e.target.value }));
 
   const submit = async () => {
-    if (!form.full_name.trim()) return setError("Full name is required.");
-    if (!form.email.trim())     return setError("Email address is required.");
-    if (!form.phone.trim())     return setError("Phone number is required (used for password reset).");
-    if (!form.password)         return setError("Password is required.");
-    if (form.password.length < 6) return setError("Password must be at least 6 characters.");
+    if (!form.full_name.trim())     return setError("Full name is required.");
+    if (!form.email.trim())         return setError("Email address is required.");
+    if (!form.phone.trim())         return setError("Phone number is required (used for password reset).");
+    if (!form.password)             return setError("Password is required.");
+    if (form.password.length < 6)   return setError("Password must be at least 6 characters.");
     if (form.password !== form.confirm) return setError("Passwords do not match.");
-
-    // Basic Nigerian phone validation
     const phoneOk = /^(0|\+234)[789][01]\d{8}$/.test(form.phone.replace(/\s/g, ""));
-    if (!phoneOk) return setError("Enter a valid Nigerian phone number (e.g. 08012345678).");
-
+    if (!phoneOk)                   return setError("Enter a valid Nigerian phone (e.g. 08012345678).");
     setError(""); setLoading(true);
     try {
-      await register({
-        full_name: form.full_name.trim(),
-        email:     form.email.trim(),
-        phone:     form.phone.trim(),
-        password:  form.password,
-      });
+      await register({ full_name: form.full_name.trim(), email: form.email.trim(), phone: form.phone.trim(), password: form.password });
       nav("/dashboard");
     } catch (err) {
       setError(err.response?.data?.error || "Registration failed. Please try again.");
     } finally { setLoading(false); }
   };
 
+  const inputStyle = (id) => ({
+    width: "100%", padding: "13px 14px",
+    background: focused === id ? "rgba(124,92,255,0.09)" : "rgba(255,255,255,0.04)",
+    border: `1.5px solid ${focused === id ? C.purple : C.border}`,
+    borderRadius: 12, fontSize: 15, color: C.text,
+    boxSizing: "border-box", outline: "none",
+    transition: "all 0.2s ease",
+    fontFamily: "'Plus Jakarta Sans', sans-serif",
+  });
+
+  const pw = pwStrength(form.password);
+
   return (
-    <div style={s.page}>
-      <div style={s.card}>
-        <div style={s.logo}>🎓</div>
-        <h2 style={s.title}>Create your account</h2>
-        <p style={s.sub}>Free to join — start practising today</p>
+    <div style={{
+      minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
+      background: C.bg, padding: "20px 20px 40px",
+      fontFamily: "'Plus Jakarta Sans', sans-serif", position: "relative", overflow: "hidden",
+    }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+        @keyframes blob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-16px)} }
+        @keyframes reg-in { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:translateY(0)} }
+        ::placeholder { color: rgba(255,255,255,0.22) !important; }
+      `}</style>
 
-        <label style={s.label}>Full Name</label>
-        <input style={s.input} placeholder="John Doe"
-          value={form.full_name} onChange={handle("full_name")} />
+      <div style={{ position:"absolute", top:-70, right:-70, width:260, height:260, borderRadius:"50%", background:`${C.purple}13`, filter:"blur(60px)", animation:"blob 7s ease-in-out infinite" }} />
+      <div style={{ position:"absolute", bottom:-50, left:-50, width:220, height:220, borderRadius:"50%", background:`${C.blue}10`, filter:"blur(50px)", animation:"blob 9s ease-in-out infinite reverse" }} />
 
-        <label style={s.label}>Email Address</label>
-        <input style={s.input} type="email" placeholder="your@email.com"
-          value={form.email} onChange={handle("email")} />
-
-        <label style={s.label}>
-          Phone Number
-          <span style={{ fontSize: 11, color: "#636e72", fontWeight: 400, marginLeft: 6 }}>
-            (required for password reset)
-          </span>
-        </label>
-        <input style={s.input} type="tel" placeholder="08012345678"
-          value={form.phone} onChange={handle("phone")} />
-
-        <label style={s.label}>Password</label>
-        <div style={{ position: "relative" }}>
-          <input style={{ ...s.input, paddingRight: 44 }}
-            type={showPass ? "text" : "password"}
-            placeholder="Min. 6 characters"
-            value={form.password} onChange={handle("password")} />
-          <button style={s.eyeBtn} onClick={() => setShowPass(p => !p)} tabIndex={-1}>
-            {showPass ? "🙈" : "👁️"}
-          </button>
+      <div style={{ width: "100%", maxWidth: 420, position: "relative", zIndex: 1, animation: "reg-in .4s ease" }}>
+        {/* Logo */}
+        <div style={{ textAlign: "center", marginBottom: 26 }}>
+          <div style={{ width: 64, height: 64, borderRadius: 18, background: `linear-gradient(135deg,${C.purple},${C.blue})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30, margin: "0 auto 12px", boxShadow: `0 8px 32px ${C.purple}55` }}>🎓</div>
+          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 900, color: C.text }}>Create your account</h1>
+          <p style={{ margin: "6px 0 0", fontSize: 13, color: C.muted }}>Free to join — start practising today</p>
         </div>
 
-        <label style={s.label}>Confirm Password</label>
-        <input style={s.input} type="password" placeholder="Repeat your password"
-          value={form.confirm} onChange={handle("confirm")}
-          onKeyDown={e => e.key === "Enter" && submit()} />
-
-        {/* Password strength */}
-        {form.password && (
-          <div style={{ marginBottom: 8 }}>
-            <div style={{ height: 4, background: "#f0f0f0", borderRadius: 2, overflow: "hidden" }}>
-              <div style={{ height: "100%", borderRadius: 2, transition: "all 0.3s",
-                width: form.password.length >= 10 ? "100%" : form.password.length >= 8 ? "66%" : form.password.length >= 6 ? "33%" : "10%",
-                background: form.password.length >= 10 ? "#00b894" : form.password.length >= 8 ? "#fdcb6e" : "#e17055" }} />
+        <div style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${C.border}`, borderRadius: 24, padding: "24px 22px", backdropFilter: "blur(20px)", boxShadow: "0 24px 60px rgba(0,0,0,0.4)" }}>
+          {error && (
+            <div style={{ background: "rgba(255,90,95,0.12)", border: `1px solid ${C.red}44`, borderRadius: 12, padding: "11px 14px", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+              <span>⚠️</span><span style={{ fontSize: 13, color: "#FF8A8F" }}>{error}</span>
             </div>
+          )}
+
+          {[
+            { key: "full_name", label: "Full Name", type: "text", placeholder: "John Doe" },
+            { key: "email",     label: "Email Address", type: "email", placeholder: "your@email.com" },
+            { key: "phone",     label: "Phone Number", type: "tel", placeholder: "08012345678", hint: "For password reset" },
+          ].map(f => (
+            <div key={f.key} style={{ marginBottom: 14 }}>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: C.muted, marginBottom: 6, letterSpacing: 0.5, textTransform: "uppercase" }}>
+                {f.label}{f.hint && <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, marginLeft: 6 }}>· {f.hint}</span>}
+              </label>
+              <input style={inputStyle(f.key)} type={f.type} placeholder={f.placeholder}
+                value={form[f.key]} onChange={handle(f.key)}
+                onFocus={() => setFocused(f.key)} onBlur={() => setFocused("")} />
+            </div>
+          ))}
+
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: C.muted, marginBottom: 6, letterSpacing: 0.5, textTransform: "uppercase" }}>Password</label>
+          <div style={{ position: "relative", marginBottom: 6 }}>
+            <input style={{ ...inputStyle("pw"), paddingRight: 48 }}
+              type={showPass ? "text" : "password"} placeholder="Min. 6 characters"
+              value={form.password} onChange={handle("password")}
+              onFocus={() => setFocused("pw")} onBlur={() => setFocused("")} />
+            <button onClick={() => setShowPass(p => !p)} tabIndex={-1}
+              style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 18, color: C.muted, padding: 4 }}>
+              {showPass ? "🙈" : "👁️"}
+            </button>
           </div>
-        )}
+          {form.password && (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ height: 4, background: "rgba(255,255,255,0.08)", borderRadius: 2, overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${pw.pct}%`, background: pw.color, borderRadius: 2, transition: "all .3s" }} />
+              </div>
+              <div style={{ fontSize: 11, color: pw.color, marginTop: 4, fontWeight: 700 }}>{pw.label}</div>
+            </div>
+          )}
 
-        {error && <p style={s.error}>⚠️ {error}</p>}
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: C.muted, marginBottom: 6, letterSpacing: 0.5, textTransform: "uppercase" }}>Confirm Password</label>
+          <input style={{ ...inputStyle("cf"), marginBottom: 22 }}
+            type="password" placeholder="Repeat your password"
+            value={form.confirm} onChange={handle("confirm")}
+            onFocus={() => setFocused("cf")} onBlur={() => setFocused("")}
+            onKeyDown={e => e.key === "Enter" && submit()} />
 
-        <button style={{ ...s.btn, opacity: loading ? 0.7 : 1 }}
-          onClick={submit} disabled={loading}>
-          {loading ? "Creating account..." : "Create Free Account"}
-        </button>
+          <button onClick={submit} disabled={loading} style={{
+            width: "100%", padding: "14px 0",
+            background: loading ? "rgba(124,92,255,0.5)" : `linear-gradient(135deg,${C.purple},${C.blue})`,
+            color: "#fff", border: "none", borderRadius: 14,
+            fontWeight: 900, fontSize: 16, cursor: loading ? "not-allowed" : "pointer",
+            boxShadow: loading ? "none" : `0 4px 20px ${C.purple}55`,
+            transition: "all 0.2s ease", fontFamily: "'Plus Jakarta Sans', sans-serif",
+          }}>
+            {loading ? "Creating account…" : "Create Free Account 🎓"}
+          </button>
 
-        <p style={s.foot}>
-          Already registered? <Link to="/login" style={s.link}>Login here</Link>
-        </p>
+          <p style={{ textAlign: "center", marginTop: 18, fontSize: 14, color: C.muted }}>
+            Already have an account?{" "}
+            <Link to="/login" style={{ color: C.purple, fontWeight: 700, textDecoration: "none" }}>Login here</Link>
+          </p>
+        </div>
       </div>
     </div>
   );
 }
-
-const s = {
-  page:   { minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg,#6c63ff,#3f51b5)", padding: 16 },
-  card:   { background: "#fff", borderRadius: 16, padding: "32px 28px", width: "100%", maxWidth: 420, boxShadow: "0 8px 40px rgba(0,0,0,0.2)" },
-  logo:   { textAlign: "center", fontSize: 36, marginBottom: 6 },
-  title:  { textAlign: "center", fontSize: 22, fontWeight: 800, marginBottom: 4 },
-  sub:    { textAlign: "center", color: "#636e72", marginBottom: 20, fontSize: 13 },
-  label:  { display: "block", fontSize: 13, fontWeight: 600, color: "#2d3436", marginBottom: 5, marginTop: 12 },
-  input:  { width: "100%", padding: "11px 14px", border: "2px solid #dfe6e9", borderRadius: 10, fontSize: 14, boxSizing: "border-box", outline: "none", marginBottom: 2 },
-  eyeBtn: { position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 18 },
-  btn:    { width: "100%", padding: 13, background: "linear-gradient(135deg,#6c63ff,#3f51b5)", color: "#fff", border: "none", borderRadius: 10, fontWeight: 800, fontSize: 15, cursor: "pointer", marginTop: 12 },
-  error:  { color: "#e17055", fontSize: 13, marginBottom: 10, background: "#ffeae9", padding: "8px 12px", borderRadius: 8 },
-  foot:   { textAlign: "center", marginTop: 16, fontSize: 13, color: "#636e72" },
-  link:   { color: "#6c63ff", fontWeight: 700, textDecoration: "none" },
-};
