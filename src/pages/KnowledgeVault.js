@@ -274,8 +274,6 @@ export default function KnowledgeVault() {
               </div>
             )}
           </>
-        ) : tab === "downloads" ? (
-          <VaultPDFDownloads />
         ) : (
           /* Library tab */
           <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
@@ -312,7 +310,9 @@ export default function KnowledgeVault() {
               );
             })}
           </div>
-        )}
+        ) : tab === "downloads" ? (
+          <VaultPDFDownloads />
+        ) : null}
       </div>
     </div>
   );
