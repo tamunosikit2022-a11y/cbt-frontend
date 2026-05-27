@@ -12,7 +12,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from "react";
-import API from "../../utils/api";  // adjust path if needed
+import API from "../utils/api";  // adjust path if needed
 
 const CATEGORY_META = {
   assignments: { label: "Assignments",  emoji: "📋", color: "#6C63FF" },
