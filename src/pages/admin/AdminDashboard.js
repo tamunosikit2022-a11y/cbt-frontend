@@ -1646,3 +1646,5 @@ const st = {
   alertLink:    { background: "none", border: "none", color: "#e17055", fontWeight: 700, cursor: "pointer", fontSize: 12, padding: 0, marginTop: 4 },
   examTypeCard: { background: "#f8f9fa", borderRadius: 10, padding: "16px 20px", textAlign: "center", flex: 1, minWidth: 140 },
 };
+
+// v2
