@@ -260,219 +260,222 @@ export default function WaitingRoom() {
 
   return (
     <div style={s.page}>
-      <style>{`@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800;900&display=swap");::placeholder{color:rgba(255,255,255,.3)!important}*{box-sizing:border-box}`}</style>
-      <div style={s.container}>
 
-        {/* HEADER */}
-        <div style={s.header}>
-          <button style={s.back} onClick={handleLeave}>← Leave</button>
-          <div style={{ textAlign: "center", flex: 1 }}>
-            <div style={{ color: "#fff", fontWeight: 800, fontSize: 17 }}>
-              {MODE_LABELS[room.mode]} · {BATTLE_LABELS[room.battleType]}
-            </div>
-            <div style={{ color: "#636e72", fontSize: 12, marginTop: 2 }}>
-              {room.subject || "Any subject"} · {room.questionCount}Q · {room.timePerQuestion}s each
-            </div>
+      {/* COUNTDOWN OVERLAY */}
+      {countdown !== null && (
+        <div style={s.countdownOverlay}>
+          <div style={s.countdownRing}>
+            <div style={s.countdownNum}>{countdown}</div>
           </div>
-          <div style={s.codeBox} onClick={copyCode}>
-            <span style={{ fontSize: 10, color: "#a29bfe" }}>ROOM CODE</span>
-            <span style={{ fontSize: 22, fontWeight: 900, letterSpacing: 4, color: "#fff" }}>{room.code}</span>
-            <span style={{ fontSize: 10, color: copied ? "#00b894" : "#636e72" }}>{copied ? "Copied! ✓" : "Tap to copy"}</span>
+          <div style={{ color:"#fff", fontSize:18, marginTop:20, fontWeight:800, letterSpacing:2, opacity:0.8 }}>BATTLE STARTS!</div>
+        </div>
+      )}
+
+      {/* KICK CONFIRM MODAL */}
+      {kickConfirm && (
+        <div style={s.modalOverlay}>
+          <div style={s.modal}>
+            <div style={{ fontSize:32, marginBottom:10 }}>🚫</div>
+            <div style={{ color:"#fff", fontWeight:900, fontSize:17, marginBottom:6 }}>Remove Player?</div>
+            <div style={{ color:"rgba(255,255,255,0.55)", fontSize:13, marginBottom:20, lineHeight:1.6 }}>
+              Remove <strong style={{ color:"#a29bfe" }}>{kickConfirm.name}</strong> from the room? They won't be able to rejoin.
+            </div>
+            <div style={{ display:"flex", gap:10 }}>
+              <button style={s.kickCancelBtn} onClick={() => setKickConfirm(null)}>Cancel</button>
+              <button style={s.kickConfirmBtn} onClick={() => handleKickPlayer(kickConfirm.id, kickConfirm.name)}>Remove</button>
+            </div>
           </div>
         </div>
+      )}
 
-        {/* FIX BUG 4: AUTO-START WARNING - MAKE SURE THIS IS RENDERED */}
-        {autoStart !== null && (
-          <div style={s.autoStartBanner}>
-            ⚡ Room full! Auto-starting in {autoStart}s...
+      {/* HEADER */}
+      <div style={s.header}>
+        <button style={s.back} onClick={handleLeave}>← Leave</button>
+        <div style={{ flex:1, textAlign:"center" }}>
+          <div style={{ color:"#fff", fontWeight:900, fontSize:15, lineHeight:1.3 }}>
+            {MODE_LABELS[room.mode]}
           </div>
-        )}
-
-        {/* COUNTDOWN OVERLAY */}
-        {countdown !== null && (
-          <div style={s.countdownOverlay}>
-            <div style={s.countdownNum}>{countdown}</div>
-            <div style={{ color: "#fff", fontSize: 20, marginTop: 8, fontWeight: 700 }}>Battle starts!</div>
+          <div style={{ color:"rgba(255,255,255,0.45)", fontSize:11, marginTop:2 }}>
+            {BATTLE_LABELS[room.battleType]} · {room.subject || "Any subject"} · {room.questionCount}Q
           </div>
-        )}
+        </div>
+        <div style={{ width:36 }} /> {/* spacer to center title */}
+      </div>
 
-        {error && <div style={s.errorBanner}>{error}</div>}
+      {/* ROOM CODE CARD */}
+      <div style={s.codeCard} onClick={copyCode}>
+        <div style={{ fontSize:11, fontWeight:700, color:"#a29bfe", letterSpacing:2, marginBottom:4 }}>ROOM CODE</div>
+        <div style={s.codeDigits}>{(room.code || "").split("").map((ch, i) => (
+          <span key={i} style={s.codeChar}>{ch}</span>
+        ))}</div>
+        <div style={{ fontSize:12, color: copied ? "#00b894" : "rgba(255,255,255,0.35)", marginTop:6, fontWeight:600 }}>
+          {copied ? "✓ Copied to clipboard!" : "Tap to copy code"}
+        </div>
+      </div>
 
-        <div style={s.twoCol}>
-          {/* LEFT: PLAYERS */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {/* ALERTS */}
+      {autoStart !== null && (
+        <div style={s.autoStartBanner}>
+          ⚡ Room full — auto-starting in {autoStart}s...
+        </div>
+      )}
+      {error && (
+        <div style={s.errorBanner}>{error}</div>
+      )}
 
-            {/* SQUAD VIEW for duo/clash_squad */}
-            {isSquadMode(room.mode) ? (
-              <div style={s.panel}>
-                <div style={s.panelTitle}>
-                  Players ({players.length}/{totalSlots})
+      {/* PLAYERS */}
+      <div style={s.section}>
+        <div style={s.sectionHeader}>
+          <span style={s.sectionTitle}>Players</span>
+          <span style={s.playerCount}>{players.length}/{totalSlots}</span>
+        </div>
+
+        {isSquadMode(room.mode) ? (
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+            {[squad0, squad1].map((squad, si) => (
+              <div key={si} style={{ ...s.squadBox, borderColor: SQUAD_COLORS[si] + "88" }}>
+                <div style={{ color:SQUAD_COLORS[si], fontWeight:800, fontSize:11, marginBottom:8, letterSpacing:1 }}>
+                  {SQUAD_LABELS[si]}
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                  {[squad0, squad1].map((squad, si) => (
-                    <div key={si} style={{ ...s.squadBox, borderColor: SQUAD_COLORS[si] }}>
-                      <div style={{ color: SQUAD_COLORS[si], fontWeight: 700, fontSize: 12, marginBottom: 8 }}>
-                        {SQUAD_LABELS[si]}
-                      </div>
-                      {squad.map(p => (
-                        <PlayerRow key={p.id} p={p}
-                          isSelf={p.id === playerId}
-                          isHost={p.id === room.host?.id}
-                          canKick={isHost && p.id !== playerId}
-                          onKick={() => setKickConfirm(p)}
-                        />
-                      ))}
-                      {Array.from({ length: Math.max(0, (room.mode === "clash_squad" ? 4 : 2) - squad.length) }).map((_, i) => (
-                        <div key={i} style={s.emptySlot}>
-                          <span style={{ fontSize: 20 }}>❓</span>
-                          <span style={{ color: "#636e72", fontSize: 12 }}>Waiting...</span>
-                        </div>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-                <div style={s.shareRow}>
-                  <a href={`https://wa.me/?text=${encodeURIComponent(inviteText)}`}
-                    target="_blank" rel="noreferrer" style={s.waBtn}>
-                    📱 Invite on WhatsApp
-                  </a>
-                </div>
-              </div>
-            ) : (
-              <div style={s.panel}>
-                <div style={s.panelTitle}>Players ({players.length}/{totalSlots})</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
-                  {players.map(p => (
-                    <PlayerRow key={p.id} p={p}
-                      isSelf={p.id === playerId}
-                      isHost={p.id === room.host?.id}
-                      canKick={isHost && p.id !== playerId}
-                      onKick={() => setKickConfirm(p)}
-                    />
-                  ))}
-                  {Array.from({ length: Math.max(0, Math.min(totalSlots, 6) - players.length) }).map((_, i) => (
-                    <div key={i} style={s.emptySlot}>
-                      <span style={{ fontSize: 20 }}>❓</span>
-                      <span style={{ color: "#636e72", fontSize: 12 }}>Waiting for player...</span>
-                    </div>
-                  ))}
-                  {room.mode === "battle_royal" && players.length < totalSlots && (
-                    <div style={{ fontSize: 12, color: "#636e72", textAlign: "center", padding: "4px 0" }}>
-                      +{totalSlots - players.length} more slots open
-                    </div>
-                  )}
-                </div>
-                <a href={`https://wa.me/?text=${encodeURIComponent(inviteText)}`}
-                  target="_blank" rel="noreferrer" style={s.waBtn}>
-                  📱 Invite on WhatsApp
-                </a>
-              </div>
-            )}
-
-            {/* ACTIONS */}
-            <div style={s.panel}>
-              {!isReady ? (
-                <button style={s.readyBtn} onClick={handleReady}>✓ I'm Ready!</button>
-              ) : (
-                <div style={s.readyMsg}>✅ You're ready! ({readyCount}/{players.length})</div>
-              )}
-              {isHost && isReady && (
-                <>
-                  <button
-                    style={{ ...s.startBtn, opacity: canStart || canForce ? 1 : 0.5, marginTop: 10 }}
-                    onClick={() => handleStart(false)}
-                    disabled={!canStart && !canForce}>
-                    {players.length < 2
-                      ? "⏳ Waiting for another player..."
-                      : allReady
-                      ? "🚀 Start Battle!"
-                      : `⏳ ${readyCount}/${players.length} ready...`}
-                  </button>
-                  {canForce && (
-                    <button
-                      style={{ ...s.forceBtn, marginTop: 8 }}
-                      onClick={() => {
-                        if (window.confirm(`Force start? ${players.filter(p=>!p.ready).map(p=>p.name).join(", ")} is not ready yet.`))
-                          handleStart(true);
-                      }}>
-                      ⚡ Force Start (ignore not-ready)
-                    </button>
-                  )}
-                </>
-              )}
-              {!isHost && isReady && (
-                <p style={{ fontSize: 13, color: "#636e72", textAlign: "center", marginTop: 8 }}>
-                  Waiting for host to start...
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* RIGHT: REACTIONS + CHAT */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-
-            <div style={s.panel}>
-              <div style={s.panelTitle}>Reactions</div>
-              <div style={s.reactRow}>
-                {["🔥","💪","😂","😱","🎯","👏","💯","⚡","🧠","😤"].map(e => (
-                  <button key={e} style={s.reactBtn} onClick={() => sendReaction(e)}>{e}</button>
+                {squad.map(p => (
+                  <PlayerRow key={p.id} p={p}
+                    isSelf={p.id === playerId}
+                    isHost={p.id === room.host?.id}
+                    canKick={isHost && p.id !== playerId}
+                    onKick={() => setKickConfirm(p)}
+                  />
                 ))}
-              </div>
-            </div>
-
-            <div style={{ ...s.panel, flex: 1 }}>
-              <div style={s.panelTitle}>Activity</div>
-              <div style={s.chatList} id="chat-list">
-                {chat.length === 0 && (
-                  <p style={{ color: "#636e72", fontSize: 12, textAlign: "center", padding: 12 }}>Waiting for players...</p>
-                )}
-                {chat.map(c => (
-                  <div key={c.id} style={s.chatMsg}>
-                    <span style={{
-                      color: c.type === "system" ? "#a29bfe" : c.type === "reaction" ? "#fdcb6e" : "#fff",
-                      fontSize: 12
-                    }}>
-                      {c.type === "system" ? `• ${c.msg}` : c.msg}
-                    </span>
+                {Array.from({ length: Math.max(0, (room.mode === "clash_squad" ? 4 : 2) - squad.length) }).map((_, i) => (
+                  <div key={i} style={s.emptySlot}>
+                    <span style={{ fontSize:16 }}>❓</span>
+                    <span style={{ color:"rgba(255,255,255,0.25)", fontSize:11 }}>Empty</span>
                   </div>
                 ))}
               </div>
-              <div style={s.chatInputRow}>
-                <input
-                  style={s.chatInput}
-                  placeholder="Say something..."
-                  value={chatInput}
-                  onChange={e => setChatInput(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && sendChat()}
-                  maxLength={80}
-                />
-                <button style={s.chatSendBtn} onClick={sendChat}>Send</button>
-              </div>
-            </div>
+            ))}
           </div>
-        </div>{/* end twoCol */}
+        ) : (
+          <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+            {players.map(p => (
+              <PlayerRow key={p.id} p={p}
+                isSelf={p.id === playerId}
+                isHost={p.id === room.host?.id}
+                canKick={isHost && p.id !== playerId}
+                onKick={() => setKickConfirm(p)}
+              />
+            ))}
+            {Array.from({ length: Math.max(0, Math.min(totalSlots, 6) - players.length) }).map((_, i) => (
+              <div key={i} style={s.emptySlot}>
+                <span style={{ fontSize:18 }}>❓</span>
+                <span style={{ color:"rgba(255,255,255,0.25)", fontSize:12 }}>Waiting for player...</span>
+              </div>
+            ))}
+            {room.mode === "battle_royal" && players.length < totalSlots && (
+              <div style={{ fontSize:11, color:"rgba(255,255,255,0.3)", textAlign:"center", padding:"4px 0" }}>
+                +{totalSlots - players.length} more slots open
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
-        {/* KICK CONFIRM MODAL */}
-        {kickConfirm && (
-          <div style={s.modalOverlay}>
-            <div style={s.modal}>
-              <div style={{ fontSize: 28, marginBottom: 8 }}>🚫</div>
-              <div style={{ color: "#fff", fontWeight: 800, fontSize: 16, marginBottom: 6 }}>Remove Player?</div>
-              <div style={{ color: "#a29bfe", fontSize: 13, marginBottom: 18 }}>
-                Remove <strong style={{ color: "#fff" }}>{kickConfirm.name}</strong> from the room?
-                They will not be able to rejoin.
-              </div>
-              <div style={{ display: "flex", gap: 10 }}>
-                <button style={s.kickCancelBtn} onClick={() => setKickConfirm(null)}>Cancel</button>
-                <button style={s.kickConfirmBtn} onClick={() => handleKickPlayer(kickConfirm.id, kickConfirm.name)}>
-                  Yes, Remove
-                </button>
-              </div>
-            </div>
+      {/* INVITE */}
+      <a
+        href={`https://wa.me/?text=${encodeURIComponent(inviteText)}`}
+        target="_blank" rel="noreferrer"
+        style={s.waBtn}>
+        📱 Invite Friends on WhatsApp
+      </a>
+
+      {/* READY / START ACTIONS */}
+      <div style={s.section}>
+        {!isReady ? (
+          <button style={s.readyBtn} onClick={handleReady}>
+            ✓ I'm Ready to Battle!
+          </button>
+        ) : (
+          <div style={s.readyMsg}>
+            <span style={{ fontSize:20 }}>✅</span>
+            <span>You're ready! ({readyCount}/{players.length} ready)</span>
           </div>
         )}
 
-      </div>{/* end container */}
+        {isHost && isReady && (
+          <div style={{ marginTop:10, display:"flex", flexDirection:"column", gap:8 }}>
+            <button
+              style={{ ...s.startBtn, opacity: (canStart || canForce) ? 1 : 0.45 }}
+              onClick={() => handleStart(false)}
+              disabled={!canStart && !canForce}>
+              {players.length < 2
+                ? "⏳ Waiting for another player..."
+                : allReady
+                ? "🚀 Start Battle!"
+                : `⏳ ${readyCount}/${players.length} ready...`}
+            </button>
+            {canForce && (
+              <button
+                style={s.forceBtn}
+                onClick={() => {
+                  if (window.confirm(`Force start? ${players.filter(p=>!p.ready).map(p=>p.name).join(", ")} not ready yet.`))
+                    handleStart(true);
+                }}>
+                ⚡ Force Start
+              </button>
+            )}
+          </div>
+        )}
+
+        {!isHost && isReady && (
+          <p style={{ fontSize:13, color:"rgba(255,255,255,0.4)", textAlign:"center", marginTop:10 }}>
+            Waiting for host to start the battle...
+          </p>
+        )}
+      </div>
+
+      {/* REACTIONS */}
+      <div style={s.section}>
+        <div style={s.sectionTitle}>Reactions</div>
+        <div style={s.reactRow}>
+          {["🔥","💪","😂","😱","🎯","👏","💯","⚡","🧠","😤"].map(e => (
+            <button key={e} style={s.reactBtn} onClick={() => sendReaction(e)}>{e}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* ACTIVITY / CHAT */}
+      <div style={s.section}>
+        <div style={s.sectionTitle}>Activity</div>
+        <div style={s.chatList} id="chat-list">
+          {chat.length === 0 && (
+            <p style={{ color:"rgba(255,255,255,0.25)", fontSize:12, textAlign:"center", padding:12 }}>
+              Waiting for players...
+            </p>
+          )}
+          {chat.map(c => (
+            <div key={c.id} style={s.chatMsg}>
+              <span style={{
+                color: c.type === "system" ? "#a29bfe" : c.type === "reaction" ? "#fdcb6e" : "#fff",
+                fontSize:13
+              }}>
+                {c.type === "system" ? `• ${c.msg}` : c.msg}
+              </span>
+            </div>
+          ))}
+        </div>
+        <div style={s.chatInputRow}>
+          <input
+            style={s.chatInput}
+            placeholder="Say something..."
+            value={chatInput}
+            onChange={e => setChatInput(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && sendChat()}
+            maxLength={80}
+          />
+          <button style={s.chatSendBtn} onClick={sendChat}>Send</button>
+        </div>
+      </div>
+
+      <div style={{ height:32 }} />
     </div>
   );
 }
@@ -480,27 +483,33 @@ export default function WaitingRoom() {
 function PlayerRow({ p, isSelf, isHost, canKick, onKick }) {
   return (
     <div style={{
-      display: "flex", alignItems: "center", gap: 10,
-      background: isSelf ? "rgba(124,92,255,.12)" : "rgba(255,255,255,.03)",
-      borderRadius: 10, padding: "9px 12px",
-      border: isSelf ? "1px solid #7C5CFF" : "1px solid rgba(255,255,255,.08)",
+      display:"flex", alignItems:"center", gap:10,
+      background: isSelf ? "rgba(108,99,255,0.15)" : "rgba(255,255,255,0.04)",
+      borderRadius:14, padding:"11px 13px",
+      border:`1.5px solid ${isSelf ? "#6c63ff66" : "rgba(255,255,255,0.07)"}`,
     }}>
-      <span style={{ fontSize: 22 }}>{p.avatar || "🎓"}</span>
-      <div style={{ flex: 1 }}>
-        <span style={{ color: "#fff", fontWeight: isSelf ? 700 : 500, fontSize: 13 }}>
-          {p.name}
-        </span>
-        {isSelf  && <span style={{ fontSize: 10, background: "#6c63ff", color: "#fff", padding: "1px 6px", borderRadius: 6, marginLeft: 6 }}>You</span>}
-        {isHost  && <span style={{ fontSize: 10, background: "#fdcb6e", color: "#000", padding: "1px 6px", borderRadius: 6, marginLeft: 4 }}>Host</span>}
+      <div style={{ width:38, height:38, borderRadius:12, background:"rgba(255,255,255,0.07)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, flexShrink:0 }}>
+        {p.avatar || "🎓"}
       </div>
-      <div style={{ fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 10, background: p.ready ? "#00b89422" : "#2d2d44", color: p.ready ? "#00b894" : "#636e72", border: `1px solid ${p.ready ? "#00b894" : "#2d2d44"}` }}>
+      <div style={{ flex:1, minWidth:0 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
+          <span style={{ color:"#fff", fontWeight:700, fontSize:14, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+            {p.name}
+          </span>
+          {isSelf && <span style={{ fontSize:10, background:"#6c63ff", color:"#fff", padding:"2px 7px", borderRadius:6, flexShrink:0 }}>You</span>}
+          {isHost && <span style={{ fontSize:10, background:"#fdcb6e", color:"#000", padding:"2px 7px", borderRadius:6, flexShrink:0 }}>Host</span>}
+        </div>
+      </div>
+      <div style={{ fontSize:12, fontWeight:700, padding:"5px 10px", borderRadius:20, flexShrink:0,
+        background: p.ready ? "rgba(0,184,148,0.15)" : "rgba(255,255,255,0.06)",
+        color:       p.ready ? "#00b894" : "rgba(255,255,255,0.35)",
+        border:`1px solid ${p.ready ? "#00b89444" : "rgba(255,255,255,0.08)"}`,
+      }}>
         {p.ready ? "✓ Ready" : "Waiting"}
       </div>
       {canKick && (
-        <button
-          onClick={onKick}
-          title="Remove player"
-          style={{ background: "#e1705522", border: "1px solid #e17055", color: "#e17055", borderRadius: 6, padding: "3px 8px", cursor: "pointer", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+        <button onClick={onKick}
+          style={{ background:"rgba(225,112,85,0.15)", border:"1px solid #e1705566", color:"#e17055", borderRadius:8, padding:"5px 9px", cursor:"pointer", fontSize:13, fontWeight:700, flexShrink:0 }}>
           ✕
         </button>
       )}
@@ -510,44 +519,74 @@ function PlayerRow({ p, isSelf, isHost, canKick, onKick }) {
 
 function Loader({ text, isError, onBack }) {
   return (
-    <div style={{ minHeight: "100vh", background: "#0B1020", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: "'Plus Jakarta Sans', sans-serif", gap: 16 }}>
-      <div style={{ fontSize: 40 }}>{isError ? "❌" : "⏳"}</div>
-      <p style={{ color: isError ? "#e17055" : "#636e72" }}>{text}</p>
-      {onBack && <button style={{ background: "#6c63ff", color: "#fff", border: "none", borderRadius: 8, padding: "10px 20px", cursor: "pointer" }} onClick={onBack}>← Back to Arena</button>}
+    <div style={{ minHeight:"100vh", background:"#080812", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", fontFamily:"'Plus Jakarta Sans',sans-serif", gap:16, padding:20 }}>
+      <div style={{ fontSize:48 }}>{isError ? "❌" : "⏳"}</div>
+      <p style={{ color: isError ? "#e17055" : "rgba(255,255,255,0.45)", textAlign:"center", fontSize:14 }}>{text}</p>
+      {onBack && (
+        <button style={{ background:"#6c63ff", color:"#fff", border:"none", borderRadius:12, padding:"12px 24px", cursor:"pointer", fontWeight:800, fontSize:14 }} onClick={onBack}>
+          ← Back to Arena
+        </button>
+      )}
     </div>
   );
 }
 
 const s = {
-  page:            { minHeight: "100vh", background: "#0B1020", fontFamily: "'Plus Jakarta Sans', sans-serif", padding: "14px 14px 30px" },
-  container:       { maxWidth: 540, margin: "0 auto" },
-  header:          { display: "flex", alignItems: "center", gap: 12, marginBottom: 16, flexWrap: "wrap" },
-  back:            { background: "none", border: "none", color: "#a29bfe", fontWeight: 700, cursor: "pointer", fontSize: 14 },
-  codeBox:         { background: "rgba(124,92,255,.18)", border: "2px solid #7C5CFF", borderRadius: 12, padding: "8px 12px", textAlign: "center", cursor: "pointer", display: "flex", flexDirection: "column", gap: 2, minWidth: 110 },
-  autoStartBanner: { background: "#fdcb6e22", border: "1px solid #fdcb6e", color: "#fdcb6e", textAlign: "center", padding: "10px", borderRadius: 8, marginBottom: 12, fontWeight: 700, fontSize: 14 },
-  countdownOverlay:{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.9)", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", zIndex: 1000 },
-  countdownNum:    { fontSize: 100, fontWeight: 900, color: "#7C5CFF", lineHeight: 1 },
-  errorBanner:     { background: "#e1705522", border: "1px solid #e17055", color: "#e17055", padding: "10px 14px", borderRadius: 8, marginBottom: 12, fontSize: 13, textAlign: "center" },
-  twoCol:          { display: "flex", flexDirection: "column", gap: 12 },
-  panel:           { background: "rgba(255,255,255,.045)", borderRadius: 16, padding: "16px", border: "1px solid rgba(255,255,255,.09)" },
-  panelTitle:      { color: "#F1F5F9", fontSize: 14, fontWeight: 800, marginBottom: 12 },
-  squadBox:        { background: "rgba(0,0,0,.25)", borderRadius: 12, padding: 10, border: "2px solid", display: "flex", flexDirection: "column", gap: 7 },
-  emptySlot:       { display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,.02)", borderRadius: 10, padding: "9px 12px", border: "1px dashed rgba(255,255,255,.14)", opacity: 0.6 },
-  shareRow:        { marginTop: 12, borderTop: "1px solid #2d2d44", paddingTop: 12 },
-  waBtn:           { display: "block", textAlign: "center", padding: "9px", background: "#25D366", color: "#fff", borderRadius: 8, fontWeight: 700, textDecoration: "none", fontSize: 13 },
-  readyBtn:        { width: "100%", padding: 13, background: "#00b894", color: "#fff", border: "none", borderRadius: 10, fontWeight: 800, fontSize: 15, cursor: "pointer" },
-  readyMsg:        { textAlign: "center", color: "#00b894", fontWeight: 700, fontSize: 14, padding: "10px 0" },
-  startBtn:        { width: "100%", padding: 13, background: "linear-gradient(135deg,#6c63ff,#e17055)", color: "#fff", border: "none", borderRadius: 10, fontWeight: 800, fontSize: 15, cursor: "pointer" },
-  reactRow:        { display: "flex", flexWrap: "wrap", gap: 6 },
-  reactBtn:        { fontSize: 20, background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 8, padding: "6px 9px", cursor: "pointer" },
-  chatList:        { display: "flex", flexDirection: "column", gap: 3, maxHeight: 180, overflowY: "auto", marginBottom: 10 },
-  chatMsg:         { padding: "3px 0" },
-  chatInputRow:    { display: "flex", gap: 8 },
-  chatInput:       { flex: 1, background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 8, padding: "8px 10px", color: "#fff", fontSize: 13, fontFamily: "inherit", outline: "none" },
-  chatSendBtn:     { padding: "8px 14px", background: "#6c63ff", color: "#fff", border: "none", borderRadius: 8, fontWeight: 700, cursor: "pointer", fontSize: 13 },
-  forceBtn:        { width: "100%", padding: 10, background: "transparent", color: "#fdcb6e", border: "2px solid #fdcb6e44", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer" },
-  modalOverlay:    { position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000 },
-  modal:           { background: "#151B2E", border: "1px solid #7C5CFF", borderRadius: 20, padding: "24px 20px", textAlign: "center", maxWidth: 340, width: "92%" },
-  kickCancelBtn:   { flex: 1, padding: "10px", background: "#2d2d44", color: "#fff", border: "none", borderRadius: 8, fontWeight: 700, cursor: "pointer", fontSize: 14 },
-  kickConfirmBtn:  { flex: 1, padding: "10px", background: "#e17055", color: "#fff", border: "none", borderRadius: 8, fontWeight: 700, cursor: "pointer", fontSize: 14 },
+  page:             { minHeight:"100vh", background:"#080812", fontFamily:"'Plus Jakarta Sans',sans-serif", padding:"0 0 20px", maxWidth:520, margin:"0 auto" },
+
+  // Header
+  header:           { display:"flex", alignItems:"center", gap:10, padding:"16px 16px 12px", position:"sticky", top:0, background:"rgba(8,8,18,0.95)", backdropFilter:"blur(12px)", zIndex:50, borderBottom:"1px solid rgba(255,255,255,0.06)" },
+  back:             { background:"none", border:"none", color:"#a29bfe", fontWeight:700, cursor:"pointer", fontSize:14, padding:"6px 8px", flexShrink:0 },
+
+  // Room code
+  codeCard:         { margin:"16px 16px 0", background:"linear-gradient(135deg,#1a1440,#0f0e1a)", border:"2px solid #6c63ff55", borderRadius:20, padding:"18px 16px", textAlign:"center", cursor:"pointer", boxShadow:"0 8px 32px rgba(108,99,255,0.2)" },
+  codeDigits:       { display:"flex", gap:8, justifyContent:"center", alignItems:"center" },
+  codeChar:         { width:38, height:48, background:"rgba(108,99,255,0.15)", border:"1.5px solid #6c63ff44", borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, fontWeight:900, color:"#fff", letterSpacing:0 },
+
+  // Alerts
+  autoStartBanner:  { margin:"12px 16px 0", background:"rgba(253,203,110,0.12)", border:"1.5px solid #fdcb6e55", color:"#fdcb6e", padding:"12px 16px", borderRadius:14, fontWeight:700, fontSize:13, textAlign:"center" },
+  errorBanner:      { margin:"12px 16px 0", background:"rgba(225,112,85,0.12)", border:"1.5px solid #e1705555", color:"#e17055", padding:"12px 16px", borderRadius:14, fontSize:13, textAlign:"center" },
+
+  // Sections
+  section:          { margin:"14px 16px 0", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:20, padding:"16px 14px" },
+  sectionHeader:    { display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12 },
+  sectionTitle:     { color:"#fff", fontWeight:800, fontSize:14 },
+  playerCount:      { background:"rgba(108,99,255,0.2)", color:"#a29bfe", fontWeight:800, fontSize:12, padding:"3px 10px", borderRadius:20, border:"1px solid #6c63ff44" },
+
+  // Squad
+  squadBox:         { background:"rgba(255,255,255,0.03)", borderRadius:14, padding:10, border:"2px solid", display:"flex", flexDirection:"column", gap:7 },
+
+  // Empty slot
+  emptySlot:        { display:"flex", alignItems:"center", gap:10, background:"rgba(255,255,255,0.02)", borderRadius:14, padding:"11px 13px", border:"1.5px dashed rgba(255,255,255,0.08)" },
+
+  // WhatsApp invite
+  waBtn:            { display:"block", margin:"12px 16px 0", padding:"13px 16px", background:"linear-gradient(135deg,#25D366,#128C7E)", color:"#fff", borderRadius:16, fontWeight:800, fontSize:14, textAlign:"center", textDecoration:"none", boxShadow:"0 4px 16px rgba(37,211,102,0.25)" },
+
+  // Actions
+  readyBtn:         { width:"100%", padding:"15px 0", background:"linear-gradient(135deg,#00b894,#00cec9)", color:"#fff", border:"none", borderRadius:14, fontWeight:900, fontSize:16, cursor:"pointer", boxShadow:"0 4px 20px rgba(0,184,148,0.35)" },
+  readyMsg:         { display:"flex", alignItems:"center", justifyContent:"center", gap:8, color:"#00b894", fontWeight:800, fontSize:14, padding:"12px 0" },
+  startBtn:         { width:"100%", padding:"15px 0", background:"linear-gradient(135deg,#6c63ff,#e17055)", color:"#fff", border:"none", borderRadius:14, fontWeight:900, fontSize:16, cursor:"pointer", boxShadow:"0 4px 20px rgba(108,99,255,0.35)" },
+  forceBtn:         { width:"100%", padding:"12px 0", background:"transparent", color:"#fdcb6e", border:"2px solid rgba(253,203,110,0.3)", borderRadius:14, fontWeight:800, fontSize:14, cursor:"pointer" },
+
+  // Reactions
+  reactRow:         { display:"flex", flexWrap:"wrap", gap:8, marginTop:10 },
+  reactBtn:         { fontSize:24, background:"rgba(255,255,255,0.05)", border:"1.5px solid rgba(255,255,255,0.08)", borderRadius:12, padding:"8px 10px", cursor:"pointer", lineHeight:1, minWidth:44, textAlign:"center" },
+
+  // Chat
+  chatList:         { display:"flex", flexDirection:"column", gap:4, maxHeight:160, overflowY:"auto", marginBottom:10, marginTop:10 },
+  chatMsg:          { padding:"2px 0" },
+  chatInputRow:     { display:"flex", gap:8 },
+  chatInput:        { flex:1, background:"rgba(255,255,255,0.06)", border:"1.5px solid rgba(255,255,255,0.1)", borderRadius:12, padding:"11px 12px", color:"#fff", fontSize:14, outline:"none" },
+  chatSendBtn:      { padding:"11px 16px", background:"#6c63ff", color:"#fff", border:"none", borderRadius:12, fontWeight:800, cursor:"pointer", fontSize:14, flexShrink:0 },
+
+  // Countdown
+  countdownOverlay: { position:"fixed", inset:0, background:"rgba(8,8,18,0.96)", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", zIndex:1000, backdropFilter:"blur(8px)" },
+  countdownRing:    { width:160, height:160, borderRadius:"50%", border:"4px solid #6c63ff", background:"rgba(108,99,255,0.1)", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 0 60px rgba(108,99,255,0.5)" },
+  countdownNum:     { fontSize:80, fontWeight:900, color:"#fff", lineHeight:1 },
+
+  // Modal
+  modalOverlay:     { position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:2000, padding:20 },
+  modal:            { background:"#12112a", border:"1.5px solid #6c63ff55", borderRadius:20, padding:"28px 24px", textAlign:"center", width:"100%", maxWidth:340 },
+  kickCancelBtn:    { flex:1, padding:"12px 0", background:"rgba(255,255,255,0.07)", color:"#fff", border:"1px solid rgba(255,255,255,0.1)", borderRadius:12, fontWeight:700, cursor:"pointer", fontSize:14 },
+  kickConfirmBtn:   { flex:1, padding:"12px 0", background:"#e17055", color:"#fff", border:"none", borderRadius:12, fontWeight:800, cursor:"pointer", fontSize:14 },
 };
