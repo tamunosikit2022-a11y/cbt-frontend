@@ -35,6 +35,7 @@ const AdmissionChecker = lazy(() => import("./pages/AdmissionChecker"));
 // ── PHASE 2 INNOVATIONS ───────────────────────────────────
 const PersonalityProfile = lazy(() => import("./pages/PersonalityProfile"));
 const BeatYourself       = lazy(() => import("./pages/BeatYourself"));
+const ParentPortal       = lazy(() => import("./pages/ParentPortal"));
 
 // ── NEW FEATURES ──────────────────────────────────────────
 const VideoLibrary     = lazy(() => import("./pages/VideoLibrary"));
@@ -158,6 +159,9 @@ export default function App() {
             <Route path="/skills"   element={<Private><Skills /></Private>} />
             <Route path="/vault"    element={<Private><KnowledgeVault /></Private>} />
             <Route path="/factions" element={<Private><Factions /></Private>} />
+
+            {/* Parent */}
+            <Route path="/parent" element={<ParentPortal />} />
 
             {/* Admin */}
             <Route path="/admin/login" element={<AdminLogin />} />

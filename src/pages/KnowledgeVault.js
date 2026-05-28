@@ -33,6 +33,7 @@ export default function KnowledgeVault() {
   const [tab,     setTab]     = useState("store");
   const [modal,   setModal]   = useState(null);
   const [busy,    setBusy]    = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
   const [toast,   setToast]   = useState(null);
   const [search,  setSearch]  = useState("");
   const [filter,  setFilter]  = useState("all");
@@ -62,13 +63,24 @@ export default function KnowledgeVault() {
 
   const handleUnlock = async (currency) => {
     if (!modal) return;
+    // Check balance before hitting API
+    const balance = currency === "coins" ? (data?.coins||0) : (data?.gems||0);
+    const cost    = currency === "coins" ? modal.cost?.coins : modal.cost?.gems;
+    if (balance < cost) { setShowUpgrade(true); return; }
     setBusy(true);
     try {
       const r = await API.post("/vault/unlock", { item_id: modal.id, currency });
       setData(d => ({ ...d, coins: r.data.coins, gems: r.data.gems }));
       showToast(r.data.message);
       setModal(null); await loadData();
-    } catch (err) { showToast(err.response?.data?.error || "Failed", "error"); }
+    } catch (err) {
+      const msg = err.response?.data?.error || "Failed";
+      if (msg.toLowerCase().includes("insufficient") || msg.toLowerCase().includes("enough")) {
+        setShowUpgrade(true);
+      } else {
+        showToast(msg, "error");
+      }
+    }
     finally { setBusy(false); }
   };
 
@@ -100,6 +112,69 @@ export default function KnowledgeVault() {
           border:`1px solid ${toast.type==="success"?"#00D084":"#FF5A5F"}`,
           color: toast.type==="success" ? "#00D084" : "#FF5A5F", fontWeight:700, backdropFilter:"blur(20px)" }}>
           {toast.msg}
+        </div>
+      )}
+
+
+      {/* Premium Upgrade Prompt */}
+      {showUpgrade && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.92)", zIndex:2000,
+          display:"flex", alignItems:"center", justifyContent:"center", padding:20, backdropFilter:"blur(16px)" }}
+          onClick={()=>setShowUpgrade(false)}>
+          <div style={{ background:"linear-gradient(135deg,#0f1729 0%,#1a1040 100%)", borderRadius:24,
+            padding:32, maxWidth:400, width:"100%", textAlign:"center",
+            border:"1px solid rgba(124,92,255,.5)", boxShadow:"0 0 80px rgba(124,92,255,.3)" }}
+            onClick={e=>e.stopPropagation()}>
+
+            {/* Icon */}
+            <div style={{ fontSize:60, marginBottom:12 }}>🔐</div>
+            <h2 style={{ color:"#fff", fontWeight:900, fontSize:22, marginBottom:8 }}>
+              Unlock Premium Access
+            </h2>
+            <p style={{ color:"rgba(255,255,255,.5)", fontSize:13, marginBottom:24, lineHeight:1.6 }}>
+              You don't have enough coins or gems to unlock <strong style={{color:"#FFC857"}}>{modal?.title}</strong>.
+              Get Premium to access all study materials instantly.
+            </p>
+
+            {/* What you get */}
+            <div style={{ background:"rgba(124,92,255,.1)", borderRadius:14, padding:16, marginBottom:20, textAlign:"left", border:"1px solid rgba(124,92,255,.2)" }}>
+              <div style={{ color:"#7C5CFF", fontWeight:800, fontSize:12, marginBottom:10, textTransform:"uppercase", letterSpacing:1 }}>
+                Premium includes
+              </div>
+              {[
+                "All vault items unlocked instantly",
+                "JAMB & WAEC past questions (5 years)",
+                "Physics, Chemistry & Maths formula sheets",
+                "PDF downloads — results, notes & more",
+                "Unlimited CBT practice sessions",
+              ].map((item,i) => (
+                <div key={i} style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
+                  <span style={{ color:"#00D084", fontSize:14 }}>✓</span>
+                  <span style={{ color:"rgba(255,255,255,.7)", fontSize:12 }}>{item}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Price */}
+            <div style={{ marginBottom:20 }}>
+              <div style={{ color:"rgba(255,255,255,.4)", fontSize:12, marginBottom:2 }}>One-time activation</div>
+              <div style={{ color:"#FFC857", fontWeight:900, fontSize:28 }}>₦1,500</div>
+              <div style={{ color:"rgba(255,255,255,.3)", fontSize:11 }}>Full access · No expiry on vault items</div>
+            </div>
+
+            {/* CTA */}
+            <a href="https://wa.me/2349036995642?text=I want to get Premium access for Scholars Syndicate"
+              target="_blank" rel="noopener noreferrer"
+              style={{ display:"block", background:"linear-gradient(135deg,#25D366,#128C7E)", color:"#fff",
+                fontWeight:800, fontSize:15, padding:"14px 0", borderRadius:14, textDecoration:"none",
+                marginBottom:10 }}>
+              Pay via WhatsApp
+            </a>
+            <button onClick={()=>setShowUpgrade(false)}
+              style={{ background:"none", border:"none", color:"rgba(255,255,255,.3)", fontSize:12, cursor:"pointer" }}>
+              Maybe later
+            </button>
+          </div>
         </div>
       )}
 
