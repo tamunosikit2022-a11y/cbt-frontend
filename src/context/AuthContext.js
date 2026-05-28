@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import API from "../utils/api";
 
 const AuthContext = createContext(null);
@@ -6,6 +6,7 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
+  const pollRef = useRef(null);
 
   // Restore session from localStorage on mount
   useEffect(() => {
@@ -62,6 +63,31 @@ export function AuthProvider({ children }) {
       if (err.response?.status === 401) logout();
     }
   }, [logout]);
+
+  // AUTO-POLL — silently check every 30s if student is free
+  // Stops automatically the moment premium is detected
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token || !student) return;
+    if (student.is_premium) return; // already premium — no need to poll
+
+    pollRef.current = setInterval(async () => {
+      try {
+        const res = await API.get("/auth/profile");
+        const updated = res.data;
+        if (updated.is_premium) {
+          // Premium just activated — update state, stop polling
+          localStorage.setItem("student", JSON.stringify(updated));
+          setStudent(updated);
+          clearInterval(pollRef.current);
+        }
+      } catch {
+        // Silently ignore network errors during background poll
+      }
+    }, 30000); // every 30 seconds
+
+    return () => clearInterval(pollRef.current);
+  }, [student?.is_premium, student?.id]);
 
   // Don't render until we know auth state
   if (loading) return <div style={{ minHeight: "100vh", background: "#0B1020" }} />;

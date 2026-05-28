@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import API from "../utils/api";
@@ -87,6 +87,16 @@ export default function Upgrade() {
   const [activating, setActivating] = useState(false);
   const [error,      setError]      = useState("");
   const [success,    setSuccess]    = useState("");
+  const [justActivated, setJustActivated] = useState(false);
+
+  // Detect when polling flips premium — show celebration
+  const prevPremium = useRef(student?.is_premium);
+  useEffect(() => {
+    if (!prevPremium.current && student?.is_premium) {
+      setJustActivated(true);
+    }
+    prevPremium.current = student?.is_premium;
+  }, [student?.is_premium]);
 
   const plan = PLANS.find(p => p.id === selected);
 
@@ -122,6 +132,32 @@ export default function Upgrade() {
       setError(err.response?.data?.error || "Invalid key. Check it carefully and try again.");
     } finally { setActivating(false); }
   };
+
+  // Celebration screen — fires once when premium is detected by background poll
+  if (justActivated) {
+    return (
+      <div style={{ ...s.page, display:"flex", alignItems:"center", justifyContent:"center", textAlign:"center" }}>
+        <div style={{ maxWidth:360, width:"100%", padding:28 }}>
+          <div style={{ fontSize:72, marginBottom:16, animation:"bounce 0.6s ease" }}>🎉</div>
+          <div style={{ fontSize:44, marginBottom:8 }}>👑</div>
+          <h1 style={{ fontSize:28, fontWeight:900, color:"#fff", marginBottom:8 }}>You're Premium!</h1>
+          <p style={{ color:"rgba(255,255,255,0.6)", fontSize:14, lineHeight:1.7, marginBottom:24 }}>
+            Your account just upgraded. Full access is now unlocked — explanations, weakness mode, Arena hosting, and everything else.
+          </p>
+          <div style={{ background:"rgba(108,99,255,0.15)", border:"1.5px solid #6c63ff44", borderRadius:16, padding:"16px 14px", marginBottom:24 }}>
+            {["📊 Full Analytics", "🔁 Error Review Bank", "🏛️ Admission Checker", "🎯 Predicted JAMB Score", "⚡ 2× XP on all exams", "🏟️ Create Arena Rooms"].map((f, i) => (
+              <div key={i} style={{ color:"#a29bfe", fontSize:13, fontWeight:700, padding:"5px 0", borderBottom: i < 5 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>{f}</div>
+            ))}
+          </div>
+          <button
+            onClick={() => nav("/dashboard")}
+            style={{ width:"100%", padding:"14px 0", background:"linear-gradient(135deg,#6c63ff,#a29bfe)", color:"#fff", border:"none", borderRadius:13, fontWeight:800, fontSize:16, cursor:"pointer", boxShadow:"0 6px 20px rgba(108,99,255,0.4)" }}>
+            Start Using Premium →
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Already premium screen
   if (student?.is_premium) {
