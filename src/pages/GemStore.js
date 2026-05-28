@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import API from "../utils/api";
 
 const RARITY_GLOW = { legendary: "#FFC857", epic: "#7C5CFF", rare: "#00D4FF", common: "#00D084" };
@@ -27,6 +28,8 @@ const CSS = `
 
 export default function GemStore() {
   const nav = useNavigate();
+  const { student } = useAuth();
+  const isPremium = student?.is_premium;
   const [data,       setData]       = useState(null);
   const [loading,    setLoading]    = useState(true);
   const [buying,     setBuying]     = useState(null);
@@ -196,12 +199,30 @@ export default function GemStore() {
         </div>
 
         {/* Gem packages */}
-        <h2 style={{ color:"rgba(255,255,255,.7)", fontSize:13, fontWeight:700, letterSpacing:2, marginBottom:16 }}>
+        <h2 style={{ color:"rgba(255,255,255,.7)", fontSize:13, fontWeight:700, letterSpacing:2, marginBottom:8 }}>
           CHOOSE A PACK
         </h2>
 
+        {/* Premium discount banner */}
+        {isPremium ? (
+          <div style={{ background:"linear-gradient(135deg,#6c63ff22,#a29bfe11)", border:"1.5px solid #6c63ff44", borderRadius:12, padding:"10px 14px", marginBottom:16, display:"flex", alignItems:"center", gap:8 }}>
+            <span style={{ fontSize:18 }}>👑</span>
+            <div style={{ fontSize:12, fontWeight:800, color:"#a29bfe" }}>Premium discount applied — 20% off all packs!</div>
+          </div>
+        ) : (
+          <div onClick={() => nav("/upgrade")} style={{ background:"rgba(108,99,255,0.08)", border:"1px solid rgba(108,99,255,0.25)", borderRadius:12, padding:"10px 14px", marginBottom:16, display:"flex", alignItems:"center", gap:8, cursor:"pointer" }}>
+            <span style={{ fontSize:18 }}>💎</span>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:12, fontWeight:800, color:"#a29bfe" }}>Premium members get 20% off all gem packs</div>
+              <div style={{ fontSize:11, color:"rgba(255,255,255,0.4)" }}>Upgrade from ₦100 →</div>
+            </div>
+          </div>
+        )}
+
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
-          {packages.map((pkg, i) => (
+          {packages.map((pkg, i) => {
+            const discountedPrice = isPremium ? Math.floor(pkg.price * 0.8) : pkg.price;
+            return (
             <div key={pkg.id} className={`gem-card ${pkg.popular ? "popular" : ""}`}
               style={{ padding:20, animationDelay:`${i*.08}s` }}>
 
@@ -209,6 +230,13 @@ export default function GemStore() {
                 <div style={{ position:"absolute", top:12, right:12, background:"linear-gradient(135deg,#FFC857,#FF9500)",
                   borderRadius:20, padding:"3px 10px", fontSize:11, fontWeight:800, color:"#000" }}>
                   ⭐ BEST VALUE
+                </div>
+              )}
+
+              {isPremium && (
+                <div style={{ position:"absolute", top:12, left:12, background:"linear-gradient(135deg,#6c63ff,#a29bfe)",
+                  borderRadius:20, padding:"3px 10px", fontSize:11, fontWeight:800, color:"#fff" }}>
+                  -20%
                 </div>
               )}
 
@@ -226,16 +254,17 @@ export default function GemStore() {
                 </p>
               </div>
 
-              <button className="cyber-btn" onClick={(e) => handleBuy(pkg, e)}
+              <button className="cyber-btn" onClick={(e) => handleBuy({ ...pkg, price: discountedPrice }, e)}
                 style={{ width:"100%", padding:"12px 0", borderRadius:12, fontWeight:800, fontSize:15,
-                  background: pkg.popular
-                    ? "linear-gradient(135deg,#25D366,#128C7E)"
-                    : "linear-gradient(135deg,#25D366,#128C7E)",
+                  background:"linear-gradient(135deg,#25D366,#128C7E)",
                   color:"#fff" }}>
-                📱 Buy on WhatsApp — ₦{pkg.price.toLocaleString()}
+                {isPremium
+                  ? <>📱 Buy — <s style={{ opacity:0.5, fontSize:12 }}>₦{pkg.price.toLocaleString()}</s> ₦{discountedPrice.toLocaleString()}</>
+                  : `📱 Buy on WhatsApp — ₦${pkg.price.toLocaleString()}`}
               </button>
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* How to earn gems */}

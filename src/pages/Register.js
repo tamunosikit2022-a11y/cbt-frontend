@@ -29,7 +29,7 @@ export default function Register() {
   const { register } = useAuth();
   const nav = useNavigate();
   const location = useLocation();
-  const refCode = new URLSearchParams(location.search).get("ref") || "";
+  const [welcomed, setWelcomed] = useState(false);
   const [form, setForm] = useState({ full_name: "", email: "", phone: "", password: "", confirm: "" });
   const [error,   setError]   = useState("");
   const [loading, setLoading] = useState(false);
@@ -50,7 +50,8 @@ export default function Register() {
     setError(""); setLoading(true);
     try {
       await register({ full_name: form.full_name.trim(), email: form.email.trim(), phone: form.phone.trim(), password: form.password, referred_by: refCode || undefined });
-      nav("/dashboard");
+      setWelcomed(true);
+      setTimeout(() => nav("/dashboard"), 3000);
     } catch (err) {
       setError(err.response?.data?.error || "Registration failed. Please try again.");
     } finally { setLoading(false); }
@@ -67,6 +68,28 @@ export default function Register() {
   });
 
   const pw = pwStrength(form.password);
+
+  // Welcome screen shown briefly after successful registration
+  if (welcomed) {
+    return (
+      <div style={{ minHeight:"100vh", background:"#0B1020", display:"flex", alignItems:"center", justifyContent:"center", padding:20, fontFamily:"'Plus Jakarta Sans', sans-serif" }}>
+        <div style={{ textAlign:"center", maxWidth:360 }}>
+          <div style={{ fontSize:64, marginBottom:16 }}>🎓</div>
+          <h1 style={{ color:"#fff", fontSize:24, fontWeight:900, marginBottom:8 }}>Welcome to Scholars Syndicate!</h1>
+          <p style={{ color:"rgba(255,255,255,0.6)", fontSize:14, marginBottom:24, lineHeight:1.7 }}>
+            Your account is ready. You're on the <strong style={{ color:"#a29bfe" }}>free plan</strong> — start practising now.
+          </p>
+          <div style={{ background:"rgba(108,99,255,0.15)", border:"1.5px solid #6c63ff44", borderRadius:14, padding:"14px 16px", marginBottom:20 }}>
+            <div style={{ fontWeight:800, fontSize:13, color:"#a29bfe", marginBottom:6 }}>💡 Tip: Unlock full access from ₦100</div>
+            <div style={{ fontSize:12, color:"rgba(255,255,255,0.5)", lineHeight:1.6 }}>
+              Premium gives you full explanations, AI weakness mode, Arena hosting, predicted JAMB score, and 2× XP on every exam.
+            </div>
+          </div>
+          <div style={{ color:"rgba(255,255,255,0.3)", fontSize:12 }}>Taking you to your dashboard...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{

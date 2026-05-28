@@ -944,21 +944,64 @@ export default function AdminDashboard() {
           <>
             <div style={st.pageHeader}>
               <div>
-                <h2 style={st.pageTitle}>💰 Revenue Overview</h2>
-                <p style={st.pageSubtitle}>Activation key sales & earnings</p>
+                <h2 style={st.pageTitle}>💰 Revenue & Conversion</h2>
+                <p style={st.pageSubtitle}>Activation key sales, earnings, and student conversion metrics</p>
               </div>
             </div>
 
-            {!revenue ? <Skeleton /> : (
+            {!revenue ? <Skeleton /> : (() => {
+              const totalStudents  = stats?.total_students  || 0;
+              const premiumCount   = stats?.premium_students || revenue.totalKeys || 0;
+              const freeCount      = Math.max(0, totalStudents - premiumCount);
+              const conversionRate = totalStudents > 0 ? ((premiumCount / totalStudents) * 100).toFixed(1) : "0.0";
+              const topPlan        = Object.entries(revenue.byPlan || {}).sort((a,b) => b[1]-a[1])[0];
+              return (
               <>
+                {/* Top KPI strip */}
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:10, marginBottom:16 }}>
+                  {[
+                    { icon:"👥", label:"Total Students",   value: totalStudents.toLocaleString(),         sub:"All registered",           color:"#6c63ff" },
+                    { icon:"👑", label:"Premium Students", value: premiumCount.toLocaleString(),           sub:"Active premium",            color:"#fdcb6e" },
+                    { icon:"🆓", label:"Free Students",    value: freeCount.toLocaleString(),              sub:"Not yet upgraded",          color:"#0984e3" },
+                    { icon:"📈", label:"Conversion Rate",  value: `${conversionRate}%`,                   sub:"Free → Premium",           color:"#00b894" },
+                    { icon:"💰", label:"Total Revenue",    value:`₦${revenue.total.toLocaleString()}`,    sub:"From all activations",     color:"#00b894" },
+                    { icon:"🔑", label:"Keys Sold",        value: revenue.totalKeys,                       sub:"Total activations",         color:"#a29bfe" },
+                  ].map((c,i) => (
+                    <div key={i} style={{ background:"#fff", borderRadius:12, padding:"14px 14px", boxShadow:"0 2px 10px rgba(0,0,0,0.06)" }}>
+                      <div style={{ fontSize:20, marginBottom:4 }}>{c.icon}</div>
+                      <div style={{ fontWeight:900, fontSize:22, color:c.color }}>{c.value}</div>
+                      <div style={{ fontSize:12, fontWeight:700, color:"#2d3436" }}>{c.label}</div>
+                      <div style={{ fontSize:11, color:"#b2bec3" }}>{c.sub}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Conversion bar */}
+                <div style={{ background:"#fff", borderRadius:14, padding:"16px 18px", marginBottom:16, boxShadow:"0 2px 10px rgba(0,0,0,0.06)" }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
+                    <div style={{ fontWeight:800, fontSize:14 }}>Free → Premium Conversion</div>
+                    <div style={{ fontWeight:900, color:"#00b894" }}>{conversionRate}%</div>
+                  </div>
+                  <div style={{ height:12, background:"#f0f0f0", borderRadius:6, overflow:"hidden", marginBottom:8 }}>
+                    <div style={{ height:"100%", width:`${Math.min(parseFloat(conversionRate),100)}%`, background:"linear-gradient(90deg,#6c63ff,#00b894)", borderRadius:6, transition:"width 1s ease" }} />
+                  </div>
+                  <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, color:"#636e72" }}>
+                    <span>👑 {premiumCount} premium</span>
+                    <span>🆓 {freeCount} free</span>
+                  </div>
+                  {topPlan && (
+                    <div style={{ marginTop:10, background:"#f8f9fa", borderRadius:8, padding:"8px 12px", fontSize:12 }}>
+                      🏆 <strong>Top plan:</strong> {topPlan[0]} ({topPlan[1]} activations) — ₦{(topPlan[1] * ({hourly:100,daily:200,weekly:700,monthly:2000,yearly:15000}[topPlan[0]]||0)).toLocaleString()} earned
+                    </div>
+                  )}
+                </div>
+
                 {/* Revenue Stats */}
                 <div style={st.statsGrid}>
-                  <StatCard icon="💰" label="Total Revenue"     value={`₦${revenue.total.toLocaleString()}`}  sub="From all key activations"     color="#00b894" />
-                  <StatCard icon="🔑" label="Keys Sold"         value={revenue.totalKeys}                      sub="Total activations"            color="#6c63ff" />
-                  <StatCard icon="📅" label="Monthly Keys"      value={revenue.byPlan?.monthly || 0}           sub={`₦${((revenue.byPlan?.monthly || 0) * 2000).toLocaleString()}`} color="#0984e3" />
-                  <StatCard icon="📆" label="Yearly Keys"       value={revenue.byPlan?.yearly || 0}            sub={`₦${((revenue.byPlan?.yearly || 0) * 15000).toLocaleString()}`} color="#fdcb6e" />
-                  <StatCard icon="🗓️" label="Weekly Keys"       value={revenue.byPlan?.weekly || 0}            sub={`₦${((revenue.byPlan?.weekly || 0) * 700).toLocaleString()}`}  color="#a29bfe" />
-                  <StatCard icon="⏱️" label="Daily/Hourly"      value={(revenue.byPlan?.daily || 0) + (revenue.byPlan?.hourly || 0)} sub="Short-term activations" color="#e17055" />
+                  <StatCard icon="📅" label="Monthly Keys"  value={revenue.byPlan?.monthly || 0}           sub={`₦${((revenue.byPlan?.monthly || 0) * 2000).toLocaleString()}`} color="#0984e3" />
+                  <StatCard icon="📆" label="Yearly Keys"   value={revenue.byPlan?.yearly || 0}            sub={`₦${((revenue.byPlan?.yearly || 0) * 15000).toLocaleString()}`} color="#fdcb6e" />
+                  <StatCard icon="🗓️" label="Weekly Keys"   value={revenue.byPlan?.weekly || 0}            sub={`₦${((revenue.byPlan?.weekly || 0) * 700).toLocaleString()}`}  color="#a29bfe" />
+                  <StatCard icon="⏱️" label="Daily/Hourly"  value={(revenue.byPlan?.daily || 0) + (revenue.byPlan?.hourly || 0)} sub="Short-term activations" color="#e17055" />
                 </div>
 
                 {/* Plan breakdown */}
@@ -1019,7 +1062,8 @@ export default function AdminDashboard() {
                   </button>
                 </div>
               </>
-            )}
+              );
+            })()}
           </>
         )}
 

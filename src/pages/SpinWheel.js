@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import API from "../utils/api";
 
 const SEGMENTS = [
@@ -89,6 +90,8 @@ function drawWheel(canvas, rotation) {
 
 export default function SpinWheel() {
   const nav            = useNavigate();
+  const { student }    = useAuth();
+  const isPremium      = student?.is_premium;
   const canvasRef      = useRef(null);
   const animRef        = useRef(null);
   const rotRef         = useRef(0);
@@ -207,7 +210,9 @@ export default function SpinWheel() {
         <button style={s.back} onClick={() => nav("/dashboard")}>←</button>
         <div style={{ flex:1 }}>
           <div style={s.headerTitle}>🎰 Scholar Spin</div>
-          <div style={s.headerSub}>1 free spin every 24 hours</div>
+          <div style={s.headerSub}>
+            {isPremium ? "👑 2 free spins every 24 hours" : "1 free spin every 24 hours"}
+          </div>
         </div>
         <div style={s.balRow}>
           <div style={s.bal}><span>🪙</span> {coins.toLocaleString()}</div>
@@ -236,6 +241,19 @@ export default function SpinWheel() {
           disabled={!canSpin || spinning}>
           {spinning ? "Spinning..." : canSpin ? "🎰 SPIN NOW!" : `⏰ ${formatCountdown(msUntil)}`}
         </button>
+
+        {/* Premium spin nudge for free users */}
+        {!isPremium && (
+          <div
+            onClick={() => nav("/upgrade")}
+            style={{ display:"flex", alignItems:"center", gap:10, background:"rgba(108,99,255,0.12)", border:"1px solid rgba(108,99,255,0.3)", borderRadius:12, padding:"10px 14px", marginBottom:16, cursor:"pointer", maxWidth:320, width:"100%" }}>
+            <span style={{ fontSize:20 }}>👑</span>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:12, fontWeight:800, color:"#a29bfe" }}>Premium gets 2 spins daily</div>
+              <div style={{ fontSize:11, color:"rgba(255,255,255,0.4)" }}>Upgrade from ₦100 →</div>
+            </div>
+          </div>
+        )}
 
         {/* Result popup */}
         {showResult && result && (

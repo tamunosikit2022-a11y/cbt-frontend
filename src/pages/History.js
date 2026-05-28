@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import API from "../utils/api";
 
 export default function History() {
   const nav = useNavigate();
+  const { student } = useAuth();
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter,  setFilter]  = useState("all"); // all | JAMB | POST-UTME
@@ -135,6 +137,26 @@ export default function History() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Upgrade hook — free users with at least 1 exam */}
+        {!student?.is_premium && filtered.length > 0 && (
+          <div
+            onClick={() => nav("/upgrade")}
+            style={{ background:"linear-gradient(135deg,#f0edff,#e8e4ff)", border:"2px solid #6c63ff33", borderRadius:16, padding:"18px 16px", marginTop:16, cursor:"pointer", display:"flex", gap:12, alignItems:"flex-start" }}>
+            <span style={{ fontSize:32, flexShrink:0 }}>🔒</span>
+            <div style={{ flex:1 }}>
+              <div style={{ fontWeight:800, fontSize:14, color:"#2d3436", marginBottom:4 }}>
+                See the full breakdown of every past exam
+              </div>
+              <div style={{ fontSize:13, color:"#636e72", lineHeight:1.6, marginBottom:10 }}>
+                Premium shows detailed error review, weak topic heatmap, and full explanations for every exam — not just the score.
+              </div>
+              <div style={{ display:"inline-block", background:"linear-gradient(135deg,#6c63ff,#a29bfe)", color:"#fff", fontWeight:800, fontSize:13, padding:"9px 18px", borderRadius:10 }}>
+                👑 Unlock Full Review — from ₦100
+              </div>
+            </div>
           </div>
         )}
       </div>
