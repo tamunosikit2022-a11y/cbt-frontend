@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const C = {
@@ -28,6 +28,8 @@ function pwStrength(pw) {
 export default function Register() {
   const { register } = useAuth();
   const nav = useNavigate();
+  const location = useLocation();
+  const refCode = new URLSearchParams(location.search).get("ref") || "";
   const [form, setForm] = useState({ full_name: "", email: "", phone: "", password: "", confirm: "" });
   const [error,   setError]   = useState("");
   const [loading, setLoading] = useState(false);
@@ -47,7 +49,7 @@ export default function Register() {
     if (!phoneOk)                   return setError("Enter a valid Nigerian phone (e.g. 08012345678).");
     setError(""); setLoading(true);
     try {
-      await register({ full_name: form.full_name.trim(), email: form.email.trim(), phone: form.phone.trim(), password: form.password });
+      await register({ full_name: form.full_name.trim(), email: form.email.trim(), phone: form.phone.trim(), password: form.password, referred_by: refCode || undefined });
       nav("/dashboard");
     } catch (err) {
       setError(err.response?.data?.error || "Registration failed. Please try again.");
@@ -89,6 +91,17 @@ export default function Register() {
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 900, color: C.text }}>Create your account</h1>
           <p style={{ margin: "6px 0 0", fontSize: 13, color: C.muted }}>Free to join — start practising today</p>
         </div>
+
+        {/* Referral welcome banner */}
+        {refCode && (
+          <div style={{ background:"linear-gradient(135deg,#6c63ff22,#a29bfe11)", border:"1.5px solid #6c63ff55", borderRadius:14, padding:"12px 14px", marginBottom:16, display:"flex", alignItems:"center", gap:10 }}>
+            <span style={{ fontSize:22 }}>🎁</span>
+            <div>
+              <div style={{ fontWeight:800, fontSize:13, color:"#a29bfe" }}>You were invited!</div>
+              <div style={{ fontSize:12, color:"rgba(255,255,255,0.5)", marginTop:2 }}>Your friend gets bonus Premium days when you join. Welcome to Scholars Syndicate.</div>
+            </div>
+          </div>
+        )}
 
         <div style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${C.border}`, borderRadius: 24, padding: "24px 22px", backdropFilter: "blur(20px)", boxShadow: "0 24px 60px rgba(0,0,0,0.4)" }}>
           {error && (

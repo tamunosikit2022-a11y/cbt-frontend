@@ -304,6 +304,57 @@ export default function Profile() {
             )}
           </div>
         )}
+
+        {/* ── REFERRAL CARD ── */}
+        {(() => {
+          const refLink = `${window.location.origin}/register?ref=${student?.referral_code || student?.id}`;
+          const waText  = `🎓 Join me on Scholars Syndicate — Nigeria's best JAMB & Post-UTME practice app!\n\nRegister free here 👇\n${refLink}\n\nWe both get rewards when you join! 🎁`;
+          const copied  = false;
+          return (
+            <div style={{ ...s.card, marginTop:14 }}>
+              <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12 }}>
+                <span style={{ fontSize:26 }}>🔗</span>
+                <div>
+                  <div style={{ fontWeight:800, fontSize:15, color:"#2d3436" }}>Invite Friends, Earn Premium</div>
+                  <div style={{ fontSize:12, color:"#636e72", marginTop:1 }}>Each friend who registers through your link gives you +3 days Premium free.</div>
+                </div>
+              </div>
+
+              {/* Referral stats */}
+              <div style={{ display:"flex", gap:8, marginBottom:14 }}>
+                {[
+                  { label:"Friends Invited", value: student?.referral_count ?? 0 },
+                  { label:"Days Earned", value: `+${(student?.referral_count ?? 0) * 3}` },
+                ].map((stat, i) => (
+                  <div key={i} style={{ flex:1, background:"#f8f9fa", borderRadius:10, padding:"12px 10px", textAlign:"center" }}>
+                    <div style={{ fontWeight:900, fontSize:22, color:"#6c63ff" }}>{stat.value}</div>
+                    <div style={{ fontSize:11, color:"#636e72", marginTop:2 }}>{stat.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Link display */}
+              <div style={{ background:"#f0edff", borderRadius:10, padding:"10px 12px", fontSize:12, fontFamily:"monospace", color:"#6c63ff", wordBreak:"break-all", marginBottom:10 }}>
+                {refLink}
+              </div>
+
+              {/* Share buttons */}
+              <div style={{ display:"flex", gap:8 }}>
+                <button
+                  onClick={() => { navigator.clipboard.writeText(refLink); alert("Link copied! Share it with your classmates."); }}
+                  style={{ flex:1, padding:"11px 0", background:"#6c63ff", color:"#fff", border:"none", borderRadius:9, fontWeight:800, fontSize:13, cursor:"pointer" }}>
+                  📋 Copy Link
+                </button>
+                <a
+                  href={`https://wa.me/?text=${encodeURIComponent(waText)}`}
+                  target="_blank" rel="noreferrer"
+                  style={{ flex:1, padding:"11px 0", background:"#25D366", color:"#fff", borderRadius:9, fontWeight:800, fontSize:13, textAlign:"center", textDecoration:"none", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                  📱 Share on WhatsApp
+                </a>
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
