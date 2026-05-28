@@ -44,3 +44,36 @@ self.addEventListener("fetch", event => {
       .catch(() => caches.match(event.request))
   );
 });
+
+// ─────────────────────────────────────────────────────────
+// PUSH NOTIFICATIONS
+// ─────────────────────────────────────────────────────────
+self.addEventListener("push", event => {
+  let data = { title: "Scholars Syndicate", body: "You have a new notification.", icon: "/icons/icon-192x192.png", url: "/" };
+  try { if (event.data) data = { ...data, ...event.data.json() }; } catch {}
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body:    data.body,
+      icon:    data.icon || "/icons/icon-192x192.png",
+      badge:   "/icons/icon-192x192.png",
+      tag:     data.tag  || "scholars-notification",
+      data:    { url: data.url || "/" },
+      vibrate: [200, 100, 200],
+      actions: data.actions || [],
+    })
+  );
+});
+
+// Handle notification click — open the app at the right page
+self.addEventListener("notificationclick", event => {
+  event.notification.close();
+  const url = event.notification.data?.url || "/";
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then(windowClients => {
+      const existing = windowClients.find(c => c.url.includes(self.location.origin));
+      if (existing) { existing.focus(); existing.navigate(url); }
+      else clients.openWindow(url);
+    })
+  );
+});

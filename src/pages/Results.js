@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { trackExamCompleted } from "../utils/notifications";
 
 function calcJAMBScore(answers, subjectMap) {
   if (!subjectMap) return null;
@@ -198,6 +199,7 @@ export default function Results() {
   const certRef = useRef(null);
 
   useEffect(() => { if (!state?.result) nav("/dashboard", { replace:true }); }, [state, nav]);
+  useEffect(() => { trackExamCompleted(); }, []);
   if (!state?.result) return null;
 
   const { result, questions, subject, subjectMap, isJAMBFull, isPostUTME, institution } = state;

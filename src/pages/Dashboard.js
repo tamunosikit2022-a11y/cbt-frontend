@@ -3,6 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import API from "../utils/api";
 import OnboardingTour from "../components/OnboardingTour";
+import NotificationPrompt from "../components/NotificationPrompt";
+import JAMBCountdown from "../components/JAMBCountdown";
+import { initNotifications } from "../utils/notifications";
 
 // ── Global CSS ─────────────────────────────────────────────
 const GLOBAL_CSS = `
@@ -151,6 +154,14 @@ export default function Dashboard() {
   const avgScore  = history.length ? (history.reduce((a,h)=>a+parseFloat(h.percentage||0),0)/history.length).toFixed(0) : 0;
   const bestScore = history.length ? Math.max(...history.map(h=>parseFloat(h.percentage||0))).toFixed(0) : 0;
   const scoreColor = p => parseFloat(p)>=70 ? C.green : parseFloat(p)>=50 ? C.gold : C.red;
+
+  // Init push notifications after student loads
+  useEffect(() => {
+    if (student) {
+      const jambDate = localStorage.getItem("scholars_jamb_date");
+      initNotifications(student, jambDate);
+    }
+  }, [student?.id]);
 
   if (loading) return (
     <div style={{ minHeight:"100vh", background:C.bg, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:14, fontFamily:"'Plus Jakarta Sans',sans-serif" }}>
@@ -315,6 +326,9 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* ── JAMB Countdown ── */}
+      <JAMBCountdown avgScore={avgScore} />
 
       {/* Hero card */}
       <div style={{ background:`linear-gradient(135deg,${C.purple}cc,${C.blue}99)`, borderRadius:22, padding:"20px 18px", marginBottom:14, position:"relative", overflow:"hidden", boxShadow:`0 8px 36px ${C.purple}44`, border:`1px solid ${C.purple}44` }}>
@@ -645,6 +659,7 @@ export default function Dashboard() {
           onComplete={() => setShowOnboarding(false)}
         />
       )}
+      <NotificationPrompt />
       <div style={{ minHeight:"100vh", background:C.bg, fontFamily:"'Plus Jakarta Sans',sans-serif", maxWidth:520, margin:"0 auto", position:"relative" }}>
         <XPFloat amount={xpFloat} visible={!!xpFloat} />
         <Sidebar />
