@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminPDFVault from "../../components/AdminPDFVault"; // pdf-vault-v4
 
-const API_URL = process.env.REACT_APP_API_URL || "https://cbt-backend-dujo.onrender.com/api";
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:3000/api"; // FIX BUG 21: removed hardcoded stale URL
 
 function adminFetch(path) {
   return fetch(`${API_URL}/admin${path}`, {

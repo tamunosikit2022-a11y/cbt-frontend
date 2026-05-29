@@ -118,7 +118,7 @@ export default function ExamSelect() {
         nav(`/exam?exam_type=JAMB&mode=jamb_full&subjects=${encodeURIComponent(JSON.stringify(subjects))}&limit=180&time=120`);
       } else {
         if (!singleSubject) return setError("Please select a subject to practice");
-        nav(`/exam?exam_type=JAMB&subject=${encodeURIComponent(singleSubject)}&mode=${mode}&limit=40&single=true`);
+        nav(`/exam?exam_type=JAMB&subject=${encodeURIComponent(singleSubject)}&mode=${mode}&limit=40&time=40&single=true`); // FIX BUG 34: add time param so single-subject gets 40min not 120min
       }
     } else {
       // POST-UTME

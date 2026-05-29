@@ -15,6 +15,17 @@ export function AuthProvider({ children }) {
     if (token && saved) {
       try { setStudent(JSON.parse(saved)); }
       catch { localStorage.removeItem("student"); }
+      // FIX BUG 8: Re-validate token silently — catches bans/downgrades
+      API.get("/auth/profile").then(r => {
+        localStorage.setItem("student", JSON.stringify(r.data));
+        setStudent(r.data);
+      }).catch(err => {
+        if (err.response?.status === 401 || err.response?.status === 403) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("student");
+          setStudent(null);
+        }
+      });
     }
     setLoading(false);
   }, []);
@@ -72,6 +83,8 @@ export function AuthProvider({ children }) {
     if (student.is_premium) return; // already premium — no need to poll
 
     pollRef.current = setInterval(async () => {
+      // FIX BUG 33: Skip poll when tab is in background
+      if (document.visibilityState !== "visible") return;
       try {
         const res = await API.get("/auth/profile");
         const updated = res.data;

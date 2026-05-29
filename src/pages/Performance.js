@@ -4,6 +4,18 @@ import { useAuth } from "../context/AuthContext";
 import API from "../utils/api";
 import PremiumGate from "../components/PremiumGate";
 
+// FIX BUG 35: Loader is defined locally (was used but never imported)
+function Loader({ text, isError }) {
+  return (
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "sans-serif" }}>
+      <div style={{ textAlign: "center" }}>
+        <div style={{ fontSize: 40, marginBottom: 12 }}>{isError ? "❌" : "⏳"}</div>
+        <p style={{ color: isError ? "#e17055" : "#636e72" }}>{text}</p>
+      </div>
+    </div>
+  );
+}
+
 export default function Performance() {
   const nav = useNavigate();
   const { student } = useAuth();
@@ -11,25 +23,30 @@ export default function Performance() {
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState("");
 
+  // FIX BUG 17: Don't fetch at all for free users — check premium before API call
   useEffect(() => {
+    if (!student?.is_premium) {
+      setLoading(false);
+      return;
+    }
     API.get("/exam/performance")
       .then(r => setData(r.data))
       .catch(err => setError(err.response?.data?.error || "Failed to load performance data."))
       .finally(() => setLoading(false));
-  }, []);
+  }, [student?.is_premium]);
 
-  if (loading) return <Loader text="Loading your analytics..." />;
+  // FIX BUG 17: Check premium FIRST, before loading spinner
   if (!student?.is_premium) return <PremiumGate feature="performance" />;
+  if (loading) return <Loader text="Loading your analytics..." />;
   if (error)   return <Loader text={error} isError />;
   if (!data)   return null;
 
-  // FIX BUG 2: Add default values to prevent crashes
-  const { 
-    subjects = [], 
-    weak_subjects = [], 
-    strong_subjects = [], 
-    stats = {}, 
-    total_wrong_answers = 0 
+  const {
+    subjects = [],
+    weak_subjects = [],
+    strong_subjects = [],
+    stats = {},
+    total_wrong_answers = 0
   } = data;
 
   return (
@@ -56,8 +73,8 @@ export default function Performance() {
                   <div style={{ fontWeight: 700, fontSize: 14 }}>{sub.subject}</div>
                   <div style={{ fontSize: 22, fontWeight: 800, color: "#e17055" }}>{sub.accuracy}%</div>
                   <div style={{ fontSize: 11, color: "#636e72" }}>{sub.total_attempted || 0} attempts</div>
-                  <button 
-                    style={s.practiceBtn} 
+                  <button
+                    style={s.practiceBtn}
                     onClick={() => nav(`/exam-select?subject=${encodeURIComponent(sub.subject)}&mode=weakness`)}>
                     Practice →
                   </button>
@@ -124,7 +141,7 @@ export default function Performance() {
             <div>
               <div style={{ fontWeight: 700, fontSize: 16 }}>🔁 Error Review</div>
               <div style={{ fontSize: 13, opacity: 0.9, marginTop: 4 }}>
-                You have {total_wrong_answers} question{total_wrong_answers !== 1 ? 's' : ''} to review.
+                You have {total_wrong_answers} question{total_wrong_answers !== 1 ? "s" : ""} to review.
               </div>
             </div>
             <button style={s.reviewBtn} onClick={() => nav("/error-review")}>Start Review →</button>
@@ -141,17 +158,6 @@ function StatCard({ icon, label, value, color }) {
       <div style={{ fontSize: 22 }}>{icon}</div>
       <div style={{ fontSize: 20, fontWeight: 800, color, marginTop: 4 }}>{value}</div>
       <div style={{ fontSize: 11, color: "#636e72" }}>{label}</div>
-    </div>
-  );
-}
-
-function Loader({ text, isError }) {
-  return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "sans-serif" }}>
-      <div style={{ textAlign: "center" }}>
-        <div style={{ fontSize: 40, marginBottom: 12 }}>{isError ? "❌" : "⏳"}</div>
-        <p style={{ color: isError ? "#e17055" : "#636e72" }}>{text}</p>
-      </div>
     </div>
   );
 }

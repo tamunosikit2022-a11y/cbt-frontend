@@ -3,17 +3,19 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import API from "../utils/api";
 
+// FIX BUG 15: SEGMENTS must exactly match backend REWARDS array order and count
+// Backend order: +50 Coins, +100 Coins, +200 Coins, +20 Coins, +5 Gems, +15 Gems, +50 Gems, +100 XP, +250 XP, 2× XP Boost, 2× Coins
 const SEGMENTS = [
   { label:"+50 Coins",    color:"#FFC857", dark:"#CC9A00", icon:"🪙" },
-  { label:"+5 Gems",      color:"#00D4FF", dark:"#0099BB", icon:"💎" },
-  { label:"+100 XP",      color:"#7C5CFF", dark:"#5535DD", icon:"⚡" },
   { label:"+100 Coins",   color:"#FFC857", dark:"#CC9A00", icon:"🪙" },
-  { label:"+15 Gems",     color:"#00D4FF", dark:"#0099BB", icon:"💎" },
-  { label:"+20 Coins",    color:"#FFC857", dark:"#CC9A00", icon:"🪙" },
-  { label:"2× XP Boost",  color:"#00D084", dark:"#008855", icon:"🚀" },
-  { label:"+250 XP",      color:"#7C5CFF", dark:"#5535DD", icon:"⚡" },
   { label:"+200 Coins",   color:"#FFC857", dark:"#CC9A00", icon:"🪙" },
+  { label:"+20 Coins",    color:"#FFC857", dark:"#CC9A00", icon:"🪙" },
+  { label:"+5 Gems",      color:"#00D4FF", dark:"#0099BB", icon:"💎" },
+  { label:"+15 Gems",     color:"#00D4FF", dark:"#0099BB", icon:"💎" },
   { label:"+50 Gems",     color:"#00D4FF", dark:"#0099BB", icon:"💎" },
+  { label:"+100 XP",      color:"#7C5CFF", dark:"#5535DD", icon:"⚡" },
+  { label:"+250 XP",      color:"#7C5CFF", dark:"#5535DD", icon:"⚡" },
+  { label:"2× XP Boost",  color:"#00D084", dark:"#008855", icon:"🚀" },
   { label:"2× Coins",     color:"#00D084", dark:"#008855", icon:"🚀" },
 ];
 
@@ -152,10 +154,12 @@ export default function SpinWheel() {
     try {
       const r = await API.post("/spin/spin");
       const reward     = r.data.reward;
-      const rewardIdx  = reward.rewardIndex ?? 0;
+      // FIX BUG 15: Match by label so index mismatch between backend/frontend never causes wrong segment
+      const rewardIdx  = SEGMENTS.findIndex(s => s.label === (reward.rewardLabel || reward.label));
+      const safeIdx    = rewardIdx >= 0 ? rewardIdx : (reward.rewardIndex ?? 0);
 
       // Calculate target rotation: land on reward segment
-      const targetSegAngle = rewardIdx * SEG_ANGLE + SEG_ANGLE / 2;
+      const targetSegAngle = safeIdx * SEG_ANGLE + SEG_ANGLE / 2;
       // Pointer is at top (270deg), we want targetSegAngle at 270
       const targetRot = 270 - targetSegAngle;
       const fullSpins = 6 * 360;

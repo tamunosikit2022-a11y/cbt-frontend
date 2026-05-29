@@ -188,8 +188,7 @@ export default function Exam() {
       setError(err.response?.data?.error || "Submit failed. Please try again.");
       setSubmitting(false);
       setSubmitted(false);
-    } finally {
-      // Release lock
+      // FIX BUG 30: Only release lock on failure — prevents re-submission after success
       submitLock.current = false;
     }
   };

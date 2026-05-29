@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const API_URL = process.env.REACT_APP_API_URL;
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:3000/api"; // FIX BUG 13: added fallback
 
 export default function AdminLogin() {
   const nav = useNavigate();

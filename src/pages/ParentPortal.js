@@ -8,7 +8,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 
-const API_URL = process.env.REACT_APP_API_URL || "https://cbt-backend-dujo.onrender.com/api";
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:3000/api"; // FIX BUG 21: removed hardcoded stale URL
 
 const SUBJECT_COLORS = {
   Physics:          "#6C63FF",

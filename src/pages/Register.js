@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Link, useLocation } from "react-router-dom";
+import { useNavigate, Link, useLocation, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const C = {
@@ -29,8 +29,16 @@ export default function Register() {
   const { register } = useAuth();
   const nav = useNavigate();
   const location = useLocation();
+  // FIX BUG 1: declare refCode from URL search params
+  const [searchParams] = useSearchParams();
+  const refCode = searchParams.get("ref") || new URLSearchParams(location.search).get("ref") || "";
+
   const [welcomed, setWelcomed] = useState(false);
-  const [form, setForm] = useState({ full_name: "", email: "", phone: "", password: "", confirm: "" });
+  const [form, setForm] = useState({
+    full_name: "", email: "", phone: "",
+    school_name: "",          // FIX BUG 20/31: collect school_name at registration
+    password: "", confirm: ""
+  });
   const [error,   setError]   = useState("");
   const [loading, setLoading] = useState(false);
   const [showPass,setShowPass] = useState(false);
@@ -49,7 +57,14 @@ export default function Register() {
     if (!phoneOk)                   return setError("Enter a valid Nigerian phone (e.g. 08012345678).");
     setError(""); setLoading(true);
     try {
-      await register({ full_name: form.full_name.trim(), email: form.email.trim(), phone: form.phone.trim(), password: form.password, referred_by: refCode || undefined });
+      await register({
+        full_name:   form.full_name.trim(),
+        email:       form.email.trim(),
+        phone:       form.phone.trim(),
+        school_name: form.school_name.trim() || undefined,   // FIX BUG 31
+        password:    form.password,
+        referred_by: refCode || undefined,                   // FIX BUG 1
+      });
       setWelcomed(true);
       setTimeout(() => nav("/dashboard"), 3000);
     } catch (err) {
@@ -69,7 +84,6 @@ export default function Register() {
 
   const pw = pwStrength(form.password);
 
-  // Welcome screen shown briefly after successful registration
   if (welcomed) {
     return (
       <div style={{ minHeight:"100vh", background:"#0B1020", display:"flex", alignItems:"center", justifyContent:"center", padding:20, fontFamily:"'Plus Jakarta Sans', sans-serif" }}>
@@ -134,9 +148,10 @@ export default function Register() {
           )}
 
           {[
-            { key: "full_name", label: "Full Name", type: "text", placeholder: "John Doe" },
-            { key: "email",     label: "Email Address", type: "email", placeholder: "your@email.com" },
-            { key: "phone",     label: "Phone Number", type: "tel", placeholder: "08012345678", hint: "For password reset" },
+            { key: "full_name",   label: "Full Name",      type: "text",  placeholder: "John Doe" },
+            { key: "email",       label: "Email Address",  type: "email", placeholder: "your@email.com" },
+            { key: "phone",       label: "Phone Number",   type: "tel",   placeholder: "08012345678", hint: "For password reset" },
+            { key: "school_name", label: "School Name",    type: "text",  placeholder: "e.g. Federal Govt College Lagos", hint: "Optional — for Factions" },
           ].map(f => (
             <div key={f.key} style={{ marginBottom: 14 }}>
               <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: C.muted, marginBottom: 6, letterSpacing: 0.5, textTransform: "uppercase" }}>
