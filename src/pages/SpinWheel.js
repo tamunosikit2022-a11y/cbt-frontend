@@ -114,14 +114,17 @@ export default function SpinWheel() {
     if (c) drawWheel(c, rotRef.current);
   }, []);
 
+  // Canvas setup — separate from API call
   useEffect(() => {
     const c = canvasRef.current;
     if (!c) return;
     c.width  = Math.min(320, window.innerWidth - 80);
     c.height = c.width;
     drawWheel(c, 0);
+  }, [loading]); // re-run after loading=false so canvas is mounted
 
-    // Timeout after 10s in case Render is cold-starting
+  // Load spin status — always runs regardless of canvas
+  useEffect(() => {
     const timeout = setTimeout(() => setLoading(false), 10000);
 
     API.get("/spin/status").then(r => {
@@ -130,7 +133,7 @@ export default function SpinWheel() {
       setCoins(r.data.coins || 0);
       setGems(r.data.gems   || 0);
       setSpinsLeft(r.data.spinsLeft ?? 1);
-    }).catch(()=>{}).finally(() => {
+    }).catch(() => {}).finally(() => {
       clearTimeout(timeout);
       setLoading(false);
     });
