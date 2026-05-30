@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#6c63ff" />
     <meta name="description" content="Practice JAMB and Post-UTME past questions. Battle friends in Scholars Arena." />
     <meta name="mobile-web-app-capable" content="yes" />
@@ -25,43 +25,42 @@
         });
       }
     </script>
-  </head>
-  <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
     <style>
       *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-      html {
-        height: 100%;
-        overflow-x: hidden;
-        overflow-y: auto;
+
+      html, body {
+        width: 100%;
+        /* Never restrict height — let content determine it */
+        min-height: 100%;
+        background: #0B1020;
         -webkit-text-size-adjust: 100%;
         -ms-text-size-adjust: 100%;
         text-size-adjust: 100%;
-      }
-      body {
-        height: 100%;
-        overflow-x: hidden;
-        overflow-y: auto;
-        overscroll-behavior: none;
-        -webkit-overflow-scrolling: touch;
-        -webkit-tap-highlight-color: transparent;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
+        -webkit-tap-highlight-color: transparent;
         touch-action: manipulation;
-        background: #0B1020;
-      }
-      #root {
-        min-height: 100%;
-        overflow-x: hidden;
-        -webkit-overflow-scrolling: touch;
         overscroll-behavior-y: contain;
       }
-      input, textarea, select {
-        font-size: 16px !important;
+
+      /* Prevent horizontal scroll only */
+      body { overflow-x: hidden; }
+
+      #root {
+        width: 100%;
+        min-height: 100vh;
+        overflow-x: hidden;
       }
+
+      /* Prevent iOS input zoom */
+      input, textarea, select { font-size: 16px !important; }
+
       button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
       img { user-select: none; -webkit-user-drag: none; }
     </style>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
   </body>
 </html>
