@@ -20,7 +20,6 @@ html {
 body {
   /* Allow pages to scroll — individual pages control their own overflow */
   overflow-x: hidden;
-  overflow-y: auto;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
   -webkit-tap-highlight-color: transparent;
