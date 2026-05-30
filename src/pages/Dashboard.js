@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import API from "../utils/api";
+import AppTourGuide from "../components/AppTourGuide";
 import OnboardingTour from "../components/OnboardingTour";
 import NotificationPrompt from "../components/NotificationPrompt";
 import JAMBCountdown from "../components/JAMBCountdown";
@@ -673,6 +674,7 @@ export default function Dashboard() {
       <div style={{ minHeight:"100vh", background:C.bg, fontFamily:"'Plus Jakarta Sans',sans-serif", maxWidth:520, margin:"0 auto", position:"relative" }}>
         <XPFloat amount={xpFloat} visible={!!xpFloat} />
         <Sidebar />
+        <AppTourGuide />
 
         <div style={{ position:"relative", zIndex:1, overflowY:"auto", overflowX:"hidden" }}>
           <Header />

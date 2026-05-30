@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import api from '../utils/api';
+import {
+  speak, stop as stopSpeech, speechSupported, isSpeaking,
+  startListening, stopListening, recognitionSupported,
+} from '../utils/voiceUtils';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const ACCENT       = '#7C5CFF';
@@ -53,7 +57,7 @@ function renderMessageContent(text) {
 }
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
-function MessageBubble({ msg }) {
+function MessageBubble({ msg, onSpeak, isSpeakingThis }) {
   const isUser = msg.role === 'user';
   return (
     <div style={{
@@ -73,21 +77,34 @@ function MessageBubble({ msg }) {
           🤖
         </div>
       )}
-      <div style={{
-        maxWidth: '75%',
-        background: isUser ? `linear-gradient(135deg, ${ACCENT}, #6340E0)` : CARD_HOVER,
-        border: `1px solid ${isUser ? 'transparent' : BORDER}`,
-        borderRadius: isUser ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-        padding: '12px 16px',
-        fontSize: 14,
-        lineHeight: 1.65,
-        color: '#fff',
-        wordBreak: 'break-word',
-      }}>
-        {renderMessageContent(msg.content)}
-        <div style={{ fontSize: 11, color: isUser ? 'rgba(255,255,255,0.6)' : TEXT_MUTED, marginTop: 6, textAlign: 'right' }}>
-          {formatTime(msg.created_at)}
+      <div style={{ maxWidth: '75%', display: 'flex', flexDirection: 'column', alignItems: isUser ? 'flex-end' : 'flex-start', gap: 4 }}>
+        <div style={{
+          background: isUser ? `linear-gradient(135deg, ${ACCENT}, #6340E0)` : CARD_HOVER,
+          border: `1px solid ${isUser ? 'transparent' : BORDER}`,
+          borderRadius: isUser ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+          padding: '12px 16px',
+          fontSize: 14,
+          lineHeight: 1.65,
+          color: '#fff',
+          wordBreak: 'break-word',
+        }}>
+          {renderMessageContent(msg.content)}
+          <div style={{ fontSize: 11, color: isUser ? 'rgba(255,255,255,0.6)' : TEXT_MUTED, marginTop: 6, textAlign: 'right' }}>
+            {formatTime(msg.created_at)}
+          </div>
         </div>
+        {/* Speak button on AI messages */}
+        {!isUser && onSpeak && speechSupported() && (
+          <button onClick={() => onSpeak(msg)} style={{
+            background: isSpeakingThis ? `${ACCENT}33` : 'transparent',
+            border: `1px solid ${isSpeakingThis ? ACCENT : 'rgba(255,255,255,0.1)'}`,
+            borderRadius: 8, padding: '3px 10px', cursor: 'pointer',
+            color: isSpeakingThis ? ACCENT : TEXT_MUTED, fontSize: 12,
+            display: 'flex', alignItems: 'center', gap: 5,
+          }}>
+            {isSpeakingThis ? '⏹ Stop' : '🔊 Listen'}
+          </button>
+        )}
       </div>
       {isUser && (
         <div style={{
@@ -196,6 +213,12 @@ export default function AITutor({ user }) {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 480);
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 480);
 
+  // ── Voice state ──────────────────────────────────────────────────────────────
+  const [voiceMode,    setVoiceMode]   = useState(false);   // TTS on/off
+  const [isListening,  setIsListening] = useState(false);   // mic active
+  const [isSpeakingAI,setIsSpeakingAI]= useState(false);   // AI speaking
+  const [speakingMsgId,setSpeakingMsgId]=useState(null);   // which msg is speaking
+
   useEffect(() => {
     const handle = () => setIsMobile(window.innerWidth <= 480);
     window.addEventListener('resize', handle);
@@ -281,6 +304,15 @@ export default function AITutor({ user }) {
         setActiveSession(data.session);
         setMessages([tempUserMsg, data.reply]);
         setUsage(prev => ({ ...prev, used: prev.used + 1, remaining: prev.remaining - 1 }));
+        // Auto-speak if voice mode on
+        if (voiceMode && data.reply?.content) {
+          setSpeakingMsgId(data.reply.id);
+          setIsSpeakingAI(true);
+          speak(data.reply.content, {
+            onEnd:   () => { setIsSpeakingAI(false); setSpeakingMsgId(null); },
+            onError: () => { setIsSpeakingAI(false); setSpeakingMsgId(null); },
+          });
+        }
       } catch (err) {
         setError(err.response?.data?.error || 'Failed to send message');
         setMessages([]);
@@ -296,6 +328,15 @@ export default function AITutor({ user }) {
         const { data } = await api.post(`/ai-tutor/sessions/${activeSession.id}/messages`, { message: text });
         setMessages(prev => [...prev, data.reply]);
         setUsage(prev => ({ ...prev, used: prev.used + 1, remaining: prev.remaining - 1 }));
+        // Auto-speak if voice mode on
+        if (voiceMode && data.reply?.content) {
+          setSpeakingMsgId(data.reply.id);
+          setIsSpeakingAI(true);
+          speak(data.reply.content, {
+            onEnd:   () => { setIsSpeakingAI(false); setSpeakingMsgId(null); },
+            onError: () => { setIsSpeakingAI(false); setSpeakingMsgId(null); },
+          });
+        }
       } catch (err) {
         setError(err.response?.data?.error || 'Failed to send message');
         setMessages(prev => prev.filter(m => m.id !== 'temp'));
@@ -341,6 +382,57 @@ export default function AITutor({ user }) {
     textareaRef.current?.focus();
   }
 
+  function handleMicToggle() {
+    if (isListening) {
+      stopListening();
+      setIsListening(false);
+      return;
+    }
+    // Stop AI speech before listening
+    stopSpeech();
+    setIsSpeakingAI(false);
+    setIsListening(true);
+    startListening({
+      onResult: (transcript, isFinal) => {
+        setInput(transcript);
+        if (isFinal) {
+          setIsListening(false);
+          // Auto-send after a short delay so user can see what was transcribed
+          setTimeout(() => {
+            setInput(t => {
+              if (t.trim()) {
+                // Trigger send via ref trick
+                document.getElementById('ai-send-btn')?.click();
+              }
+              return t;
+            });
+          }, 600);
+        }
+      },
+      onError: (err) => {
+        setIsListening(false);
+        setError(err);
+      },
+      onEnd: () => setIsListening(false),
+    });
+  }
+
+  function handleSpeakMessage(msg) {
+    if (speakingMsgId === msg.id) {
+      stopSpeech();
+      setIsSpeakingAI(false);
+      setSpeakingMsgId(null);
+    } else {
+      stopSpeech();
+      setSpeakingMsgId(msg.id);
+      setIsSpeakingAI(true);
+      speak(msg.content, {
+        onEnd:   () => { setIsSpeakingAI(false); setSpeakingMsgId(null); },
+        onError: () => { setIsSpeakingAI(false); setSpeakingMsgId(null); },
+      });
+    }
+  }
+
   // ─── Styles ────────────────────────────────────────────────────────────────
   const usagePct = usage.limit > 0 ? (usage.used / usage.limit) * 100 : 0;
   const quotaColor = usagePct > 80 ? '#FF6B6B' : usagePct > 60 ? '#FFB347' : ACCENT;
@@ -355,6 +447,8 @@ export default function AITutor({ user }) {
         }
         textarea::-webkit-scrollbar { width: 4px; }
         textarea::-webkit-scrollbar-thumb { background: rgba(124,92,255,0.4); border-radius: 4px; }
+        @keyframes dot-wave { from { transform: scaleY(0.5); opacity: 0.4; } to { transform: scaleY(1.3); opacity: 1; } }
+        @keyframes typing-dot { 0%,80%,100%{opacity:0.2;transform:scale(0.8)} 40%{opacity:1;transform:scale(1)} }
         .msg-area::-webkit-scrollbar { width: 6px; }
         .msg-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
         .session-list::-webkit-scrollbar { width: 4px; }
@@ -532,7 +626,7 @@ export default function AITutor({ user }) {
 
           {/* Messages */}
           {messages.map((msg, i) => (
-            <MessageBubble key={msg.id || i} msg={msg} />
+            <MessageBubble key={msg.id || i} msg={msg} onSpeak={handleSpeakMessage} isSpeakingThis={speakingMsgId === msg.id} />
           ))}
 
           {/* Typing indicator */}
@@ -560,69 +654,117 @@ export default function AITutor({ user }) {
 
         {/* ── Input area ──────────────────────────────────────────────────── */}
         <div style={{
-          padding: '16px 20px',
-          paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
+          padding: '12px 16px',
+          paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
           borderTop: `1px solid ${BORDER}`,
           background: 'rgba(255,255,255,0.02)',
         }}>
-          {/* Quick prompts strip (when in a session) */}
+          {/* Quick prompts strip */}
           {activeSession && (
-            <div style={{ display: 'flex', gap: 8, marginBottom: 10, overflowX: 'auto', paddingBottom: 4 }}>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 10, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
               {QUICK_PROMPTS.map(p => (
                 <button key={p.label} onClick={() => applyQuickPrompt(p.text)} style={{
                   padding: '5px 12px', borderRadius: 20, fontSize: 12,
                   border: `1px solid ${BORDER}`, background: CARD,
-                  color: TEXT_MUTED, cursor: 'pointer', whiteSpace: 'nowrap',
-                  flexShrink: 0,
-                }}>
-                  {p.label}
-                </button>
+                  color: TEXT_MUTED, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+                }}>{p.label}</button>
               ))}
             </div>
           )}
 
-          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
+          {/* Voice controls bar */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+            {speechSupported() && (
+              <button onClick={() => { if (voiceMode) { stopSpeech(); setIsSpeakingAI(false); } setVoiceMode(v => !v); }} style={{
+                display: 'flex', alignItems: 'center', gap: 5,
+                padding: '4px 10px', borderRadius: 16,
+                background: voiceMode ? `${ACCENT}33` : 'rgba(255,255,255,0.05)',
+                border: `1px solid ${voiceMode ? ACCENT : 'rgba(255,255,255,0.1)'}`,
+                color: voiceMode ? ACCENT : TEXT_MUTED, cursor: 'pointer', fontSize: 12, fontWeight: 600,
+              }}>
+                {voiceMode ? '🔊 Voice On' : '🔇 Voice Off'}
+              </button>
+            )}
+            {isSpeakingAI && (
+              <>
+                <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
+                  {[0,1,2].map(i => (
+                    <div key={i} style={{ width: 5, height: 5, borderRadius: '50%', background: ACCENT,
+                      animation: `dot-wave 0.8s ease-in-out ${i*0.15}s infinite alternate` }} />
+                  ))}
+                  <span style={{ fontSize: 11, color: TEXT_MUTED, marginLeft: 4 }}>Speaking…</span>
+                </div>
+                <button onClick={() => { stopSpeech(); setIsSpeakingAI(false); setSpeakingMsgId(null); }} style={{
+                  background: 'none', border: `1px solid rgba(255,255,255,0.1)`, borderRadius: 8,
+                  color: TEXT_MUTED, cursor: 'pointer', fontSize: 11, padding: '2px 8px',
+                }}>⏹ Stop</button>
+              </>
+            )}
+            {isListening && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#e74c3c',
+                  animation: 'dot-wave 0.5s infinite alternate' }} />
+                <span style={{ fontSize: 12, color: '#e74c3c', fontWeight: 600 }}>Listening…</span>
+              </div>
+            )}
+          </div>
+
+          {/* Input row */}
+          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+            {/* Mic button */}
+            {recognitionSupported() && (
+              <button onClick={handleMicToggle} title={isListening ? 'Stop' : 'Speak question'} style={{
+                width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+                background: isListening ? '#e74c3c' : 'rgba(255,255,255,0.06)',
+                border: `1px solid ${isListening ? '#e74c3c' : 'rgba(255,255,255,0.1)'}`,
+                color: isListening ? '#fff' : TEXT_MUTED,
+                cursor: 'pointer', fontSize: 18,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'all 0.2s',
+              }}>🎤</button>
+            )}
+
             <textarea
               ref={textareaRef}
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={
-                usage.remaining === 0
-                  ? "You've reached today's limit. Try again tomorrow!"
-                  : "Ask ScholarAI anything… (Enter to send, Shift+Enter for new line)"
+                isListening ? 'Listening… speak now' :
+                usage.remaining === 0 ? "You've reached today's limit. Try again tomorrow!" :
+                'Ask ScholarAI anything… (Enter to send)'
               }
               disabled={isTyping || usage.remaining === 0}
               rows={1}
               style={{
                 flex: 1, resize: 'none', outline: 'none',
-                background: CARD, border: `1px solid ${input ? ACCENT : BORDER}`,
+                background: CARD, border: `1px solid ${input ? ACCENT : isListening ? '#e74c3c' : BORDER}`,
                 borderRadius: 14, padding: '12px 16px',
                 color: '#fff', fontSize: 14, lineHeight: 1.5,
-                fontFamily: 'inherit',
-                transition: 'border-color 0.2s',
+                fontFamily: 'inherit', transition: 'border-color 0.2s',
                 maxHeight: 160, overflowY: 'auto',
               }}
             />
+
             <button
+              id="ai-send-btn"
               onClick={handleSend}
               disabled={!input.trim() || isTyping || usage.remaining === 0}
               style={{
-                width: 46, height: 46, borderRadius: 12, flexShrink: 0,
+                width: 44, height: 44, borderRadius: 12, flexShrink: 0,
                 background: input.trim() && !isTyping && usage.remaining > 0
-                  ? `linear-gradient(135deg, ${ACCENT}, #6340E0)`
-                  : 'rgba(255,255,255,0.05)',
-                border: 'none', cursor: input.trim() && !isTyping && usage.remaining > 0 ? 'pointer' : 'not-allowed',
+                  ? `linear-gradient(135deg, ${ACCENT}, #6340E0)` : 'rgba(255,255,255,0.05)',
+                border: 'none',
+                cursor: input.trim() && !isTyping && usage.remaining > 0 ? 'pointer' : 'not-allowed',
                 color: input.trim() && !isTyping && usage.remaining > 0 ? '#fff' : TEXT_MUTED,
                 fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center',
                 transition: 'all 0.2s',
               }}
               title="Send message"
-            >
-              ➤
-            </button>
+            >➤</button>
           </div>
-          <div style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 8, textAlign: 'center' }}>
+
+          <div style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 6, textAlign: 'center' }}>
             ScholarAI can make mistakes. Always verify important answers.
           </div>
         </div>
