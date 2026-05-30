@@ -19,7 +19,7 @@ export default function ClassroomSession() {
   const [sessionCode,    setSessionCode]    = useState(code);
   const [session,        setSession]        = useState(null);
   const [participants,   setParticipants]   = useState([]);
-  const [pendingJoins,   setPendingJoins]   = useState([]); // ← NEW: join requests waiting for approval
+  const [pendingJoins,   setPendingJoins]   = useState([]);
   const [chat,           setChat]           = useState([]);
   const [chatInput,      setChatInput]      = useState("");
   const [connected,      setConnected]      = useState(false);
@@ -34,7 +34,7 @@ export default function ClassroomSession() {
   const [unreadChat,     setUnreadChat]     = useState(0);
   const [sharedQuestion, setSharedQuestion] = useState(null);
   const [sessionEnded,   setSessionEnded]   = useState(false);
-  const [waitingApproval,setWaitingApproval]= useState(false); // ← student waiting to be accepted
+  const [waitingApproval,setWaitingApproval]= useState(false);
 
   const canvasRef   = useRef(null);
   const socketRef   = useRef(null);
@@ -45,7 +45,12 @@ export default function ClassroomSession() {
   const localStream = useRef(null);
   const peers       = useRef({});
   const audioEls    = useRef({});
-  const boardData   = useRef([]); // local copy of board for replay
+  const boardData   = useRef([]);
+  // Use ref for panel so socket callbacks always get the latest value (avoids stale closure)
+  const panelRef    = useRef("board");
+
+  // Keep panelRef in sync with state
+  useEffect(() => { panelRef.current = panel; }, [panel]);
 
   // ── CANVAS ────────────────────────────────────────────
   const initCanvas = useCallback(() => {
@@ -56,6 +61,9 @@ export default function ClassroomSession() {
     canvas.width  = w;
     canvas.height = h;
     const ctx = canvas.getContext("2d");
+    // White background for whiteboard
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, w, h);
     ctx.lineCap  = "round";
     ctx.lineJoin = "round";
     ctxRef.current = ctx;
@@ -71,6 +79,8 @@ export default function ClassroomSession() {
       const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
       canvas.width  = canvas.offsetWidth  || 600;
       canvas.height = canvas.offsetHeight || 450;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.putImageData(img, 0, 0);
       ctx.lineCap  = "round";
       ctx.lineJoin = "round";
@@ -82,6 +92,29 @@ export default function ClassroomSession() {
   useEffect(() => {
     if (panel === "board") setTimeout(initCanvas, 80);
   }, [panel, initCanvas]);
+
+  // ── VOICE helpers (defined BEFORE the socket useEffect so they can be referenced in cleanup) ──
+  const cleanupPeer = useCallback((id) => {
+    try { peers.current[id]?.close(); } catch {}
+    delete peers.current[id];
+    try {
+      if (audioEls.current[id]) {
+        audioEls.current[id].srcObject = null;
+        audioEls.current[id].remove();
+      }
+    } catch {}
+    delete audioEls.current[id];
+  }, []);
+
+  const stopVoice = useCallback(() => {
+    localStream.current?.getTracks().forEach(t => t.stop());
+    localStream.current = null;
+    Object.keys(peers.current).forEach(id => cleanupPeer(id));
+    peers.current    = {};
+    audioEls.current = {};
+    setVoiceActive(false);
+    socketRef.current?.emit("voice_leave");
+  }, [cleanupPeer]);
 
   // ── SOCKET ────────────────────────────────────────────
   useEffect(() => {
@@ -110,7 +143,6 @@ export default function ClassroomSession() {
           } else setError(res.error);
         });
       } else {
-        // Student sends join request — waits for teacher approval
         setWaitingApproval(true);
         sock.emit("request_join", {
           code,
@@ -121,23 +153,18 @@ export default function ClassroomSession() {
             setError(res.error || "Could not join session.");
             setWaitingApproval(false);
           }
-          // If pending, stay on waiting screen
-          // If directly approved (backward compat), handle join_approved below
         });
       }
     });
 
-    // ── Teacher receives join REQUEST ──────────────────
     sock.on("join_request", data => {
-      // data: { studentId, studentName, socketId }
       setPendingJoins(prev => {
         if (prev.find(p => p.socketId === data.socketId)) return prev;
         return [...prev, data];
       });
-      setPanel("participants"); // switch to participants so teacher sees it
+      setPanel("participants");
     });
 
-    // ── Student gets APPROVED ──────────────────────────
     sock.on("join_approved", res => {
       setWaitingApproval(false);
       setSession(res.session);
@@ -149,7 +176,6 @@ export default function ClassroomSession() {
       }
     });
 
-    // ── Student gets REJECTED ──────────────────────────
     sock.on("join_rejected", () => {
       setWaitingApproval(false);
       setError("Your request to join was declined by the teacher.");
@@ -169,17 +195,15 @@ export default function ClassroomSession() {
       clearCanvas();
     });
 
-    // Chat — BUG FIX: use "chat" not "classroom_chat" for panel check
+    // FIX: use panelRef (not panel) to avoid stale closure
     sock.on("chat_message", msg => {
       setChat(prev => [...prev, msg]);
-      setUnreadChat(prev => panel !== "chat" ? prev + 1 : 0);
+      setUnreadChat(prev => panelRef.current !== "chat" ? prev + 1 : 0);
     });
 
-    // Participants
     sock.on("participant_joined", d => setParticipants(d.participants || []));
     sock.on("participant_left",   d => setParticipants(d.participants || []));
 
-    // Session control
     sock.on("session_ended",  d => { setSessionEnded(true); setError(d.message); });
     sock.on("teacher_left",   d => setError(d.message));
     sock.on("kicked",         d => { setSessionEnded(true); setError(d.message); });
@@ -204,7 +228,11 @@ export default function ClassroomSession() {
     sock.on("connect_error", e => setError(`Connection failed: ${e.message}`));
     sock.on("disconnect",    () => setConnected(false));
 
-    return () => { disconnectClassroom(); stopVoice(); };
+    return () => {
+      stopVoice();
+      disconnectClassroom();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior:"smooth" }); }, [chat]);
@@ -308,7 +336,11 @@ export default function ClassroomSession() {
   const clearCanvas = () => {
     const canvas = canvasRef.current;
     const ctx    = ctxRef.current;
-    if (canvas && ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (canvas && ctx) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
   };
 
   const handleClear = () => { clearCanvas(); socketRef.current?.emit("clear_board"); boardData.current = []; };
@@ -337,29 +369,21 @@ export default function ClassroomSession() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
       localStream.current = stream;
       setVoiceActive(true);
-      // Tell others we joined voice — they will create offer to us
       socketRef.current?.emit("voice_join");
-    } catch(err) {
+    } catch (err) {
       setError("Microphone access denied. Please allow mic in browser settings.");
     }
   };
 
-  const stopVoice = () => {
-    localStream.current?.getTracks().forEach(t => t.stop());
-    localStream.current = null;
-    Object.values(peers.current).forEach(p => { try { p.close(); } catch {} });
-    peers.current = {};
-    Object.values(audioEls.current).forEach(el => { try { el.srcObject = null; el.remove(); } catch {} });
-    audioEls.current = {};
-    setVoiceActive(false);
-    socketRef.current?.emit("voice_leave");
-  };
-
+  // FIX: toggleMute was inverting muted state incorrectly
+  // muted=true means track is disabled, muted=false means track is enabled
   const toggleMute = () => {
     if (!localStream.current) return;
-    const enabled = !muted;
-    localStream.current.getAudioTracks().forEach(t => { t.enabled = enabled; });
-    setMuted(!enabled);
+    setMuted(prev => {
+      const nowMuted = !prev;
+      localStream.current.getAudioTracks().forEach(t => { t.enabled = !nowMuted; });
+      return nowMuted;
+    });
   };
 
   const ICE_SERVERS = {
@@ -376,12 +400,10 @@ export default function ClassroomSession() {
     const pc = new RTCPeerConnection(ICE_SERVERS);
     peers.current[targetSocketId] = pc;
 
-    // Add local tracks
     if (localStream.current) {
       localStream.current.getTracks().forEach(t => pc.addTrack(t, localStream.current));
     }
 
-    // Play remote audio
     pc.ontrack = e => {
       let audio = audioEls.current[targetSocketId];
       if (!audio) {
@@ -418,25 +440,13 @@ export default function ClassroomSession() {
   };
 
   const handleOffer = async (d) => {
-    if (!localStream.current) return; // only handle if we're in voice
+    if (!localStream.current) return;
     const pc = await createPeer(d.from, false);
     if (pc.signalingState !== "stable") return;
     await pc.setRemoteDescription(new RTCSessionDescription(d.offer));
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
     socketRef.current?.emit("voice_answer", { to: d.from, answer });
-  };
-
-  const cleanupPeer = (id) => {
-    try { peers.current[id]?.close(); } catch {}
-    delete peers.current[id];
-    try {
-      if (audioEls.current[id]) {
-        audioEls.current[id].srcObject = null;
-        audioEls.current[id].remove();
-      }
-    } catch {}
-    delete audioEls.current[id];
   };
 
   // ── END SESSION ───────────────────────────────────────
@@ -460,7 +470,6 @@ export default function ClassroomSession() {
     </div>
   );
 
-  // Student waiting for teacher approval
   if (waitingApproval) return (
     <div style={sc.centred}>
       <div style={{ fontSize:60, animation:"pulse 1.5s infinite" }}>⏳</div>
@@ -579,7 +588,7 @@ export default function ClassroomSession() {
           </div>
         )}
 
-        {/* CHAT — BUG FIX: panel === "chat" */}
+        {/* CHAT */}
         {panel === "chat" && (
           <div style={s.chatPanel}>
             <div style={s.chatMessages}>
@@ -611,7 +620,6 @@ export default function ClassroomSession() {
         {/* PARTICIPANTS */}
         {panel === "participants" && (
           <div style={s.scrollPanel}>
-            {/* Pending join requests — teacher only */}
             {role === "teacher" && pendingJoins.length > 0 && (
               <div style={{ background:"#2d2d44", borderRadius:14, padding:"14px", marginBottom:14 }}>
                 <div style={{ fontWeight:800, fontSize:14, color:"#fdcb6e", marginBottom:10 }}>
@@ -630,7 +638,7 @@ export default function ClassroomSession() {
               </div>
             )}
 
-            <div style={{ fontWeight:800, fontSize:15, color:"#2d3436", marginBottom:10 }}>
+            <div style={{ fontWeight:800, fontSize:15, color:"#fff", marginBottom:10 }}>
               👥 In Session ({participants.length})
             </div>
             {participants.map((p, i) => (
@@ -639,8 +647,8 @@ export default function ClassroomSession() {
                   {p.role === "teacher" ? "👨‍🏫" : "👤"}
                 </div>
                 <div style={{ flex:1 }}>
-                  <div style={{ fontWeight:700, fontSize:14 }}>{p.name}</div>
-                  <div style={{ fontSize:11, color:"#636e72", textTransform:"capitalize" }}>{p.role}</div>
+                  <div style={{ fontWeight:700, fontSize:14, color:"#fff" }}>{p.name}</div>
+                  <div style={{ fontSize:11, color:"#b2bec3", textTransform:"capitalize" }}>{p.role}</div>
                 </div>
                 {role === "teacher" && p.role === "student" && (
                   <div style={{ display:"flex", gap:5 }}>
@@ -661,17 +669,17 @@ export default function ClassroomSession() {
         {panel === "voice" && (
           <div style={{ ...s.scrollPanel, textAlign:"center" }}>
             <div style={{ fontSize:64, marginBottom:12 }}>{voiceActive ? "🎙️" : "🔇"}</div>
-            <div style={{ fontWeight:800, fontSize:18, marginBottom:6, color:"#2d3436" }}>
+            <div style={{ fontWeight:800, fontSize:18, marginBottom:6, color:"#fff" }}>
               {voiceActive ? (muted ? "🔇 Muted" : "🎙️ You are live") : "Voice Off"}
             </div>
-            <div style={{ fontSize:13, color:"#636e72", marginBottom:24 }}>
+            <div style={{ fontSize:13, color:"#b2bec3", marginBottom:24 }}>
               {voiceActive ? "Others can hear you. Tap mute to silence yourself." : "Tap below to join voice"}
             </div>
             {!voiceActive ? (
               <button style={{ ...s.voiceBtn, background:"#00b894" }} onClick={startVoice}>🎤 Join Voice</button>
             ) : (
               <div style={{ display:"flex", gap:12, justifyContent:"center" }}>
-                <button style={{ ...s.voiceBtn, background: muted ? "#6c63ff" : "#fdcb6e", color:"#2d3436" }} onClick={toggleMute}>
+                <button style={{ ...s.voiceBtn, background: muted ? "#6c63ff" : "#fdcb6e", color: muted ? "#fff" : "#2d3436" }} onClick={toggleMute}>
                   {muted ? "🔊 Unmute" : "🔇 Mute"}
                 </button>
                 <button style={{ ...s.voiceBtn, background:"#e17055" }} onClick={stopVoice}>📵 Leave</button>
@@ -679,11 +687,11 @@ export default function ClassroomSession() {
             )}
             <div style={{ marginTop:24 }}>
               {participants.map((p, i) => (
-                <div key={i} style={{ display:"flex", alignItems:"center", gap:12, background:"#f8f9fa", borderRadius:12, padding:"10px 14px", marginBottom:8 }}>
+                <div key={i} style={{ display:"flex", alignItems:"center", gap:12, background:"#2d2d44", borderRadius:12, padding:"10px 14px", marginBottom:8 }}>
                   <div style={{ width:36, height:36, background:"#f0edff", borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center" }}>
                     {p.role === "teacher" ? "👨‍🏫" : "👤"}
                   </div>
-                  <div style={{ flex:1, fontWeight:600, fontSize:14, textAlign:"left" }}>{p.name}</div>
+                  <div style={{ flex:1, fontWeight:600, fontSize:14, textAlign:"left", color:"#fff" }}>{p.name}</div>
                   <div style={{ fontSize:11, color:"#00b894", fontWeight:700 }}>● {voiceActive ? "Live" : "—"}</div>
                 </div>
               ))}
@@ -719,7 +727,6 @@ export default function ClassroomSession() {
   );
 }
 
-// Centred loading/error screen
 const sc = {
   centred: { minHeight:"100vh", background:"#0f0c29", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", fontFamily:"sans-serif", color:"#fff", padding:24, textAlign:"center" },
   backBtn: { marginTop:20, padding:"12px 32px", background:"#6c63ff", color:"#fff", border:"none", borderRadius:12, fontWeight:800, fontSize:15, cursor:"pointer" },
@@ -742,15 +749,15 @@ const s = {
   canvas:        { width:"100%", height:"100%", touchAction:"none", display:"block", userSelect:"none" },
   viewOnlyBadge: { position:"absolute", top:8, left:"50%", transform:"translateX(-50%)", background:"rgba(0,0,0,0.55)", color:"#fff", fontSize:11, padding:"4px 14px", borderRadius:20, zIndex:10, whiteSpace:"nowrap", pointerEvents:"none" },
   questionBanner:{ position:"absolute", top:8, left:8, right:8, background:"#6c63ff", color:"#fff", borderRadius:12, padding:"12px 14px", zIndex:20, boxShadow:"0 4px 20px rgba(0,0,0,0.3)" },
-  chatPanel:     { height:"100%", display:"flex", flexDirection:"column", background:"#f4f6fb" },
+  chatPanel:     { height:"100%", display:"flex", flexDirection:"column", background:"#1a1a2e" },
   chatMessages:  { flex:1, overflowY:"auto", padding:"12px 14px", display:"flex", flexDirection:"column", gap:8 },
   chatEmpty:     { textAlign:"center", color:"#b2bec3", padding:"40px 20px", fontSize:14 },
   chatBubble:    { padding:"9px 13px", borderRadius:12, fontSize:14, lineHeight:1.4, boxShadow:"0 1px 4px rgba(0,0,0,0.08)" },
-  chatInputRow:  { display:"flex", gap:8, padding:"10px 14px", background:"#fff", borderTop:"1px solid #f0f0f0", flexShrink:0 },
-  chatInput:     { flex:1, padding:"10px 12px", border:"2px solid #dfe6e9", borderRadius:10, fontSize:14, outline:"none" },
+  chatInputRow:  { display:"flex", gap:8, padding:"10px 14px", background:"#252540", borderTop:"1px solid #3d3d5c", flexShrink:0 },
+  chatInput:     { flex:1, padding:"10px 12px", border:"2px solid #3d3d5c", borderRadius:10, fontSize:14, outline:"none", background:"#1a1a2e", color:"#fff" },
   sendBtn:       { padding:"10px 16px", background:"#6c63ff", color:"#fff", border:"none", borderRadius:10, fontWeight:700, cursor:"pointer" },
-  scrollPanel:   { height:"100%", overflowY:"auto", background:"#f4f6fb", padding:"16px" },
-  participantRow:{ display:"flex", alignItems:"center", gap:12, background:"#fff", borderRadius:12, padding:"12px 14px", marginBottom:8, boxShadow:"0 1px 6px rgba(0,0,0,0.05)" },
+  scrollPanel:   { height:"100%", overflowY:"auto", background:"#1a1a2e", padding:"16px" },
+  participantRow:{ display:"flex", alignItems:"center", gap:12, background:"#2d2d44", borderRadius:12, padding:"12px 14px", marginBottom:8 },
   pAvatar:       { width:40, height:40, borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, flexShrink:0 },
   miniBtn:       { background:"#6c63ff", color:"#fff", border:"none", borderRadius:6, width:28, height:28, cursor:"pointer", fontSize:12 },
   voiceBtn:      { padding:"12px 24px", border:"none", borderRadius:12, fontWeight:800, fontSize:14, cursor:"pointer", color:"#fff" },
