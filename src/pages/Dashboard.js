@@ -176,6 +176,7 @@ export default function Dashboard() {
     { id:"learn",    label:"Practice",       emoji:"📚" },
     { id:"progress", label:"Progress",       emoji:"📊" },
     { id:"profile",  label:"Profile",        emoji:"👤" },
+    { nav:"/ai-tutor",    label:"AI Tutor",        emoji:"🤖" },
     { nav:"/arena",       label:"Arena",          emoji:"⚔️" },
     { nav:"/missions",    label:"Daily Missions",  emoji:"🎯", dot:true },
     { nav:"/videos",      label:"Video Library",   emoji:"📺" },
@@ -386,6 +387,7 @@ export default function Dashboard() {
           { emoji:"🎯", label:"Missions", sub:"Earn XP", path:"/missions", color:C.purple },
           { emoji:challenge?.already_done?"✅":"⚡", label:"Challenge", sub:challenge?.already_done?"Done":"Daily", path:"/challenge", color:C.gold },
           { emoji:"🎰", label:"Spin", sub:"Win prizes", path:"/spin", color:C.blue },
+          { emoji:"🤖", label:"AI Tutor", sub:"Smart learning", path:"/ai-tutor", color:C.purple },
         ].map((a,i) => (
           <div key={i} onClick={() => nav(a.path)} className="c-btn" style={{
             background:`${a.color}12`, border:`1px solid ${a.color}30`,
@@ -479,6 +481,7 @@ export default function Dashboard() {
           { emoji:"🏫", title:"Post-UTME",       desc:"UNILAG · UI · OAU & more",        path:"/exam-select?type=POST-UTME" },
           { emoji:"📖", title:"Subject Practice",desc:"Single subject · 40 questions",    path:"/exam-select?type=JAMB" },
           { emoji:"⚡",  title:"Daily Challenge", desc:"10 questions · refreshes daily",  path:"/challenge" },
+          { emoji:"🤖",  title:"AI Tutor",       desc:"Personalized explanations & help", path:"/ai-tutor" },
         ]},
         { label:"SMART STUDY", color:C.green, items:[
           { emoji:"🔁", title:"Error Review",   desc:"Redo every question you got wrong", path:"/error-review" },
@@ -553,6 +556,7 @@ export default function Dashboard() {
           { emoji:"🏆", title:"National Leaderboard",  desc:"See your rank among all scholars",        path:"/leaderboard",  color:C.red },
           { emoji:"🏅", title:"My Badges",             desc:"All the achievements you've earned",      path:"/badges",       color:C.gold },
           { emoji:"🎯", title:"Daily Missions",        desc:"Earn XP & coins every single day",       path:"/missions",     color:C.green },
+          { emoji:"🤖", title:"AI Tutor",              desc:"Get personalized AI-powered help",       path:"/ai-tutor",     color:C.purple },
         ].map((t,i) => (
           <div key={i} onClick={() => nav(t.path)} className="c-btn" style={{ display:"flex", alignItems:"center", gap:13, background:"rgba(255,255,255,.04)", border:`1px solid ${C.border}`, borderRadius:14, padding:"13px 14px", cursor:"pointer" }}>
             <div style={{ width:42, height:42, borderRadius:12, background:`${t.color}16`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, flexShrink:0 }}>{t.emoji}</div>
@@ -621,6 +625,7 @@ export default function Dashboard() {
           { emoji:"🏆", label:"Leaderboard",        sub:"Your national ranking",        path:"/leaderboard" },
           { emoji:"📊", label:"My Analytics",       sub:"In-depth performance insights",path:"/performance" },
           { emoji:"📺", label:"Video Library",      sub:"Watch and learn",              path:"/videos" },
+          { emoji:"🤖", label:"AI Tutor",           sub:"Get personalized help",        path:"/ai-tutor" },
           { emoji:"💬", label:"Get Help",           sub:"Contact support via WhatsApp", path:"/profile" },
         ].map((m,i,arr) => (
           <div key={i} onClick={() => nav(m.path)} style={{ display:"flex", alignItems:"center", gap:13, padding:"13px 14px", borderBottom:i<arr.length-1?`1px solid ${C.border}`:"none", cursor:"pointer" }}>
