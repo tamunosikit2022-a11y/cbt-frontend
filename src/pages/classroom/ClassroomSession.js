@@ -2,9 +2,20 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { getClassroomSocket, disconnectClassroom } from "../../utils/classroomSocket";
+import { playPing, playJoin, playClick } from "../../utils/sounds";
 
 const COLORS = ["#000000","#ffffff","#e17055","#6c63ff","#00b894","#0984e3","#fdcb6e","#fd79a8","#2d3436","#74b9ff"];
 const SIZES  = [2, 4, 8, 14, 22];
+
+// Define ICE_SERVERS once at module level, not inside the component
+const ICE_SERVERS = {
+  iceServers: [
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" },
+    { urls: "stun:stun2.l.google.com:19302" },
+    { urls: "stun:stun.cloudflare.com:3478" },
+  ]
+};
 
 export default function ClassroomSession() {
   const nav = useNavigate();
@@ -163,6 +174,7 @@ export default function ClassroomSession() {
         return [...prev, data];
       });
       setPanel("participants");
+      playJoin();
     });
 
     sock.on("join_approved", res => {
@@ -170,6 +182,7 @@ export default function ClassroomSession() {
       setSession(res.session);
       setParticipants(res.session.participants || []);
       setChat(res.chat || []);
+      playJoin();
       if (res.board?.length) {
         boardData.current = res.board;
         setTimeout(() => replayBoard(res.board), 200);
@@ -198,7 +211,10 @@ export default function ClassroomSession() {
     // FIX: use panelRef (not panel) to avoid stale closure
     sock.on("chat_message", msg => {
       setChat(prev => [...prev, msg]);
-      setUnreadChat(prev => panelRef.current !== "chat" ? prev + 1 : 0);
+      if (panelRef.current !== "chat") {
+        setUnreadChat(prev => prev + 1);
+        playPing();
+      }
     });
 
     sock.on("participant_joined", d => setParticipants(d.participants || []));
@@ -386,15 +402,6 @@ export default function ClassroomSession() {
     });
   };
 
-  const ICE_SERVERS = {
-    iceServers: [
-      { urls: "stun:stun.l.google.com:19302" },
-      { urls: "stun:stun1.l.google.com:19302" },
-      { urls: "stun:stun2.l.google.com:19302" },
-      { urls: "stun:stun.cloudflare.com:3478" },
-    ]
-  };
-
   const createPeer = async (targetSocketId, isInitiator) => {
     if (peers.current[targetSocketId]) return peers.current[targetSocketId];
     const pc = new RTCPeerConnection(ICE_SERVERS);
@@ -440,7 +447,7 @@ export default function ClassroomSession() {
   };
 
   const handleOffer = async (d) => {
-    if (!localStream.current) return;
+    // Even if local voice isn't active, we can still receive audio from others
     const pc = await createPeer(d.from, false);
     if (pc.signalingState !== "stable") return;
     await pc.setRemoteDescription(new RTCSessionDescription(d.offer));

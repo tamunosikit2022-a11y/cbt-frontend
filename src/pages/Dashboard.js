@@ -27,6 +27,11 @@ const GLOBAL_CSS = `
   .nav-btn:active { transform: scale(.9); }
   ::-webkit-scrollbar { width: 4px; }
   ::-webkit-scrollbar-thumb { background: #7C5CFF44; border-radius: 4px; }
+
+  @media (max-width: 360px) {
+    .dash-grid-2 { grid-template-columns: 1fr !important; }
+    .dash-stat-val { font-size: 20px !important; }
+  }
 `;
 
 const C = {
@@ -301,7 +306,7 @@ export default function Dashboard() {
 
   // ── HOME TAB ─────────────────────────────────────────────
   const HomeTab = () => (
-    <div style={{ padding:"16px 14px 100px", animation:"slide-in .3s ease" }}>
+    <div style={{ padding:"16px 14px calc(100px + env(safe-area-inset-bottom, 0px))", animation:"slide-in .3s ease" }}>
 
       {/* ── Premium teaser — free users only ── */}
       {!student?.is_premium && (
@@ -469,7 +474,7 @@ export default function Dashboard() {
 
   // ── STUDY TAB ────────────────────────────────────────────
   const StudyTab = () => (
-    <div style={{ padding:"16px 14px 100px", animation:"slide-in .3s ease" }}>
+    <div style={{ padding:"16px 14px calc(100px + env(safe-area-inset-bottom, 0px))", animation:"slide-in .3s ease" }}>
       <div style={{ marginBottom:18 }}>
         <div style={{ fontSize:20, fontWeight:900, color:C.text }}>Practice Centre</div>
         <div style={{ fontSize:12, color:C.muted, marginTop:2 }}>Practice modes · unlock all with Premium</div>
@@ -521,7 +526,7 @@ export default function Dashboard() {
 
   // ── PROGRESS TAB ─────────────────────────────────────────
   const ProgressTab = () => (
-    <div style={{ padding:"16px 14px 100px", animation:"slide-in .3s ease" }}>
+    <div style={{ padding:"16px 14px calc(100px + env(safe-area-inset-bottom, 0px))", animation:"slide-in .3s ease" }}>
       <div style={{ marginBottom:18 }}>
         <div style={{ fontSize:20, fontWeight:900, color:C.text }}>My Progress</div>
         <div style={{ fontSize:12, color:C.muted, marginTop:2 }}>Track every step forward</div>
@@ -597,7 +602,7 @@ export default function Dashboard() {
 
   // ── PROFILE TAB ──────────────────────────────────────────
   const ProfileTab = () => (
-    <div style={{ padding:"16px 14px 100px", animation:"slide-in .3s ease" }}>
+    <div style={{ padding:"16px 14px calc(100px + env(safe-area-inset-bottom, 0px))", animation:"slide-in .3s ease" }}>
       {/* Hero */}
       <div style={{ background:`linear-gradient(135deg,${C.purple}cc,${C.blue}88)`, borderRadius:20, padding:"24px 18px", textAlign:"center", marginBottom:14, boxShadow:`0 8px 32px ${C.purple}44` }}>
         <div style={{ width:72, height:72, borderRadius:"50%", background:`${C.purple}55`, border:`3px solid ${C.purpleL}`, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 12px", fontSize:28, fontWeight:900, color:"#fff", overflow:"hidden", boxShadow:`0 0 18px ${C.purple}66` }}>
@@ -678,7 +683,7 @@ export default function Dashboard() {
           {activeTab === "profile"  && <ProfileTab />}
 
           {/* Bottom Nav */}
-          <nav style={{ position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)", width:"100%", maxWidth:520, background:"rgba(8,13,26,.97)", backdropFilter:"blur(20px)", borderTop:`1px solid ${C.border}`, padding:"6px 0 10px", display:"flex", alignItems:"center", zIndex:50, boxShadow:"0 -4px 20px rgba(0,0,0,.35)" }}>
+          <nav style={{ position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)", width:"100%", maxWidth:520, background:"rgba(8,13,26,.97)", backdropFilter:"blur(20px)", borderTop:`1px solid ${C.border}`, padding:"6px 0", paddingBottom:"calc(10px + env(safe-area-inset-bottom, 0px))", display:"flex", alignItems:"center", zIndex:50, boxShadow:"0 -4px 20px rgba(0,0,0,.35)" }}>
             {NAV_TABS.map(t => (
               <button key={t.id} className="nav-btn" onClick={() => setActiveTab(t.id)} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", padding:"5px 0", background:"none", border:"none", cursor:"pointer", color:activeTab===t.id ? C.purpleL : C.muted }}>
                 <div style={{ width:34, height:34, borderRadius:10, background:activeTab===t.id?`${C.purple}22`:"transparent", display:"flex", alignItems:"center", justifyContent:"center", marginBottom:1, transition:"all .2s" }}>

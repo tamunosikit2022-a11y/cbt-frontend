@@ -193,7 +193,14 @@ export default function AITutor({ user }) {
   const [isTyping, setIsTyping]           = useState(false);
   const [usage, setUsage]                 = useState({ used: 0, limit: 20, remaining: 20 });
   const [error, setError]                 = useState('');
-  const [sidebarOpen, setSidebarOpen]     = useState(true);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 480);
+  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 480);
+
+  useEffect(() => {
+    const handle = () => setIsMobile(window.innerWidth <= 480);
+    window.addEventListener('resize', handle);
+    return () => window.removeEventListener('resize', handle);
+  }, []);
   const [newChatSubject, setNewChatSubject] = useState('');
   const [showSubjectPicker, setShowSubjectPicker] = useState(false);
 
@@ -339,7 +346,7 @@ export default function AITutor({ user }) {
   const quotaColor = usagePct > 80 ? '#FF6B6B' : usagePct > 60 ? '#FFB347' : ACCENT;
 
   return (
-    <div style={{ display: 'flex', height: '100vh', background: BG, color: '#fff', fontFamily: 'Inter, system-ui, sans-serif', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', height: '100svh', background: BG, color: '#fff', fontFamily: 'Inter, system-ui, sans-serif', overflow: 'hidden' }}>
       {/* ── Keyframes ──────────────────────────────────────────────────── */}
       <style>{`
         @keyframes aiPulse {
@@ -356,14 +363,21 @@ export default function AITutor({ user }) {
 
       {/* ──── SIDEBAR ────────────────────────────────────────────────────── */}
       {sidebarOpen && (
-        <div style={{
-          width: 260, flexShrink: 0,
-          background: 'rgba(255,255,255,0.03)',
-          borderRight: `1px solid ${BORDER}`,
-          display: 'flex', flexDirection: 'column',
-          padding: '16px 12px',
-          transition: 'width 0.2s',
-        }}>
+        <>
+          {/* Overlay backdrop on mobile */}
+          {isMobile && (
+            <div onClick={() => setSidebarOpen(false)} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:9 }} />
+          )}
+          <div style={{
+            width: 260, flexShrink: 0,
+            background: 'rgba(255,255,255,0.03)',
+            borderRight: `1px solid ${BORDER}`,
+            display: 'flex', flexDirection: 'column',
+            padding: '16px 12px',
+            transition: 'width 0.2s',
+            // Mobile: overlay position
+            ...(isMobile ? { position:'fixed', top:0, left:0, bottom:0, zIndex:10, width:280 } : {}),
+          }}>
           {/* Header */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20, paddingLeft: 2 }}>
             <div style={{ fontSize: 22 }}>🤖</div>
@@ -422,7 +436,8 @@ export default function AITutor({ user }) {
               ))
             )}
           </div>
-        </div>
+          </div>
+        </>
       )}
 
       {/* ──── MAIN CHAT AREA ──────────────────────────────────────────────── */}
@@ -546,6 +561,7 @@ export default function AITutor({ user }) {
         {/* ── Input area ──────────────────────────────────────────────────── */}
         <div style={{
           padding: '16px 20px',
+          paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
           borderTop: `1px solid ${BORDER}`,
           background: 'rgba(255,255,255,0.02)',
         }}>

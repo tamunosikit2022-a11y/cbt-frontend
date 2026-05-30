@@ -199,11 +199,21 @@ export default function Landing() {
         .fcard{transition:all .2s ease}
         .fcard:hover{transform:translateY(-4px);box-shadow:0 14px 40px rgba(124,92,255,.2)!important}
         @media(max-width:480px){
-          .hero-title{font-size:32px!important}
+          .hero-title{font-size:28px!important}
+          .hero-sub{font-size:15px!important}
           .hide-mobile{display:none!important}
-          .land-nav{padding:12px 16px!important}
+          .land-nav{padding:10px 14px!important}
           .stats-grid{grid-template-columns:repeat(2,1fr)!important}
           .feat-grid{grid-template-columns:repeat(2,1fr)!important}
+          .land-btn{padding:13px 24px!important;font-size:15px!important}
+          .section-pad{padding:48px 16px!important}
+          .hero-pad{padding:60px 16px 48px!important}
+          .cta-btns{flex-direction:column!important;align-items:stretch!important}
+          .cta-btns button{width:100%!important;text-align:center!important}
+        }
+        @media(max-width:360px){
+          .hero-title{font-size:24px!important}
+          .stats-grid{gap:8px!important}
         }
       `}</style>
 

@@ -452,7 +452,7 @@ function StatBit({ label, value, color }) {
 
 const s = {
   page:         { minHeight:"100vh", background:"#f8f9fa", fontFamily:"'Segoe UI',sans-serif", padding:16 },
-  container:    { maxWidth:760, margin:"0 auto" },
+  container:    { maxWidth:760, margin:"0 auto", padding:"0 4px" },
   scoreCard:    { background:"#fff", borderRadius:16, padding:"32px 24px", textAlign:"center", boxShadow:"0 4px 24px rgba(0,0,0,0.08)", marginBottom:16 },
   xpBanner:     { background:"linear-gradient(135deg,#6c63ff,#a29bfe)", borderRadius:12, padding:"10px 16px", marginBottom:12, color:"#fff", fontWeight:800, fontSize:15, textAlign:"center", marginTop:12 },
   statsRow:     { display:"flex", gap:0, marginTop:20, borderTop:"1px solid #f0f0f0", paddingTop:16 },
@@ -476,7 +476,7 @@ const s = {
   noteRow:      { display:"flex", justifyContent:"space-between", padding:"4px 0", borderBottom:"1px solid #f0f0f0" },
 
   actions:      { display:"flex", gap:10, flexWrap:"wrap", marginBottom:24 },
-  btn:          { flex:1, minWidth:120, padding:"12px 16px", border:"none", borderRadius:10, color:"#fff", fontWeight:700, cursor:"pointer", fontSize:14 },
+  btn:          { flex:1, minWidth:0, padding:"12px 8px", border:"none", borderRadius:10, color:"#fff", fontWeight:700, cursor:"pointer", fontSize:13 },
   reviewTitle:  { fontSize:18, fontWeight:800, marginBottom:8 },
   answerList:   { display:"flex", flexDirection:"column", gap:12 },
   answerRow:    { background:"#fff", borderRadius:12, padding:"14px 16px", boxShadow:"0 1px 8px rgba(0,0,0,0.05)" },

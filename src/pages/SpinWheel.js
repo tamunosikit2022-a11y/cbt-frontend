@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import API from "../utils/api";
+import { playWin, playTick } from "../utils/sounds";
 
 // FIX BUG 15: SEGMENTS must exactly match backend REWARDS array order and count
 // Backend order: +50 Coins, +100 Coins, +200 Coins, +20 Coins, +5 Gems, +15 Gems, +50 Gems, +100 XP, +250 XP, 2× XP Boost, 2× Coins
@@ -100,6 +101,7 @@ export default function SpinWheel() {
   const [spinning,     setSpinning]   = useState(false);
   const [canSpin,      setCanSpin]    = useState(false);
   const [msUntil,      setMsUntil]    = useState(0);
+  const [spinsLeft,    setSpinsLeft]  = useState(0);
   const [coins,        setCoins]      = useState(0);
   const [gems,         setGems]       = useState(0);
   const [result,       setResult]     = useState(null);
@@ -124,6 +126,7 @@ export default function SpinWheel() {
       setMsUntil(r.data.msUntil || 0);
       setCoins(r.data.coins || 0);
       setGems(r.data.gems   || 0);
+      setSpinsLeft(r.data.spinsLeft ?? 1);
     }).catch(()=>{}).finally(() => setLoading(false));
   }, []);
 
@@ -172,6 +175,7 @@ export default function SpinWheel() {
       const duration  = 5000;
       const start     = performance.now();
       const startRot  = rotRef.current;
+      let   lastTick  = 0;
 
       function easeOut(t) {
         return 1 - Math.pow(1 - t, 4);
@@ -182,16 +186,32 @@ export default function SpinWheel() {
         const t = Math.min(elapsed / duration, 1);
         rotRef.current = startRot + (finalRot - startRot) * easeOut(t);
         drawWheel(canvasRef.current, rotRef.current);
+
+        // Tick sound — frequency decreases as wheel slows
+        const speed = Math.abs((finalRot - startRot) * (1 - easeOut(Math.min(t + 0.01, 1))) / duration);
+        const tickInterval = Math.max(50, 400 * t); // ticks slow down
+        if (now - lastTick > tickInterval) {
+          playTick();
+          lastTick = now;
+        }
+
         if (t < 1) {
           animRef.current = requestAnimationFrame(frame);
         } else {
+          playWin();
           setSpinning(false);
-          setCanSpin(false);
           setCoins(r.data.coins || 0);
           setGems(r.data.gems   || 0);
           setResult(reward);
           setShowResult(true);
-          setMsUntil(24 * 60 * 60 * 1000);
+          setSpinsLeft(prev => {
+            const next = Math.max(0, prev - 1);
+            if (next === 0) {
+              setCanSpin(false);
+              setMsUntil(24 * 60 * 60 * 1000);
+            }
+            return next;
+          });
         }
       }
       animRef.current = requestAnimationFrame(frame);
@@ -243,7 +263,7 @@ export default function SpinWheel() {
           style={{ ...s.spinBtn, ...((!canSpin || spinning) ? s.spinBtnDisabled : {}) }}
           onClick={handleSpin}
           disabled={!canSpin || spinning}>
-          {spinning ? "Spinning..." : canSpin ? "🎰 SPIN NOW!" : `⏰ ${formatCountdown(msUntil)}`}
+          {spinning ? "Spinning..." : canSpin ? `🎰 SPIN NOW! ${spinsLeft > 1 ? `(${spinsLeft} left)` : ""}` : `⏰ ${formatCountdown(msUntil)}`}
         </button>
 
         {/* Premium spin nudge for free users */}
@@ -298,7 +318,7 @@ export default function SpinWheel() {
 }
 
 const s = {
-  page:          { minHeight:"100vh", background:"#0B1020", fontFamily:"'Plus Jakarta Sans',sans-serif", maxWidth:480, margin:"0 auto" },
+  page:          { minHeight:"100vh", background:"#0B1020", fontFamily:"'Plus Jakarta Sans',sans-serif", maxWidth:480, margin:"0 auto", padding:"0 0 env(safe-area-inset-bottom, 0px)" },
   header:        { background:"rgba(124,92,255,0.15)", borderBottom:"1px solid rgba(124,92,255,0.2)", padding:"14px 16px", display:"flex", alignItems:"center", gap:12 },
   back:          { background:"rgba(255,255,255,0.08)", border:"none", color:"#fff", borderRadius:10, width:36, height:36, fontSize:18, cursor:"pointer", flexShrink:0 },
   headerTitle:   { fontWeight:900, fontSize:18, color:"#fff" },

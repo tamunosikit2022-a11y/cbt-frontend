@@ -367,7 +367,7 @@ function ModeSelector({ modes, mode, setMode }) {
   return (
     <div style={{ marginBottom:22 }}>
       <label style={{ display:"block", fontWeight:700, fontSize:14, marginBottom:8, color:"#2d3436" }}>Study Mode</label>
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(90px,1fr))", gap:8 }}>
         {modes.map(m => (
           <div key={m.id}
             style={{ border:`2px solid ${mode === m.id ? "#6c63ff" : "#dfe6e9"}`, background:mode === m.id ? "#f0edff" : "#fff", borderRadius:10, padding:"10px 12px", cursor:"pointer", textAlign:"center" }}
@@ -384,8 +384,8 @@ function ModeSelector({ modes, mode, setMode }) {
 
 // ── STYLES ────────────────────────────────────────────────
 const s = {
-  page:           { minHeight:"100vh", background:"#f8f9fa", fontFamily:"sans-serif", padding:20 },
-  container:      { maxWidth:700, margin:"0 auto", paddingBottom:40 },
+  page:           { minHeight:"100vh", background:"#f8f9fa", fontFamily:"sans-serif", padding:"16px 16px 40px" },
+  container:      { maxWidth:700, margin:"0 auto", width:"100%" },
   back:           { background:"none", border:"none", color:"#6c63ff", fontWeight:700, cursor:"pointer", fontSize:15, marginBottom:16, padding:0 },
   title:          { fontSize:26, fontWeight:900, marginBottom:4, color:"#2d3436" },
   sub:            { fontSize:13, color:"#636e72", marginBottom:24 },
