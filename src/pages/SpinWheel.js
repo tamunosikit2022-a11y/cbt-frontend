@@ -121,13 +121,19 @@ export default function SpinWheel() {
     c.height = c.width;
     drawWheel(c, 0);
 
+    // Timeout after 10s in case Render is cold-starting
+    const timeout = setTimeout(() => setLoading(false), 10000);
+
     API.get("/spin/status").then(r => {
       setCanSpin(r.data.canSpin);
       setMsUntil(r.data.msUntil || 0);
       setCoins(r.data.coins || 0);
       setGems(r.data.gems   || 0);
       setSpinsLeft(r.data.spinsLeft ?? 1);
-    }).catch(()=>{}).finally(() => setLoading(false));
+    }).catch(()=>{}).finally(() => {
+      clearTimeout(timeout);
+      setLoading(false);
+    });
   }, []);
 
   // Countdown timer
