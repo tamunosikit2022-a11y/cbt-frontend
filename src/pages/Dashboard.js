@@ -674,7 +674,7 @@ export default function Dashboard() {
         <XPFloat amount={xpFloat} visible={!!xpFloat} />
         <Sidebar />
 
-        <div style={{ position:"relative", zIndex:1 }}>
+        <div style={{ position:"relative", zIndex:1, overflowY:"auto", overflowX:"hidden" }}>
           <Header />
 
           {activeTab === "home"     && <HomeTab />}

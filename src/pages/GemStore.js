@@ -101,7 +101,7 @@ export default function GemStore() {
   const packages = data?.packages || [];
 
   return (
-    <div style={{ minHeight:"100vh", background:"#0B1020", fontFamily:"'Plus Jakarta Sans',sans-serif", position:"relative", overflow:"hidden" }}>
+    <div style={{ minHeight:"100vh", background:"#0B1020", fontFamily:"'Plus Jakarta Sans',sans-serif", position:"relative" }}>
       {/* Ambient particles */}
       {[...Array(6)].map((_,i) => (
         <div key={i} style={{ position:"fixed", width:4, height:4, borderRadius:"50%", background:"#7C5CFF",
