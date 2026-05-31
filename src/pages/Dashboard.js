@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import API from "../utils/api";
 import AppTourGuide from "../components/AppTourGuide";
+import NotificationPrompt from "../components/NotificationPrompt";
+import { initNotifications, trackExamCompleted } from "../utils/notifications";
 import OnboardingTour from "../components/OnboardingTour";
 import NotificationPrompt from "../components/NotificationPrompt";
 import JAMBCountdown from "../components/JAMBCountdown";
@@ -131,7 +133,13 @@ export default function Dashboard() {
 
   useEffect(() => {
     API.get("/auth/profile")
-      .then(p => { if (p?.data) setProfile(p.data); })
+      .then(p => {
+        if (p?.data) {
+          setProfile(p.data);
+          // Init daily reminders and JAMB countdown
+          initNotifications(p.data, p.data.jamb_date);
+        }
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
 
@@ -306,36 +314,105 @@ export default function Dashboard() {
   );
 
   // ── HOME TAB ─────────────────────────────────────────────
+  // ── Streak Calendar ────────────────────────────────────────────────────────
+  const StreakCalendar = ({ streak, history }) => {
+    // Build last 28 days grid
+    const days = [];
+    for (let i = 27; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const str = d.toDateString();
+      const hasExam = history.some(h => new Date(h.created_at || h.date).toDateString() === str);
+      days.push({ date: d, hasExam, isToday: i === 0 });
+    }
+
+    const weekLabels = ['S','M','T','W','T','F','S'];
+
+    return (
+      <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:"14px 14px", marginBottom:14 }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+          <div style={{ fontWeight:800, fontSize:13, color:C.text }}>🔥 {streak}-day streak</div>
+          <div style={{ fontSize:11, color:C.muted }}>Last 28 days</div>
+        </div>
+        {/* Week labels */}
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:3, marginBottom:3 }}>
+          {weekLabels.map((l,i) => (
+            <div key={i} style={{ textAlign:"center", fontSize:9, color:C.muted, fontWeight:600 }}>{l}</div>
+          ))}
+        </div>
+        {/* Day grid */}
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:3 }}>
+          {/* Offset for first day of week */}
+          {Array.from({ length: days[0].date.getDay() }).map((_,i) => (
+            <div key={`pad-${i}`} />
+          ))}
+          {days.map((d, i) => (
+            <div key={i} title={d.date.toDateString()} style={{
+              aspectRatio:"1", borderRadius:6,
+              background: d.hasExam
+                ? `linear-gradient(135deg,${C.purple},${C.blue})`
+                : d.isToday
+                  ? `${C.purple}33`
+                  : "rgba(255,255,255,0.05)",
+              border: d.isToday ? `1px solid ${C.purple}` : "none",
+              display:"flex", alignItems:"center", justifyContent:"center",
+              fontSize:8, color: d.hasExam ? "#fff" : "transparent",
+            }}>
+              {d.hasExam ? "✓" : ""}
+            </div>
+          ))}
+        </div>
+        {/* Legend + motivational text */}
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:8 }}>
+          <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+            <div style={{ display:"flex", gap:4, alignItems:"center" }}>
+              <div style={{ width:10, height:10, borderRadius:3, background:`linear-gradient(135deg,${C.purple},${C.blue})` }} />
+              <span style={{ fontSize:10, color:C.muted }}>Practiced</span>
+            </div>
+            <div style={{ display:"flex", gap:4, alignItems:"center" }}>
+              <div style={{ width:10, height:10, borderRadius:3, background:"rgba(255,255,255,0.05)" }} />
+              <span style={{ fontSize:10, color:C.muted }}>Missed</span>
+            </div>
+          </div>
+          <div style={{ fontSize:11, color: streak >= 7 ? C.gold : C.muted, fontWeight:600 }}>
+            {streak >= 30 ? "🏆 On fire!" : streak >= 14 ? "💪 Incredible!" : streak >= 7 ? "⭐ Great work!" : streak >= 3 ? "📈 Keep going!" : "Start your streak today"}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const HomeTab = () => (
     <div style={{ padding:"16px 14px calc(100px + env(safe-area-inset-bottom, 0px))", animation:"slide-in .3s ease" }}>
 
-      {/* ── Premium teaser — free users only ── */}
-      {!student?.is_premium && (
-        <div
-          onClick={() => nav("/upgrade")}
-          style={{
-            background:"linear-gradient(135deg,#6c63ff22,#e1700518)",
-            border:"1.5px solid #6c63ff44",
-            borderRadius:16, padding:"13px 14px", marginBottom:14,
-            display:"flex", alignItems:"center", gap:11, cursor:"pointer",
-          }}>
-          <div style={{ fontSize:28, flexShrink:0, filter:"drop-shadow(0 0 8px gold)" }}>👑</div>
-          <div style={{ flex:1, minWidth:0 }}>
-            <div style={{ fontWeight:800, fontSize:13, color:C.text, marginBottom:2 }}>
-              Unlock full access — from ₦100
-            </div>
-            <div style={{ fontSize:11, color:C.muted, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
-              Full explanations · AI weakness mode · 2× XP · all Post-UTME
-            </div>
+      {/* ── Token CTA ── */}
+      <div
+        onClick={() => nav("/tokens")}
+        style={{
+          background:"linear-gradient(135deg,#6c63ff22,#e1700518)",
+          border:"1.5px solid #6c63ff44",
+          borderRadius:16, padding:"13px 14px", marginBottom:14,
+          display:"flex", alignItems:"center", gap:11, cursor:"pointer",
+        }}>
+        <div style={{ fontSize:28, flexShrink:0 }}>🪙</div>
+        <div style={{ flex:1, minWidth:0 }}>
+          <div style={{ fontWeight:800, fontSize:13, color:C.text, marginBottom:2 }}>
+            {profile?.token_balance > 0 ? `You have ${profile.token_balance} tokens` : "Buy tokens to unlock AI Tutor & more"}
           </div>
-          <div style={{ background:"linear-gradient(135deg,#6c63ff,#a29bfe)", borderRadius:9, padding:"8px 12px", color:"#fff", fontWeight:800, fontSize:12, flexShrink:0 }}>
-            Upgrade →
+          <div style={{ fontSize:11, color:C.muted }}>
+            AI messages · Extra spins · Arena hosting · From ₦200
           </div>
         </div>
-      )}
+        <div style={{ background:"linear-gradient(135deg,#6c63ff,#a29bfe)", borderRadius:9, padding:"8px 12px", color:"#fff", fontWeight:800, fontSize:12, flexShrink:0 }}>
+          {profile?.token_balance > 0 ? "Top Up →" : "Buy →"}
+        </div>
+      </div>
 
       {/* ── JAMB Countdown ── */}
       <JAMBCountdown avgScore={avgScore} />
+
+      {/* ── Streak Calendar ── */}
+      <StreakCalendar streak={streak} history={history} />
 
       {/* Hero card */}
       <div style={{ background:`linear-gradient(135deg,${C.purple}cc,${C.blue}99)`, borderRadius:22, padding:"20px 18px", marginBottom:14, position:"relative", overflow:"hidden", boxShadow:`0 8px 36px ${C.purple}44`, border:`1px solid ${C.purple}44` }}>
@@ -617,6 +694,7 @@ export default function Dashboard() {
           <div style={{ background:"rgba(255,200,87,.2)", border:`1px solid ${C.gold}44`, borderRadius:20, padding:"5px 13px", fontSize:12, fontWeight:700, color:C.gold }}>⚡ {xp} XP</div>
           <div style={{ background:"rgba(255,90,95,.15)", border:`1px solid ${C.red}44`, borderRadius:20, padding:"5px 13px", fontSize:12, fontWeight:700, color:C.red }}>🔥 {streak} streak</div>
           <div style={{ background:"rgba(0,208,132,.12)", border:`1px solid ${C.green}44`, borderRadius:20, padding:"5px 13px", fontSize:12, fontWeight:700, color:C.green }}>🪙 {coins}</div>
+          <div onClick={() => nav("/tokens")} style={{ background:"rgba(108,99,255,.15)", border:`1px solid #6c63ff44`, borderRadius:20, padding:"5px 13px", fontSize:12, fontWeight:700, color:"#6c63ff", cursor:"pointer" }}>🎟️ {profile?.token_balance ?? 0} tokens</div>
         </div>
         <Btn onClick={() => nav("/profile")} style={{ padding:"9px 26px", fontSize:13, borderRadius:10 }}>Edit Profile</Btn>
       </div>
@@ -624,6 +702,7 @@ export default function Dashboard() {
       {/* Menu */}
       <Card style={{ borderRadius:18, overflow:"hidden", marginBottom:12 }}>
         {[
+          { emoji:"🎟️", label:"My Tokens",          sub:"Buy tokens & view history",    path:"/tokens" },
           { emoji:"👤", label:"Edit Profile",       sub:"Update your information",      path:"/profile" },
           { emoji:"🔒", label:"Account Security",   sub:"Password & login settings",    path:"/profile" },
           { emoji:"🎯", label:"Daily Missions",     sub:"Earn XP and coins daily",      path:"/missions" },
@@ -675,6 +754,7 @@ export default function Dashboard() {
         <XPFloat amount={xpFloat} visible={!!xpFloat} />
         <Sidebar />
         <AppTourGuide />
+        <NotificationPrompt />
 
         <div style={{ position:"relative", zIndex:1, overflowY:"auto", overflowX:"hidden" }}>
           <Header />

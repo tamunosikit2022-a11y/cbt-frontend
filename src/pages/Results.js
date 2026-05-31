@@ -1,6 +1,8 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import SharePanel, { generateShareText } from "../components/ShareBattleCard";
+import { trackExamCompleted } from "../utils/notifications";
 
 
 function calcJAMBScore(answers, subjectMap) {
@@ -196,9 +198,11 @@ export default function Results() {
   const [certImg,   setCertImg]   = useState(null);
   const [generating,setGenerating]= useState(false);
   const [shared,    setShared]    = useState(false);
+  const [showShare, setShowShare] = useState(false);
   const certRef = useRef(null);
 
   useEffect(() => { if (!state?.result) nav("/dashboard", { replace:true }); }, [state, nav]);
+  useEffect(() => { if (state?.result) trackExamCompleted(); }, []);
   
   if (!state?.result) return null;
 
@@ -361,8 +365,21 @@ export default function Results() {
         <div style={s.actions}>
           <button style={{ ...s.btn, background:"#6c63ff" }} onClick={() => nav("/exam-select")}>🔁 Try Again</button>
           <button style={{ ...s.btn, background:"#2d3436" }} onClick={() => nav("/dashboard")}>🏠 Dashboard</button>
-          <button style={{ ...s.btn, background:"#0984e3" }} onClick={() => nav("/history")}>📋 History</button>
+          <button style={{ ...s.btn, background:"#25D366" }} onClick={() => setShowShare(true)}>📤 Share</button>
         </div>
+
+        {/* Share panel */}
+        {showShare && (
+          <SharePanel
+            shareText={generateShareText({
+              studentName: student?.full_name || "Scholar",
+              score: jambScore ? jambScore.totalScore : score,
+              total: jambScore ? jambScore.maxScore : total,
+              subject: subject || "JAMB",
+            })}
+            onClose={() => setShowShare(false)}
+          />
+        )}
 
         {/* ── ANSWER REVIEW ── */}
         <h3 style={s.reviewTitle}>Answer Review & Corrections</h3>

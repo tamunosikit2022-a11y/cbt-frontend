@@ -1,71 +1,109 @@
 /**
- * NotificationPrompt — shown once to ask students to enable notifications
- * Add anywhere in the app: <NotificationPrompt />
+ * NotificationPrompt.js
+ * Smart notification permission prompt.
+ * Shows after 2nd login, not on first visit. Dismissible forever.
  */
-import { useState, useEffect } from "react";
-import { requestNotificationPermission, getNotificationPermission, saveNotifPrefs, getNotifPrefs } from "../utils/notifications";
+import { useState, useEffect } from 'react';
+import { subscribeToPush, isPushSupported, isPushSubscribed, getPushPermission } from '../utils/pushNotifications';
+
+const DISMISSED_KEY = 'scholars_notif_prompt_dismissed';
+const SHOWN_KEY     = 'scholars_notif_prompt_shown_count';
 
 export default function NotificationPrompt() {
-  const [show,    setShow]    = useState(false);
-  const [enabled, setEnabled] = useState(false);
+  const [visible,    setVisible]    = useState(false);
+  const [loading,    setLoading]    = useState(false);
+  const [subscribed, setSubscribed] = useState(false);
 
   useEffect(() => {
-    const perm      = getNotificationPermission();
-    const dismissed = localStorage.getItem("scholars_notif_dismissed");
-    if (perm === "granted")   { setEnabled(true); return; }
-    if (perm === "denied")    return;
-    if (dismissed)            return;
-    // Show after 3 seconds on first visit
-    const t = setTimeout(() => setShow(true), 3000);
-    return () => clearTimeout(t);
+    if (!isPushSupported()) return;
+    if (getPushPermission() === 'denied') return;
+    if (isPushSubscribed()) return;
+
+    const dismissed = localStorage.getItem(DISMISSED_KEY);
+    if (dismissed) return;
+
+    // Show after 2nd+ visit
+    const count = parseInt(localStorage.getItem(SHOWN_KEY) || '0') + 1;
+    localStorage.setItem(SHOWN_KEY, count);
+    if (count >= 2) {
+      // Slight delay so it doesn't pop up instantly
+      setTimeout(() => setVisible(true), 3000);
+    }
   }, []);
 
-  const handleEnable = async () => {
-    const result = await requestNotificationPermission();
-    if (result === "granted") {
-      setEnabled(true);
-      saveNotifPrefs({ ...getNotifPrefs(), enabled: true });
+  async function handleEnable() {
+    setLoading(true);
+    const result = await subscribeToPush();
+    setLoading(false);
+    if (result.success) {
+      setSubscribed(true);
+      setTimeout(() => setVisible(false), 2000);
+    } else if (result.reason === 'denied') {
+      dismiss();
     }
-    setShow(false);
-  };
+  }
 
-  const handleDismiss = () => {
-    localStorage.setItem("scholars_notif_dismissed", "true");
-    setShow(false);
-  };
+  function dismiss() {
+    localStorage.setItem(DISMISSED_KEY, 'true');
+    setVisible(false);
+  }
 
-  if (!show || enabled) return null;
+  if (!visible) return null;
 
   return (
     <div style={{
-      position: "fixed", bottom: 80, left: 16, right: 16, zIndex: 999,
-      background: "linear-gradient(135deg,#1a1440,#2d1060)",
-      border: "1.5px solid #6c63ff55", borderRadius: 16,
-      padding: "16px 16px", boxShadow: "0 8px 32px rgba(108,99,255,0.3)",
-      display: "flex", gap: 12, alignItems: "flex-start",
-      fontFamily: "'Plus Jakarta Sans', sans-serif",
-      animation: "slide-in .3s ease",
+      position: 'fixed', bottom: 90, left: 12, right: 12,
+      maxWidth: 380, margin: '0 auto',
+      background: '#111827',
+      border: '1px solid rgba(108,99,255,0.4)',
+      borderRadius: 18, padding: '16px',
+      zIndex: 8000, boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+      animation: 'slide-in 0.3s ease',
     }}>
-      <span style={{ fontSize: 28, flexShrink: 0 }}>🔔</span>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 800, fontSize: 14, color: "#fff", marginBottom: 4 }}>
-          Never miss a study day
+      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+        <div style={{ fontSize: 32, flexShrink: 0 }}>🔔</div>
+        <div style={{ flex: 1 }}>
+          {subscribed ? (
+            <>
+              <div style={{ fontWeight: 800, color: '#00b894', fontSize: 14, marginBottom: 4 }}>
+                ✅ Notifications enabled!
+              </div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>
+                We'll remind you to practice and alert you to arena challenges.
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ fontWeight: 800, color: '#fff', fontSize: 14, marginBottom: 4 }}>
+                Never miss your streak 🔥
+              </div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', marginBottom: 12, lineHeight: 1.5 }}>
+                Get reminders before your streak breaks, daily mission alerts, and arena challenge notifications.
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={handleEnable} disabled={loading} style={{
+                  flex: 2, padding: '10px 0', borderRadius: 10, border: 'none',
+                  background: loading ? 'rgba(108,99,255,0.4)' : '#6c63ff',
+                  color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer',
+                }}>
+                  {loading ? 'Enabling…' : '🔔 Enable'}
+                </button>
+                <button onClick={dismiss} style={{
+                  flex: 1, padding: '10px 0', borderRadius: 10,
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  background: 'transparent', color: 'rgba(255,255,255,0.4)',
+                  fontWeight: 600, fontSize: 13, cursor: 'pointer',
+                }}>
+                  Later
+                </button>
+              </div>
+            </>
+          )}
         </div>
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.6, marginBottom: 12 }}>
-          Get streak reminders and JAMB countdown alerts so you stay on track.
-        </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button
-            onClick={handleEnable}
-            style={{ flex: 1, padding: "10px 0", background: "linear-gradient(135deg,#6c63ff,#a29bfe)", color: "#fff", border: "none", borderRadius: 10, fontWeight: 800, fontSize: 13, cursor: "pointer" }}>
-            Enable Alerts
-          </button>
-          <button
-            onClick={handleDismiss}
-            style={{ padding: "10px 14px", background: "none", border: "1.5px solid rgba(255,255,255,0.15)", borderRadius: 10, color: "rgba(255,255,255,0.4)", fontWeight: 600, fontSize: 12, cursor: "pointer" }}>
-            Not now
-          </button>
-        </div>
+        <button onClick={dismiss} style={{
+          background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)',
+          cursor: 'pointer', fontSize: 18, padding: 0, flexShrink: 0,
+        }}>✕</button>
       </div>
     </div>
   );

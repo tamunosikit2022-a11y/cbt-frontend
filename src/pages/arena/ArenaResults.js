@@ -1,5 +1,8 @@
 import { useLocation, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { disconnectArena } from "../../utils/arenaSocket";
+import { useAuth } from "../../context/AuthContext";
+import SharePanel, { generateShareText } from "../../components/ShareBattleCard";
 
 const RANK_COLORS = ["#FFD700","#C0C0C0","#CD7F32"];
 const RANK_ICONS  = ["🥇","🥈","🥉"];
@@ -7,11 +10,14 @@ const RANK_ICONS  = ["🥇","🥈","🥉"];
 export default function ArenaResults() {
   const { state } = useLocation();
   const nav = useNavigate();
+  const { student } = useAuth();
+  const [showShare, setShowShare] = useState(false);
 
   const { scores = [], winner, totalQ, playerId, room } = state || {};
 
-  const myResult = scores.find(s => s.playerId === playerId);
-  const isWinner = winner?.playerId === playerId;
+  const myResult  = scores.find(s => s.playerId === playerId);
+  const opponent  = scores.find(s => s.playerId !== playerId && scores.length === 2);
+  const isWinner  = winner?.playerId === playerId;
 
   const handlePlay = () => {
     disconnectArena();
@@ -81,9 +87,24 @@ export default function ArenaResults() {
         {/* ACTIONS */}
         <div style={s.actions}>
           <button style={s.playAgain} onClick={handlePlay}>🏟️ Play Again</button>
+          <button style={{ ...s.playAgain, background:"#25D366" }} onClick={() => setShowShare(true)}>📤 Share</button>
           <button style={s.dashboard} onClick={() => { disconnectArena(); nav("/dashboard"); }}>🏠 Dashboard</button>
         </div>
       </div>
+
+      {showShare && (
+        <SharePanel
+          shareText={generateShareText({
+            studentName: student?.full_name || "Scholar",
+            score: myResult?.score || 0,
+            total: totalQ || 20,
+            subject: room?.subject || "JAMB",
+            opponent: opponent?.name,
+            won: isWinner,
+          })}
+          onClose={() => setShowShare(false)}
+        />
+      )}
     </div>
   );
 }

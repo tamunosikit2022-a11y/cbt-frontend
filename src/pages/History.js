@@ -63,7 +63,7 @@ export default function History() {
             <div style={{ fontSize: 48 }}>⚠️</div>
             <p>{error}</p>
             <button 
-              style={{ ...s.tab, background: "#6c63ff", color: "#fff", marginTop: 16 }}
+              style={{ ...s.tab, background: "#6c63ff", color: "#fff", marginTop: 16, border: "none" }}
               onClick={() => window.location.reload()}>
               Retry
             </button>
@@ -94,7 +94,7 @@ export default function History() {
         <div style={s.tabs}>
           {["all","JAMB","POST-UTME"].map(f => (
             <button key={f}
-              style={{ ...s.tab, background: filter === f ? "#6c63ff" : "#fff", color: filter === f ? "#fff" : "#636e72" }}
+              style={{ ...s.tab, background: filter === f ? "#6c63ff" : "rgba(255,255,255,0.05)", color: filter === f ? "#fff" : "rgba(255,255,255,0.6)", border: filter === f ? "none" : "1px solid rgba(255,255,255,0.12)" }}
               onClick={() => setFilter(f)}>
               {f === "all" ? "All" : f}
             </button>
@@ -140,23 +140,17 @@ export default function History() {
           </div>
         )}
 
-        {/* Upgrade hook — free users with at least 1 exam */}
-        {!student?.is_premium && filtered.length > 0 && (
+        {/* Token upsell — directs to tokens page */}
+        {filtered.length > 0 && (
           <div
-            onClick={() => nav("/upgrade")}
-            style={{ background:"linear-gradient(135deg,#f0edff,#e8e4ff)", border:"2px solid #6c63ff33", borderRadius:16, padding:"18px 16px", marginTop:16, cursor:"pointer", display:"flex", gap:12, alignItems:"flex-start" }}>
-            <span style={{ fontSize:32, flexShrink:0 }}>🔒</span>
+            onClick={() => nav("/tokens")}
+            style={{ background:"linear-gradient(135deg,#1a1040,#0d1a30)", border:"1px solid #6c63ff44", borderRadius:16, padding:"16px", marginTop:16, cursor:"pointer", display:"flex", gap:12, alignItems:"center" }}>
+            <span style={{ fontSize:28, flexShrink:0 }}>🪙</span>
             <div style={{ flex:1 }}>
-              <div style={{ fontWeight:800, fontSize:14, color:"#2d3436", marginBottom:4 }}>
-                See the full breakdown of every past exam
-              </div>
-              <div style={{ fontSize:13, color:"#636e72", lineHeight:1.6, marginBottom:10 }}>
-                Premium shows detailed error review, weak topic heatmap, and full explanations for every exam — not just the score.
-              </div>
-              <div style={{ display:"inline-block", background:"linear-gradient(135deg,#6c63ff,#a29bfe)", color:"#fff", fontWeight:800, fontSize:13, padding:"9px 18px", borderRadius:10 }}>
-                👑 Unlock Full Review — from ₦100
-              </div>
+              <div style={{ fontWeight:800, fontSize:13, color:"#fff", marginBottom:3 }}>Get detailed error explanations</div>
+              <div style={{ fontSize:12, color:"rgba(255,255,255,0.5)" }}>Use AI Tutor to understand why you got questions wrong. 1 token per message.</div>
             </div>
+            <span style={{ color:"#6c63ff", fontSize:18 }}>→</span>
           </div>
         )}
       </div>
@@ -166,7 +160,7 @@ export default function History() {
 
 function SumCard({ label, value, color, icon }) {
   return (
-    <div style={{ flex: 1, background: "#fff", borderRadius: 12, padding: "14px 16px", boxShadow: "0 2px 10px rgba(0,0,0,0.06)", textAlign: "center" }}>
+    <div style={{ flex: 1, background: "#111827", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "14px 16px", textAlign: "center" }}>
       <div style={{ fontSize: 22 }}>{icon}</div>
       <div style={{ fontSize: 22, fontWeight: 800, color }}>{value}</div>
       <div style={{ fontSize: 12, color: "#636e72" }}>{label}</div>
@@ -175,16 +169,16 @@ function SumCard({ label, value, color, icon }) {
 }
 
 const s = {
-  page:      { minHeight: "100vh", background: "#f8f9fa", fontFamily: "sans-serif", padding: 16 },
+  page:      { minHeight: "100vh", background: "#0B1020", fontFamily: "'Plus Jakarta Sans',sans-serif", padding: 16, color: "#fff" },
   container: { maxWidth: 680, margin: "0 auto" },
   topRow:    { display: "flex", alignItems: "center", gap: 16, marginBottom: 20 },
   back:      { background: "none", border: "none", color: "#6c63ff", fontWeight: 700, cursor: "pointer", fontSize: 14 },
-  title:     { fontSize: 22, fontWeight: 800 },
+  title:     { fontSize: 22, fontWeight: 800, color: "#fff" },
   summary:   { display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" },
   tabs:      { display: "flex", gap: 8, marginBottom: 16 },
-  tab:       { padding: "8px 16px", border: "2px solid #dfe6e9", borderRadius: 8, fontWeight: 600, cursor: "pointer", fontSize: 13 },
+  tab:       { padding: "8px 16px", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, fontWeight: 600, cursor: "pointer", fontSize: 13, background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.6)" },
   list:      { display: "flex", flexDirection: "column", gap: 10 },
-  row:       { background: "#fff", borderRadius: 12, padding: "14px 16px", display: "flex", alignItems: "center", gap: 14, boxShadow: "0 1px 8px rgba(0,0,0,0.05)" },
+  row:       { background: "#111827", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "14px 16px", display: "flex", alignItems: "center", gap: 14 },
   scoreCircle:{ width: 54, height: 54, borderRadius: "50%", border: "3px solid", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 13, flexShrink: 0 },
-  empty:     { textAlign: "center", padding: 60, color: "#636e72" },
+  empty:     { textAlign: "center", padding: 60, color: "rgba(255,255,255,0.4)" },
 };

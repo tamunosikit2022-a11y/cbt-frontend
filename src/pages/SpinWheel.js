@@ -98,11 +98,12 @@ export default function SpinWheel() {
   const canvasRef      = useRef(null);
   const animRef        = useRef(null);
   const rotRef         = useRef(0);
-  const [spinning,     setSpinning]   = useState(false);
-  const [canSpin,      setCanSpin]    = useState(false);
-  const [msUntil,      setMsUntil]    = useState(0);
-  const [spinsLeft,    setSpinsLeft]  = useState(0);
-  const [coins,        setCoins]      = useState(0);
+  const [spinning,     setSpinning]       = useState(false);
+  const [canSpin,      setCanSpin]        = useState(false);
+  const [msUntil,      setMsUntil]        = useState(0);
+  const [spinsLeft,    setSpinsLeft]      = useState(0);
+  const [spin2CostsToken, setSpin2CostsToken] = useState(false);
+  const [coins,        setCoins]          = useState(0);
   const [gems,         setGems]       = useState(0);
   const [result,       setResult]     = useState(null);
   const [showResult,   setShowResult] = useState(false);
@@ -133,6 +134,7 @@ export default function SpinWheel() {
       setCoins(r.data.coins || 0);
       setGems(r.data.gems   || 0);
       setSpinsLeft(r.data.spinsLeft ?? 1);
+      setSpin2CostsToken(r.data.spin2CostsToken || false);
     }).catch(() => {}).finally(() => {
       clearTimeout(timeout);
       setLoading(false);
@@ -272,7 +274,11 @@ export default function SpinWheel() {
           style={{ ...s.spinBtn, ...((!canSpin || spinning) ? s.spinBtnDisabled : {}) }}
           onClick={handleSpin}
           disabled={!canSpin || spinning}>
-          {spinning ? "Spinning..." : canSpin ? `🎰 SPIN NOW! ${spinsLeft > 1 ? `(${spinsLeft} left)` : ""}` : `⏰ ${formatCountdown(msUntil)}`}
+          {spinning ? "Spinning..." : canSpin
+            ? spin2CostsToken
+              ? `🪙 Spin (1 token)`
+              : `🎰 SPIN NOW! ${spinsLeft > 1 ? `(${spinsLeft} left)` : ""}`
+            : `⏰ ${formatCountdown(msUntil)}`}
         </button>
 
         {/* Premium spin nudge for free users */}

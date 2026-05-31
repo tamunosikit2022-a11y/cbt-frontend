@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import API from "../utils/api";
-import PremiumGate from "../components/PremiumGate";
 
 export default function ErrorReview() {
   const nav = useNavigate();
@@ -30,7 +29,6 @@ export default function ErrorReview() {
     setRevealed(r => ({ ...r, [qId]: true }));
   };
 
-  if (!student?.is_premium) return <PremiumGate feature="errorReview" />;
 
   if (loading) return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "sans-serif" }}>

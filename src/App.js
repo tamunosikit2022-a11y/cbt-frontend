@@ -17,6 +17,7 @@ const Leaderboard      = lazy(() => import("./pages/Leaderboard"));
 const Performance      = lazy(() => import("./pages/Performance"));
 const ErrorReview      = lazy(() => import("./pages/ErrorReview"));
 const Upgrade          = lazy(() => import("./pages/Upgrade"));
+const Tokens           = lazy(() => import("./pages/Tokens"));
 const Profile          = lazy(() => import("./pages/Profile"));
 
 // ── ARENA ─────────────────────────────────────────────────
@@ -134,6 +135,7 @@ export default function App() {
               <Route path="/performance" element={<Private><Performance /></Private>} />
               <Route path="/error-review" element={<Private><ErrorReview /></Private>} />
               <Route path="/upgrade" element={<Private><Upgrade /></Private>} />
+              <Route path="/tokens"  element={<Private><Tokens /></Private>} />
 
               {/* AI Tutor Route */}
               <Route path="/ai-tutor" element={<Private><AITutorWithUser /></Private>} />

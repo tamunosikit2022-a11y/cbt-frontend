@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import API from "../utils/api";
-import PremiumGate from "../components/PremiumGate";
 
 export default function PredictedScore() {
   const nav = useNavigate();
@@ -18,7 +17,6 @@ export default function PredictedScore() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (!student?.is_premium) return <PremiumGate feature="predicted" />;
   if (loading) return <Loader text="Calculating your predicted score..." />;
   if (error)   return <Loader text={error} isError onBack={() => nav("/dashboard")} />;
 
@@ -112,31 +110,31 @@ export default function PredictedScore() {
 
 function Loader({ text, isError, onBack }) {
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, fontFamily: "sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: "#0B1020", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, fontFamily: "sans-serif" }}>
       <div style={{ fontSize: 36 }}>{isError ? "❌" : "⏳"}</div>
-      <p style={{ color: isError ? "#e17055" : "#636e72" }}>{text}</p>
+      <p style={{ color: isError ? "#e17055" : "rgba(255,255,255,0.5)" }}>{text}</p>
       {onBack && <button style={{ background: "#6c63ff", color: "#fff", border: "none", borderRadius: 8, padding: "10px 20px", cursor: "pointer" }} onClick={onBack}>← Back</button>}
     </div>
   );
 }
 
 const s = {
-  page:           { minHeight: "100vh", background: "#f8f9fa", fontFamily: "sans-serif", padding: 16 },
+  page:           { minHeight: "100vh", background: "#0B1020", fontFamily: "'Plus Jakarta Sans',sans-serif", padding: 16, color: "#fff" },
   container:      { maxWidth: 640, margin: "0 auto" },
   back:           { background: "none", border: "none", color: "#6c63ff", fontWeight: 700, cursor: "pointer", fontSize: 14, marginBottom: 8 },
-  title:          { fontSize: 24, fontWeight: 800, color: "#2d3436", marginBottom: 4 },
-  sub:            { color: "#636e72", marginBottom: 20, fontSize: 14 },
-  scoreCard:      { background: "#fff", borderRadius: 16, padding: "28px 24px", textAlign: "center", boxShadow: "0 4px 24px rgba(0,0,0,0.08)", marginBottom: 16, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 },
+  title:          { fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 4 },
+  sub:            { color: "rgba(255,255,255,0.5)", marginBottom: 20, fontSize: 14 },
+  scoreCard:      { background: "#111827", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: "28px 24px", textAlign: "center", marginBottom: 16, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 },
   confidencePill: { padding: "6px 16px", borderRadius: 20, fontSize: 12, fontWeight: 600 },
-  advice:         { color: "#636e72", fontSize: 14, textAlign: "center", maxWidth: 400, lineHeight: 1.6 },
-  card:           { background: "#fff", borderRadius: 14, padding: "18px 16px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", marginBottom: 14 },
-  cardTitle:      { fontSize: 15, fontWeight: 800, color: "#2d3436", marginBottom: 14 },
+  advice:         { color: "rgba(255,255,255,0.6)", fontSize: 14, textAlign: "center", maxWidth: 400, lineHeight: 1.6 },
+  card:           { background: "#111827", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: "18px 16px", marginBottom: 14 },
+  cardTitle:      { fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 },
   subjectGrid:    { display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 },
-  subjCard:       { background: "#f8f9fa", borderRadius: 10, padding: "12px 14px", textAlign: "center" },
-  trendPill:      { fontSize: 10, marginTop: 4, color: "#636e72" },
-  barBg:          { height: 8, background: "#f0f0f0", borderRadius: 4, overflow: "hidden" },
+  subjCard:       { background: "rgba(255,255,255,0.04)", borderRadius: 10, padding: "12px 14px", textAlign: "center" },
+  trendPill:      { fontSize: 10, marginTop: 4, color: "rgba(255,255,255,0.4)" },
+  barBg:          { height: 8, background: "rgba(255,255,255,0.08)", borderRadius: 4, overflow: "hidden" },
   barFill:        { height: "100%", borderRadius: 4, transition: "width 0.5s" },
-  improveRow:     { display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #f0f0f0", alignItems: "center" },
+  improveRow:     { display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.06)", alignItems: "center" },
   practiceBtn:    { marginTop: 12, width: "100%", padding: 12, background: "#6c63ff", color: "#fff", border: "none", borderRadius: 10, fontWeight: 700, cursor: "pointer", fontSize: 14 },
-  emptyState:     { background: "#fff", borderRadius: 14, padding: 32, textAlign: "center", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 },
+  emptyState:     { background: "#111827", borderRadius: 14, padding: 32, textAlign: "center", border: "1px solid rgba(255,255,255,0.07)", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 },
 };
