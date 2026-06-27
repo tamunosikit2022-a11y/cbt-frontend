@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+
+# Block private/user-specific pages from being indexed
+Disallow: /dashboard
+Disallow: /profile
+Disallow: /admin
+Disallow: /exam/
+Disallow: /results/
+Disallow: /arena/match/
+Disallow: /arena/waiting/
+
+# Sitemap location — tells Google where to find your page list
+Sitemap: https://scholars-syndicate.vercel.app/sitemap.xml

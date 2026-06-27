@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <!-- Home / Landing -->
+  <url>
+    <loc>https://cbt-frontend-umber.vercel.app/</loc>
+    <lastmod>2026-06-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- Auth pages -->
+  <url>
+    <loc>https://cbt-frontend-umber.vercel.app/register</loc>
+    <lastmod>2026-06-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://cbt-frontend-umber.vercel.app/login</loc>
+    <lastmod>2026-06-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Core features -->
+  <url>
+    <loc>https://cbt-frontend-umber.vercel.app/exam</loc>
+    <lastmod>2026-06-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://cbt-frontend-umber.vercel.app/arena</loc>
+    <lastmod>2026-06-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://cbt-frontend-umber.vercel.app/flashcards</loc>
+    <lastmod>2026-06-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://cbt-frontend-umber.vercel.app/ai-tutor</loc>
+    <lastmod>2026-06-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://cbt-frontend-umber.vercel.app/leaderboard</loc>
+    <lastmod>2026-06-20</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://cbt-frontend-umber.vercel.app/school-finder</loc>
+    <lastmod>2026-06-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://cbt-frontend-umber.vercel.app/daily-challenge</loc>
+    <lastmod>2026-06-20</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <url><loc>https://scholarssyndicate.com/weakness</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://scholarssyndicate.com/ai-quiz</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://scholarssyndicate.com/social</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://scholarssyndicate.com/school-wars</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://scholarssyndicate.com/chests</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://scholarssyndicate.com/blitz</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+</urlset>
