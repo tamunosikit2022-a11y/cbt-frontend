@@ -264,10 +264,29 @@ function FXOverlay() {
 
     // Dynamic import to prevent React build crash
     let socket = null;
-    try {
-      const { io } = (await import("socket.io-client"));
-      socket = io(SOCKET_URL, { auth: { token }, transports: ["websocket"] });
-    } catch { return; }
+    const connectSocket = async () => {
+      try {
+        const { io } = await import("socket.io-client");
+        socket = io(SOCKET_URL, { auth: { token }, transports: ["websocket"] });
+
+        let sid = null;
+        try { sid = JSON.parse(atob((token.split(".")||["","{}",""])[1]||"e30=") || "{}").id; } catch {}
+        if (sid) socket.emit("fx:subscribe", { studentId: sid });
+
+        socket.on("fx:coin_fly",    addCoins);
+        socket.on("fx:confetti",    addConfetti);
+        socket.on("fx:screen_flash",addFlash);
+        socket.on("fx:victory",     (d) => { addConfetti({ intensity:"explosion", color:"gold" }); });
+        socket.on("fx:badge_unlock",(d) => { addConfetti({ intensity:"heavy", color:"rainbow" }); addFlash({ color:"#FFC857", duration:800 }); });
+        socket.on("fx:rank_up",     (d) => {
+          const el = document.createElement("div");
+          el.className = "rank-up-banner";
+          el.textContent = "🏆 RANK UP — " + (d.rankName||"");
+          document.body.appendChild(el);
+          setTimeout(() => el.remove(), 3200);
+        });
+      } catch { return; }
+    };
 
     const addCoins = (d) => {
       const id = Date.now() + Math.random();
@@ -293,24 +312,9 @@ function FXOverlay() {
       setTimeout(() => setFlashes(f => f.filter(x => x.id!==id)), d.duration||600);
     };
 
-    let sid = null;
-    try { sid = JSON.parse(atob((token.split(".")||["","{}",""])[1]||"e30=") || "{}").id; } catch {}
-    if (sid) socket.emit("fx:subscribe", { studentId: sid });
+    connectSocket();
 
-    socket.on("fx:coin_fly",    addCoins);
-    socket.on("fx:confetti",    addConfetti);
-    socket.on("fx:screen_flash",addFlash);
-    socket.on("fx:victory",     (d) => { addConfetti({ intensity:"explosion", color:"gold" }); });
-    socket.on("fx:badge_unlock",(d) => { addConfetti({ intensity:"heavy", color:"rainbow" }); addFlash({ color:"#FFC857", duration:800 }); });
-    socket.on("fx:rank_up",     (d) => {
-      const el = document.createElement("div");
-      el.className = "rank-up-banner";
-      el.textContent = "🏆 RANK UP — " + (d.rankName||"");
-      document.body.appendChild(el);
-      setTimeout(() => el.remove(), 3200);
-    });
-
-    return () => { socket.disconnect(); };
+    return () => { if (socket) socket.disconnect(); };
   }, []);
 
   return (
