@@ -80,6 +80,7 @@ const BlitzMode        = lazy(() => import("./pages/BlitzMode"));
 const Flashcards       = lazy(() => import("./pages/Flashcards"));
 const AIQuestions      = lazy(() => import("./pages/AIQuestions"));
 const SchoolFinder     = lazy(() => import("./pages/SchoolFinder"));
+const CareerQuiz       = lazy(() => import("./pages/CareerQuiz"));
 const Tournaments      = lazy(() => import("./pages/Tournaments"));
 const Seasons          = lazy(() => import("./pages/Seasons"));
 
@@ -235,6 +236,7 @@ export default function App() {
               <Route path="/flashcards"    element={<Private><Flashcards /></Private>} />
               <Route path="/ai-questions"  element={<Private><AIQuestions /></Private>} />
               <Route path="/school-finder" element={<Private><SchoolFinder /></Private>} />
+              <Route path="/career-quiz"   element={<Private><CareerQuiz /></Private>} />
               <Route path="/seasons"       element={<Private><Seasons /></Private>} />
               <Route path="/tournaments"   element={<Private><Tournaments /></Private>} />
 

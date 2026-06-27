@@ -1,174 +1,137 @@
 import { createContext, useContext, useState, useEffect } from "react";
 
-/* ── THEMES ─────────────────────────────────────────────────── */
+/* ────────────────────────────────────────────────────────────────
+   SCHOLAR SYNDICATE — Design System
+   Philosophy: Black base · White text · One accent · Minimal noise
+   ──────────────────────────────────────────────────────────────── */
+
 export const THEMES = {
-  scholar: {
-    name: "Scholar Blue", icon: "💙", category: "Light",
-    primary: "#6B5AED", primaryDark: "#2D5BE3", primaryLight: "#93B8FF",
-    accent:  "#06B6D4", success: "#10B981", warning: "#F59E0B", info: "#8B5CF6",
-    gradient: "linear-gradient(135deg,#4F7EF7,#06B6D4)",
-  },
-  purple: {
-    name: "Royal Purple", icon: "💜", category: "Light",
-    primary: "#7C3AED", primaryDark: "#5B21B6", primaryLight: "#C4B5FD",
-    accent:  "#EC4899", success: "#10B981", warning: "#F59E0B", info: "#3B82F6",
-    gradient: "linear-gradient(135deg,#7C3AED,#EC4899)",
-  },
-  forest: {
-    name: "Forest", icon: "🌿", category: "Light",
-    primary: "#059669", primaryDark: "#047857", primaryLight: "#6EE7B7",
-    accent:  "#0EA5E9", success: "#84CC16", warning: "#F59E0B", info: "#6366F1",
-    gradient: "linear-gradient(135deg,#059669,#0EA5E9)",
-  },
-  sunset: {
-    name: "Sunset", icon: "🌅", category: "Light",
-    primary: "#F97316", primaryDark: "#EA580C", primaryLight: "#FED7AA",
-    accent:  "#EF4444", success: "#10B981", warning: "#EAB308", info: "#8B5CF6",
-    gradient: "linear-gradient(135deg,#F97316,#EF4444)",
-  },
-  rose: {
-    name: "Rose Gold", icon: "🌸", category: "Light",
-    primary: "#E11D48", primaryDark: "#BE123C", primaryLight: "#FDA4AF",
-    accent:  "#F97316", success: "#10B981", warning: "#EAB308", info: "#8B5CF6",
-    gradient: "linear-gradient(135deg,#E11D48,#F97316)",
-  },
-  cosmic: {
-    name: "Cosmic", icon: "🌌", category: "Dark",
-    primary: "#6D28D9", primaryDark: "#4C1D95", primaryLight: "#C4B5FD",
-    accent:  "#2563EB", success: "#10B981", warning: "#F59E0B", info: "#06B6D4",
-    gradient: "linear-gradient(135deg,#6D28D9,#2563EB)",
+  default: {
+    name: "Scholar",   icon: "🎓", category: "Dark",
+    primary:      "#7C5CFF",   // purple accent — used sparingly
+    primaryDark:  "#5A3FCC",
+    primaryLight: "#A98BFF",
+    accent:       "#00D4AA",   // teal for success/CTA
+    success:      "#22C55E",
+    warning:      "#F59E0B",
+    info:         "#7C5CFF",
+    gradient:     "linear-gradient(135deg,#7C5CFF,#00D4AA)",
   },
   midnight: {
-    name: "Midnight", icon: "🌙", category: "Dark",
-    primary: "#3B82F6", primaryDark: "#1D4ED8", primaryLight: "#93C5FD",
-    accent:  "#8B5CF6", success: "#10B981", warning: "#F59E0B", info: "#06B6D4",
-    gradient: "linear-gradient(135deg,#3B82F6,#8B5CF6)",
+    name: "Midnight",  icon: "🌙", category: "Dark",
+    primary:      "#3B82F6",
+    primaryDark:  "#1D4ED8",
+    primaryLight: "#93C5FD",
+    accent:       "#06B6D4",
+    success:      "#22C55E",
+    warning:      "#F59E0B",
+    info:         "#3B82F6",
+    gradient:     "linear-gradient(135deg,#3B82F6,#06B6D4)",
   },
-  flame: {
-    name: "Flame", icon: "🔥", category: "Dark",
-    primary: "#EF4444", primaryDark: "#DC2626", primaryLight: "#FCA5A5",
-    accent:  "#F97316", success: "#10B981", warning: "#EAB308", info: "#8B5CF6",
-    gradient: "linear-gradient(135deg,#EF4444,#F97316)",
-  },
-};
-
-/* ── MODES ──────────────────────────────────────────────────── */
-export const MODES = {
-  light: {
-    bg:           "#0D0F1C",
-    surface:      "#151929",
-    surfaceAlt:   "#1C2240",
-    border:       "rgba(107,90,237,0.2)",
-    borderStrong: "rgba(79,126,247,0.3)",
-    text:         "#FFFFFF",          // FIX: was invisible on dark bg
-    textSub:      "#C8D3F5",
-    textMuted:    "#8B99C7",
-    navBg:        "rgba(13,15,28,0.97)",  // FIX: was #151929
-    topBarBg:     "rgba(13,15,28,0.97)",  // FIX: was #151929
-    cardShadow:   "0 2px 20px rgba(0,0,0,0.4)",
-  },
-  dark: {
-    bg:           "#0A0F1E",
-    surface:      "#111827",
-    surfaceAlt:   "#1F2937",
-    border:       "rgba(255,255,255,0.08)",
-    borderStrong: "rgba(255,255,255,0.16)",
-    text:         "#F1F5F9",          // FIX: was #a2b9cf — too dim
-    textSub:      "#CBD5E1",          // FIX: was #98bbe6
-    textMuted:    "#94A3B8",          // FIX: was #7392f8 (blue!)
-    navBg:        "rgba(10,15,30,0.97)", // FIX: was #0353ff (bright blue!)
-    topBarBg:     "#111827",
-    cardShadow:   "0 2px 20px rgba(0,0,0,0.4)",
+  green: {
+    name: "Forest",    icon: "🌿", category: "Dark",
+    primary:      "#22C55E",
+    primaryDark:  "#16A34A",
+    primaryLight: "#86EFAC",
+    accent:       "#06B6D4",
+    success:      "#22C55E",
+    warning:      "#F59E0B",
+    info:         "#8B5CF6",
+    gradient:     "linear-gradient(135deg,#22C55E,#06B6D4)",
   },
 };
 
-/* ── FONT SIZES ─────────────────────────────────────────────── */
+/* ── Single dark mode (no light mode confusion) ─────────────── */
+const BASE = {
+  bg:           "#0A0A0F",     // near-black
+  surface:      "#13131A",     // slightly lifted
+  surfaceAlt:   "#1C1C26",     // cards on cards
+  surfaceHover: "#22222F",     // hover state
+  border:       "rgba(255,255,255,0.08)",
+  borderStrong: "rgba(255,255,255,0.15)",
+  text:         "#FFFFFF",     // pure white primary text
+  textSub:      "#D1D5DB",     // light grey secondary
+  textMuted:    "#6B7280",     // muted grey - NOT blue, NOT purple
+  navBg:        "rgba(10,10,15,0.96)",
+  topBarBg:     "#0A0A0F",
+  cardShadow:   "0 1px 12px rgba(0,0,0,0.6)",
+};
+
 export const FONT_SIZES = {
   small:  { name:"Small",  base:13, label:12, heading:16 },
   medium: { name:"Medium", base:15, label:13, heading:18 },
   large:  { name:"Large",  base:17, label:14, heading:21 },
 };
 
-/* ── CONTEXT ────────────────────────────────────────────────── */
 const ThemeContext = createContext(null);
 
 export function ThemeProvider({ children }) {
-  const [themeName, setThemeName] = useState(() => localStorage.getItem("ss_theme") || "scholar");
-  const [modeName,  setModeName]  = useState(() => localStorage.getItem("ss_mode")  || "light");
+  const [themeName, setThemeName] = useState(() => localStorage.getItem("ss_theme") || "default");
   const [fontSize,  setFontSize]  = useState(() => localStorage.getItem("ss_font")  || "medium");
 
-  const theme    = THEMES[themeName]    || THEMES.scholar;
-  const mode     = MODES[modeName]      || MODES.light;
+  const theme    = THEMES[themeName]    || THEMES.default;
   const fontConf = FONT_SIZES[fontSize] || FONT_SIZES.medium;
 
   useEffect(() => {
-    const root = document.documentElement;
+    const r = document.documentElement;
 
-    // Innovation PDF fixed tokens (always set regardless of theme)
-    root.style.setProperty("--gold",          "#FFC857");
-    root.style.setProperty("--danger",        "#FF5A5F");
-    root.style.setProperty("--purple",        "#7C5CFF");
-    root.style.setProperty("--purple-light",  "rgba(124,92,255,0.15)");
-    root.style.setProperty("--green",         "#00D084");
+    // ── Fixed semantic tokens ──────────────────────────────────
+    r.style.setProperty("--gold",         "#F59E0B");
+    r.style.setProperty("--danger",       "#EF4444");
+    r.style.setProperty("--success-color","#22C55E");
 
-    // Theme colours
-    root.style.setProperty("--primary",       theme.primary);
-    root.style.setProperty("--primary-dark",  theme.primaryDark);
-    root.style.setProperty("--primary-light", theme.primaryLight);
-    root.style.setProperty("--accent",        theme.accent);
-    root.style.setProperty("--success",       theme.success);
-    root.style.setProperty("--warning",       theme.warning);
-    root.style.setProperty("--info",          theme.info);
-    root.style.setProperty("--gradient",      theme.gradient);
+    // ── Theme accent ───────────────────────────────────────────
+    r.style.setProperty("--primary",       theme.primary);
+    r.style.setProperty("--primary-dark",  theme.primaryDark);
+    r.style.setProperty("--primary-light", theme.primaryLight);
+    r.style.setProperty("--accent",        theme.accent);
+    r.style.setProperty("--success",       theme.success);
+    r.style.setProperty("--warning",       theme.warning);
+    r.style.setProperty("--info",          theme.info);
+    r.style.setProperty("--gradient",      theme.gradient);
 
-    // Mode colours
-    root.style.setProperty("--bg",            mode.bg);
-    root.style.setProperty("--surface",       mode.surface);
-    root.style.setProperty("--surface-alt",   mode.surfaceAlt);
-    root.style.setProperty("--border",        mode.border);
-    root.style.setProperty("--border-strong", mode.borderStrong);
-    root.style.setProperty("--text",          mode.text);
-    root.style.setProperty("--text-sub",      mode.textSub);
-    root.style.setProperty("--text-muted",    mode.textMuted);
-    root.style.setProperty("--nav-bg",        mode.navBg);
-    root.style.setProperty("--topbar-bg",     mode.topBarBg);
-    root.style.setProperty("--card-shadow",   mode.cardShadow);
+    // ── Base colours ───────────────────────────────────────────
+    r.style.setProperty("--bg",            BASE.bg);
+    r.style.setProperty("--surface",       BASE.surface);
+    r.style.setProperty("--surface-alt",   BASE.surfaceAlt);
+    r.style.setProperty("--surface-hover", BASE.surfaceHover);
+    r.style.setProperty("--border",        BASE.border);
+    r.style.setProperty("--border-strong", BASE.borderStrong);
+    r.style.setProperty("--text",          BASE.text);
+    r.style.setProperty("--text-sub",      BASE.textSub);
+    r.style.setProperty("--text-muted",    BASE.textMuted);
+    r.style.setProperty("--nav-bg",        BASE.navBg);
+    r.style.setProperty("--topbar-bg",     BASE.topBarBg);
+    r.style.setProperty("--card-shadow",   BASE.cardShadow);
 
-    // light-surface helper class colours (used by legacy pages)
-    root.style.setProperty("--light-surface-bg",     mode.surface);
-    root.style.setProperty("--light-surface-border", mode.border);
-    root.style.setProperty("--light-surface-text",   mode.text);
+    // ── Legacy compat ──────────────────────────────────────────
+    r.style.setProperty("--light-surface-bg",     BASE.surface);
+    r.style.setProperty("--light-surface-border", BASE.border);
+    r.style.setProperty("--light-surface-text",   BASE.text);
+    r.style.setProperty("--purple",               theme.primary);
+    r.style.setProperty("--purple-light",         `${theme.primary}22`);
+    r.style.setProperty("--green",                theme.accent);
 
-    // Font
-    root.style.setProperty("--font-base",    `${fontConf.base}px`);
-    root.style.setProperty("--font-label",   `${fontConf.label}px`);
-    root.style.setProperty("--font-heading", `${fontConf.heading}px`);
+    // ── Font ───────────────────────────────────────────────────
+    r.style.setProperty("--font-base",    `${fontConf.base}px`);
+    r.style.setProperty("--font-label",   `${fontConf.label}px`);
+    r.style.setProperty("--font-heading", `${fontConf.heading}px`);
+    r.style.setProperty("--radius",       "12px");
 
-    // Body
-    document.body.style.background = mode.bg;
-    document.body.style.color      = mode.text;
+    document.body.style.background = BASE.bg;
+    document.body.style.color      = BASE.text;
     document.body.style.fontSize   = `${fontConf.base}px`;
-  }, [theme, mode, fontConf]);
+  }, [theme, fontConf]);
 
   const setTheme = name => {
     setThemeName(name);
     localStorage.setItem("ss_theme", name);
-    // Auto-switch mode based on theme category
-    if (THEMES[name]?.category === "Dark" && modeName === "light") {
-      setModeName("dark");
-      localStorage.setItem("ss_mode", "dark");
-    }
-    if (THEMES[name]?.category === "Light" && modeName === "dark") {
-      setModeName("light");
-      localStorage.setItem("ss_mode", "light");
-    }
   };
 
-  const toggleMode = () => {
-    const next = modeName === "light" ? "dark" : "light";
-    setModeName(next);
-    localStorage.setItem("ss_mode", next);
-  };
+  // Keep toggleMode for legacy callers — no-op now (always dark)
+  const toggleMode = () => {};
+  const modeName   = "dark";
+  const mode       = BASE;
 
   const setFont = name => {
     setFontSize(name);
@@ -180,7 +143,7 @@ export function ThemeProvider({ children }) {
       theme, mode, fontConf,
       themeName, modeName, fontSize,
       setTheme, toggleMode, setFont,
-      THEMES, MODES, FONT_SIZES,
+      THEMES, MODES: { dark: BASE }, FONT_SIZES,
     }}>
       {children}
     </ThemeContext.Provider>

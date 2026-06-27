@@ -298,6 +298,19 @@ export default function SchoolFinder() {
         {/* ── COURSES TAB ── */}
         {tab === "courses" && (
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+            {/* Career finder CTA */}
+            <div style={{ background:"color-mix(in srgb, var(--primary) 10%, var(--surface))", border:"1px solid color-mix(in srgb, var(--primary) 25%, transparent)", borderRadius:14, padding:"14px 16px", marginBottom:4, display:"flex", alignItems:"center", gap:12 }}>
+              <span style={{ fontSize:28 }}>🧭</span>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:14, fontWeight:700, color:"var(--text)" }}>Not sure what to study?</div>
+                <div style={{ fontSize:12, color:"var(--text-muted)", marginTop:2 }}>Take the Career Quiz to find courses that match your personality</div>
+              </div>
+              <button onClick={() => window.location.href="/career-quiz"}
+                style={{ background:"var(--primary)", color:"#fff", border:"none", borderRadius:10, padding:"9px 14px", fontSize:13, fontWeight:700, cursor:"pointer", flexShrink:0 }}>
+                Start →
+              </button>
+            </div>
+
             {courses.map(course => (
               <div key={course.id} style={s.card}>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8, gap:8 }}>
