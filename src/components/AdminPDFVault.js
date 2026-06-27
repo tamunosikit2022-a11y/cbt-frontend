@@ -40,17 +40,20 @@ function QuestionGenModal({ pdf, apiBase, token, onClose }) {
     if (!subject) return setError("Select a subject.");
     setLoading(true); setError(""); setJob(null);
     try {
-      const fd = new FormData();
-      // Re-upload is not needed — pass pdf_id so backend fetches from Cloudinary
-      fd.append("pdf_id", pdf.id);
-      fd.append("pdf_url", pdf.cloudinary_url);
-      fd.append("pdf_name", pdf.title);
-      fd.append("subject", subject);
-      fd.append("exam_type", examType);
-      fd.append("difficulty", difficulty);
-      fd.append("target", target);
+      // Send as JSON (not FormData) — generate-from-url uses req.body, not multer
+      const payload = {
+        pdf_id:     pdf.id,
+        pdf_url:    pdf.cloudinary_url,
+        pdf_name:   pdf.title,
+        subject,
+        exam_type:  examType,
+        difficulty,
+        target,
+      };
       const r = await fetch(`${apiBase}/admin/questions/generate-from-url`, {
-        method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd,
+        method:  "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body:    JSON.stringify(payload),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || "Failed to start job");

@@ -39,6 +39,13 @@ export default function TreasureChests() {
       if (!r.ok) { flash("❌ " + d.error); return; }
       setDailyResult(d);
       setDailyClaimed(true);
+      // Show the reward modal — same modal used by openChest so the student
+      // actually SEES what they won (Bug 2 fix: rewards were applied but never shown)
+      setResult({
+        chest:   { tier: d.tier, label: d.label, icon: d.icon, color: d.color },
+        rewards: d.rewards || [],
+        totals:  d.totals  || {},
+      });
       load();
     } catch (e) { flash("❌ " + e.message); }
   };
