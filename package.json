@@ -4,7 +4,7 @@
   "private": true,
   "description": "Scholars Syndicate - JAMB & Post-UTME Practice Platform with Tokens, Voice AI, Tour Guide, Share Cards, Streak Calendar & Push Notifications",
   "engines": {
-    "node": "20.x",
+    "node": "24.x",
     "npm": "10.x"
   },
   "dependencies": {
