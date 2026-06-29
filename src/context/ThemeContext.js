@@ -1,0 +1,157 @@
+import { createContext, useContext, useState, useEffect } from "react";
+
+/* ────────────────────────────────────────────────────────────────
+   SCHOLAR SYNDICATE — Design System
+   Philosophy: Black base · White text · One accent · Minimal noise
+   ──────────────────────────────────────────────────────────────── */
+
+export const THEMES = {
+  default: {
+    name: "Scholar",   icon: "🎓", category: "Dark",
+    primary:      "#7C5CFF",   // purple accent — used sparingly
+    primaryDark:  "#5A3FCC",
+    primaryLight: "#A98BFF",
+    accent:       "#00D4AA",   // teal for success/CTA
+    success:      "#22C55E",
+    warning:      "#F59E0B",
+    info:         "#7C5CFF",
+    gradient:     "linear-gradient(135deg,#7C5CFF,#00D4AA)",
+  },
+  midnight: {
+    name: "Midnight",  icon: "🌙", category: "Dark",
+    primary:      "#3B82F6",
+    primaryDark:  "#1D4ED8",
+    primaryLight: "#93C5FD",
+    accent:       "#06B6D4",
+    success:      "#22C55E",
+    warning:      "#F59E0B",
+    info:         "#3B82F6",
+    gradient:     "linear-gradient(135deg,#3B82F6,#06B6D4)",
+  },
+  green: {
+    name: "Forest",    icon: "🌿", category: "Dark",
+    primary:      "#22C55E",
+    primaryDark:  "#16A34A",
+    primaryLight: "#86EFAC",
+    accent:       "#06B6D4",
+    success:      "#22C55E",
+    warning:      "#F59E0B",
+    info:         "#8B5CF6",
+    gradient:     "linear-gradient(135deg,#22C55E,#06B6D4)",
+  },
+};
+
+/* ── Single dark mode (no light mode confusion) ─────────────── */
+const BASE = {
+  bg:           "#0A0A0F",     // near-black
+  surface:      "#13131A",     // slightly lifted
+  surfaceAlt:   "#1C1C26",     // cards on cards
+  surfaceHover: "#22222F",     // hover state
+  border:       "rgba(255,255,255,0.08)",
+  borderStrong: "rgba(255,255,255,0.15)",
+  text:         "#FFFFFF",     // pure white primary text
+  textSub:      "#D1D5DB",     // light grey secondary
+  textMuted:    "#6B7280",     // muted grey - NOT blue, NOT purple
+  navBg:        "rgba(10,10,15,0.96)",
+  topBarBg:     "#0A0A0F",
+  cardShadow:   "0 1px 12px rgba(0,0,0,0.6)",
+};
+
+export const FONT_SIZES = {
+  small:  { name:"Small",  base:13, label:12, heading:16 },
+  medium: { name:"Medium", base:15, label:13, heading:18 },
+  large:  { name:"Large",  base:17, label:14, heading:21 },
+};
+
+const ThemeContext = createContext(null);
+
+export function ThemeProvider({ children }) {
+  const [themeName, setThemeName] = useState(() => localStorage.getItem("ss_theme") || "default");
+  const [fontSize,  setFontSize]  = useState(() => localStorage.getItem("ss_font")  || "medium");
+
+  const theme    = THEMES[themeName]    || THEMES.default;
+  const fontConf = FONT_SIZES[fontSize] || FONT_SIZES.medium;
+
+  useEffect(() => {
+    const r = document.documentElement;
+
+    // ── Fixed semantic tokens ──────────────────────────────────
+    r.style.setProperty("--gold",         "#F59E0B");
+    r.style.setProperty("--danger",       "#EF4444");
+    r.style.setProperty("--success-color","#22C55E");
+
+    // ── Theme accent ───────────────────────────────────────────
+    r.style.setProperty("--primary",       theme.primary);
+    r.style.setProperty("--primary-dark",  theme.primaryDark);
+    r.style.setProperty("--primary-light", theme.primaryLight);
+    r.style.setProperty("--accent",        theme.accent);
+    r.style.setProperty("--success",       theme.success);
+    r.style.setProperty("--warning",       theme.warning);
+    r.style.setProperty("--info",          theme.info);
+    r.style.setProperty("--gradient",      theme.gradient);
+
+    // ── Base colours ───────────────────────────────────────────
+    r.style.setProperty("--bg",            BASE.bg);
+    r.style.setProperty("--surface",       BASE.surface);
+    r.style.setProperty("--surface-alt",   BASE.surfaceAlt);
+    r.style.setProperty("--surface-hover", BASE.surfaceHover);
+    r.style.setProperty("--border",        BASE.border);
+    r.style.setProperty("--border-strong", BASE.borderStrong);
+    r.style.setProperty("--text",          BASE.text);
+    r.style.setProperty("--text-sub",      BASE.textSub);
+    r.style.setProperty("--text-muted",    BASE.textMuted);
+    r.style.setProperty("--nav-bg",        BASE.navBg);
+    r.style.setProperty("--topbar-bg",     BASE.topBarBg);
+    r.style.setProperty("--card-shadow",   BASE.cardShadow);
+
+    // ── Legacy compat ──────────────────────────────────────────
+    r.style.setProperty("--light-surface-bg",     BASE.surface);
+    r.style.setProperty("--light-surface-border", BASE.border);
+    r.style.setProperty("--light-surface-text",   BASE.text);
+    r.style.setProperty("--purple",               theme.primary);
+    r.style.setProperty("--purple-light",         `${theme.primary}22`);
+    r.style.setProperty("--green",                theme.accent);
+
+    // ── Font ───────────────────────────────────────────────────
+    r.style.setProperty("--font-base",    `${fontConf.base}px`);
+    r.style.setProperty("--font-label",   `${fontConf.label}px`);
+    r.style.setProperty("--font-heading", `${fontConf.heading}px`);
+    r.style.setProperty("--radius",       "12px");
+
+    document.body.style.background = BASE.bg;
+    document.body.style.color      = BASE.text;
+    document.body.style.fontSize   = `${fontConf.base}px`;
+  }, [theme, fontConf]);
+
+  const setTheme = name => {
+    setThemeName(name);
+    localStorage.setItem("ss_theme", name);
+  };
+
+  // Keep toggleMode for legacy callers — no-op now (always dark)
+  const toggleMode = () => {};
+  const modeName   = "dark";
+  const mode       = BASE;
+
+  const setFont = name => {
+    setFontSize(name);
+    localStorage.setItem("ss_font", name);
+  };
+
+  return (
+    <ThemeContext.Provider value={{
+      theme, mode, fontConf,
+      themeName, modeName, fontSize,
+      setTheme, toggleMode, setFont,
+      THEMES, MODES: { dark: BASE }, FONT_SIZES,
+    }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+
+export function useTheme() {
+  const ctx = useContext(ThemeContext);
+  if (!ctx) throw new Error("useTheme must be inside ThemeProvider");
+  return ctx;
+}

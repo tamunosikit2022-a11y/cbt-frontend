@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scholars Syndicate — Offline</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0f0f1e;
+      color: #f0f4ff;
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+    }
+    .card {
+      max-width: 400px;
+      width: 100%;
+      background: #1a1a2e;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: 40px 32px;
+    }
+    .icon { font-size: 72px; margin-bottom: 20px; display: block; }
+    h1 { font-size: 22px; font-weight: 800; margin-bottom: 8px; color: #f0f4ff; }
+    p  { font-size: 14px; color: #636e72; line-height: 1.7; margin-bottom: 24px; }
+    .tips {
+      background: rgba(108,99,255,0.1);
+      border: 1px solid rgba(108,99,255,0.2);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: left;
+      margin-bottom: 24px;
+    }
+    .tips h3 { font-size: 13px; color: #a29bfe; font-weight: 700; margin-bottom: 10px; }
+    .tips li  { font-size: 13px; color: #b2bec3; line-height: 1.8; list-style: none; padding-left: 4px; }
+    .tips li::before { content: "• "; color: #6c63ff; }
+    .btn {
+      background: #6c63ff;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 14px 32px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .status {
+      margin-top: 16px;
+      font-size: 12px;
+      color: #636e72;
+    }
+    .dot {
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #e17055;
+      margin-right: 6px;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <span class="icon">📡</span>
+    <h1>You're Offline</h1>
+    <p>
+      No internet connection detected. Don't worry — any questions
+      you've already loaded are cached and ready to practice.
+    </p>
+
+    <div class="tips">
+      <h3>While offline you can still:</h3>
+      <ul>
+        <li>Review your cached practice questions</li>
+        <li>Use flashcards you already loaded</li>
+        <li>Check your saved study plan</li>
+        <li>Review past exam results</li>
+      </ul>
+    </div>
+
+    <button class="btn" onclick="tryReconnect()">Try Reconnecting</button>
+
+    <p class="status">
+      <span class="dot"></span>
+      Waiting for connection...
+    </p>
+  </div>
+
+  <script>
+    function tryReconnect() {
+      if (navigator.onLine) {
+        window.location.href = '/';
+      } else {
+        const btn = document.querySelector('.btn');
+        btn.textContent = 'Still offline... try again';
+        setTimeout(() => { btn.textContent = 'Try Reconnecting'; }, 2000);
+      }
+    }
+
+    // Auto-redirect when connection returns
+    window.addEventListener('online', () => {
+      window.location.href = '/';
+    });
+  </script>
+</body>
+</html>
