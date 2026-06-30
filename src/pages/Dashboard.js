@@ -30,6 +30,20 @@ const GLOBAL_CSS = `
     .dash-grid-2 { grid-template-columns: 1fr !important; }
     .dash-stat-val { font-size: 20px !important; }
   }
+
+  /* ── Desktop sidebar layout (>=1024px) ───────────────────── */
+  .dash-shell { max-width: 520px; margin: 0 auto; }
+  .desktop-sidebar { display: none; position: fixed; top: 0; bottom: 0; left: 50%; width: 260px; margin-left: -590px; }
+  @media (min-width: 1024px) {
+    .dash-shell { max-width: 1180px; margin: 0 auto; }
+    .dash-shell-inner { margin-left: 260px; max-width: 760px; padding: 0 20px; }
+    .desktop-sidebar { display: flex !important; }
+    .mobile-only { display: none !important; }
+    .dash-tiles-grid { grid-template-columns: repeat(3, 1fr) !important; }
+  }
+  @media (min-width: 1024px) and (max-width: 1179px) {
+    .desktop-sidebar { left: 0; margin-left: 0; }
+  }
 `;
 
 const C = {
@@ -177,6 +191,7 @@ export default function Dashboard() {
     { id:"progress", label:"Progress",       emoji:"📊" },
     { id:"profile",  label:"Profile",        emoji:"👤" },
     { nav:"/ai-tutor",    label:"AI Tutor",        emoji:"🤖" },
+    { nav:"/exam-select?type=UNIVERSITY", label:"University Past Qs", emoji:"🎓", badge:"NEW" },
     { nav:"/arena",       label:"Arena",          emoji:"⚔️" },
     { nav:"/missions",    label:"Daily Missions",  emoji:"🎯", dot:true },
     { nav:"/videos",      label:"Video Library",   emoji:"📺" },
@@ -260,7 +275,7 @@ export default function Dashboard() {
       display:"flex", alignItems:"center", gap:9,
       position:"sticky", top:0, zIndex:50,
     }}>
-      <button className="nav-btn" onClick={() => setSideOpen(true)} style={{ background:"rgba(255,255,255,.06)", border:`1px solid ${C.border}`, borderRadius:9, width:36, height:36, fontSize:18, cursor:"pointer", color:C.text, display:"flex", alignItems:"center", justifyContent:"center" }}>☰</button>
+      <button className="nav-btn mobile-only" onClick={() => setSideOpen(true)} style={{ background:"rgba(255,255,255,.06)", border:`1px solid ${C.border}`, borderRadius:9, width:36, height:36, fontSize:18, cursor:"pointer", color:C.text, display:"flex", alignItems:"center", justifyContent:"center" }}>☰</button>
 
       <div style={{ flex:1 }}>
         <div style={{ fontWeight:900, fontSize:14, color:C.text }}>Scholars Syndicate</div>
@@ -379,6 +394,7 @@ export default function Dashboard() {
   const HOME_PILLS = [
     { id:"jamb",      label:"📘 JAMB / UTME",   short:"JAMB"      },
     { id:"postutme",  label:"🏫 Post-UTME",      short:"Post-UTME" },
+    { id:"university",label:"🎓 University",     short:"University"},
     { id:"smart",     label:"🧠 Smart Study",    short:"Study"     },
     { id:"battle",    label:"⚔️ Battle",          short:"Battle"    },
     { id:"rewards",   label:"🎁 Rewards",         short:"Rewards"   },
@@ -399,6 +415,8 @@ export default function Dashboard() {
     // ── POST-UTME
     { emoji:"🏫",  title:"Post-UTME",         desc:"UNILAG · UI · OAU · LASU & more",     path:"/exam-select?type=POST-UTME", color:C.green,   tags:["postutme","all"] },
     { emoji:"🏫",  title:"School Finder",     desc:"Find universities near you",           path:"/school-finder",              color:"#00b894", tags:["postutme","tools","all"], badge:"NEW" },
+    // ── UNIVERSITY
+    { emoji:"🎓",  title:"University Past Qs",desc:"UNIPORT GES course questions",         path:"/exam-select?type=UNIVERSITY",color:C.green,   tags:["university","all"], badge:"NEW" },
     // ── SMART STUDY
     { emoji:"🔁",  title:"Error Review",      desc:"Redo every question you got wrong",    path:"/error-review",               color:C.blue,    tags:["smart","all"] },
     { emoji:"💪",  title:"Beat Yourself",     desc:"Break your personal best score",       path:"/beat-yourself",              color:C.purple,  tags:["smart","all"] },
@@ -504,20 +522,28 @@ export default function Dashboard() {
 
       {/* ── Primary Actions ── */}
       <div style={{ fontSize:10, fontWeight:800, color:C.muted, letterSpacing:1.5, textTransform:"uppercase", marginBottom:8, padding:"0 14px" }}>Start Practicing</div>
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:16, padding:"0 14px" }}>
+      <div className="dash-grid-2" style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10, marginBottom:16, padding:"0 14px" }}>
         <Btn onClick={() => nav("/exam-select?type=JAMB")} grad={`linear-gradient(135deg,${C.purple},${C.blue})`} glow={C.purple}
-          style={{ padding:"18px 0", fontSize:14, borderRadius:16, display:"flex", flexDirection:"column", alignItems:"center", gap:5 }}>
-          <span style={{ fontSize:26 }}>📘</span>
+          style={{ padding:"16px 0", fontSize:13, borderRadius:16, display:"flex", flexDirection:"column", alignItems:"center", gap:5 }}>
+          <span style={{ fontSize:24 }}>📘</span>
           <span style={{ fontWeight:900 }}>JAMB</span>
-          <span style={{ fontSize:10, opacity:.7 }}>Full simulation</span>
+          <span style={{ fontSize:9, opacity:.7 }}>Full simulation</span>
         </Btn>
         <Btn onClick={() => nav("/exam-select?type=POST-UTME")} grad={`linear-gradient(135deg,${C.green}cc,#00a36c)`} glow={C.green}
-          style={{ padding:"18px 0", fontSize:14, borderRadius:16, display:"flex", flexDirection:"column", alignItems:"center", gap:5 }}>
-          <span style={{ fontSize:26 }}>🏫</span>
+          style={{ padding:"16px 0", fontSize:13, borderRadius:16, display:"flex", flexDirection:"column", alignItems:"center", gap:5 }}>
+          <span style={{ fontSize:24 }}>🏫</span>
           <span style={{ fontWeight:900 }}>Post-UTME</span>
-          <span style={{ fontSize:10, opacity:.7 }}>UNILAG · UI · OAU</span>
+          <span style={{ fontSize:9, opacity:.7 }}>UNILAG · UI · OAU</span>
+        </Btn>
+        <Btn onClick={() => nav("/exam-select?type=UNIVERSITY")} grad={`linear-gradient(135deg,#00D4AA,#00a383)`} glow={"#00D4AA"}
+          style={{ padding:"16px 0", fontSize:13, borderRadius:16, display:"flex", flexDirection:"column", alignItems:"center", gap:5, position:"relative" }}>
+          <span style={{ position:"absolute", top:6, right:6, background:"#fff", color:"#00a383", fontSize:8, fontWeight:900, padding:"2px 5px", borderRadius:5 }}>NEW</span>
+          <span style={{ fontSize:24 }}>🎓</span>
+          <span style={{ fontWeight:900 }}>University</span>
+          <span style={{ fontSize:9, opacity:.7 }}>UNIPORT GES</span>
         </Btn>
       </div>
+
 
       {/* ── Quick actions strip ── */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, marginBottom:16, padding:"0 14px" }}>
@@ -640,7 +666,7 @@ export default function Dashboard() {
           <div style={{ fontSize:10, fontWeight:800, color:C.muted, letterSpacing:1.5, textTransform:"uppercase", marginBottom:10 }}>
             {HOME_PILLS.find(p=>p.id===homeFilter)?.short} Features
           </div>
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:9, marginBottom:16 }}>
+        <div className="dash-tiles-grid" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:9, marginBottom:16 }}>
           {visibleTiles.map((item, i) => (
             <Card key={i} onClick={() => nav(item.path)} color={item.color} style={{ padding:"14px 13px", borderRadius:14, display:"flex", alignItems:"center", gap:10, position:"relative" }}>
               {item.badge && (
@@ -674,6 +700,7 @@ export default function Dashboard() {
         { label:"EXAM PREP", color:C.purple, items:[
           { emoji:"📘", title:"JAMB / UTME",    desc:"Full simulation · 180 questions",  path:"/exam-select?type=JAMB" },
           { emoji:"🏫", title:"Post-UTME",       desc:"UNILAG · UI · OAU & more",        path:"/exam-select?type=POST-UTME" },
+          { emoji:"🎓", title:"University",      desc:"UNIPORT GES course past Qs",      path:"/exam-select?type=UNIVERSITY" },
           { emoji:"📖", title:"Subject Practice",desc:"Single subject · 40 questions",    path:"/exam-select?type=JAMB" },
           { emoji:"⚡",  title:"Daily Challenge", desc:"10 questions · refreshes daily",  path:"/challenge" },
           { emoji:"🤖",  title:"AI Tutor",       desc:"Personalized explanations & help", path:"/ai-tutor" },
@@ -856,15 +883,108 @@ export default function Dashboard() {
     { id:"profile",  label:"Profile", emoji:"👤" },
   ];
 
+  // ── DESKTOP PERSISTENT SIDEBAR (>=1024px) ─────────────────
+  const DESKTOP_GROUPS = [
+    { label:"Dashboard", items:[
+      { tab:"home",     label:"Home",            emoji:"🏠" },
+      { tab:"learn",    label:"Practice Centre",  emoji:"📚" },
+      { tab:"progress", label:"Progress",         emoji:"📊" },
+      { tab:"profile",  label:"Profile",          emoji:"👤" },
+    ]},
+    { label:"Exam prep", items:[
+      { nav:"/exam-select?type=JAMB",       label:"JAMB / UTME",  emoji:"📘" },
+      { nav:"/exam-select?type=POST-UTME",  label:"Post-UTME",    emoji:"🏫" },
+      { nav:"/exam-select?type=UNIVERSITY", label:"University",   emoji:"🎓", badge:"NEW" },
+      { nav:"/history",                     label:"History",      emoji:"🕓" },
+      { nav:"/heatmap",                     label:"Weakness Heatmap", emoji:"🎯" },
+    ]},
+    { label:"Study tools", items:[
+      { nav:"/ai-tutor",      label:"AI Tutor",          emoji:"🤖" },
+      { nav:"/ai-quiz",       label:"AI Quiz Generator", emoji:"✨" },
+      { nav:"/flashcards",    label:"Flashcards",        emoji:"🃏" },
+      { nav:"/study-planner", label:"Study Planner",     emoji:"📅" },
+      { nav:"/vault",         label:"Knowledge Vault",   emoji:"📖" },
+      { nav:"/videos",        label:"Video Library",     emoji:"📺" },
+    ]},
+    { label:"Compete", items:[
+      { nav:"/arena",        label:"Arena",          emoji:"⚔️" },
+      { nav:"/tournaments",  label:"Tournaments",    emoji:"🏆" },
+      { nav:"/leaderboard",  label:"Leaderboard",    emoji:"📊" },
+      { nav:"/challenge",    label:"Daily Challenge",emoji:"🔥" },
+      { nav:"/blitz",        label:"Blitz Mode",     emoji:"⚡" },
+      { nav:"/school-wars",  label:"School Wars",    emoji:"🏰" },
+    ]},
+    { label:"Rewards", items:[
+      { nav:"/badges",   label:"Badges",     emoji:"🎖️" },
+      { nav:"/missions", label:"Missions",   emoji:"✅" },
+      { nav:"/gems",     label:"Token Store",emoji:"🎫" },
+      { nav:"/spin",     label:"Spin Wheel", emoji:"🎰" },
+      { nav:"/skills",   label:"Skills",     emoji:"🗝️" },
+    ]},
+    { label:"Account", items:[
+      { nav:"/profile", label:"Edit Profile", emoji:"👤" },
+      { nav:"/theme",   label:"Appearance",   emoji:"🎨" },
+      { nav:"/refer",   label:"Refer & Earn", emoji:"🎁" },
+      { nav:"/parent",  label:"Parent Portal",emoji:"👪" },
+    ]},
+  ];
+
+  const DesktopNav = () => (
+    <aside className="desktop-sidebar" style={{
+      flexDirection:"column", background:"var(--surface)", borderRight:`1px solid ${C.border}`,
+      padding:"18px 12px", overflowY:"auto", zIndex:10,
+    }}>
+      <div style={{ display:"flex", alignItems:"center", gap:10, padding:"0 8px 16px", borderBottom:`1px solid ${C.border}`, marginBottom:10 }}>
+        <div style={{ width:36, height:36, borderRadius:11, background:`linear-gradient(135deg,${C.purple},${C.blue})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, flexShrink:0 }}>🎓</div>
+        <div style={{ minWidth:0 }}>
+          <div style={{ fontWeight:900, fontSize:13, color:C.text, lineHeight:1.2 }}>Scholars Syndicate</div>
+          <div style={{ fontSize:10, color:C.muted }}>🔥 {streak} streak · 🪙 {coins.toLocaleString()}</div>
+        </div>
+      </div>
+
+      {DESKTOP_GROUPS.map((g,gi) => (
+        <div key={gi} style={{ marginBottom:14 }}>
+          <div style={{ fontSize:10, fontWeight:800, color:C.muted, letterSpacing:1, textTransform:"uppercase", padding:"0 8px", marginBottom:5 }}>{g.label}</div>
+          {g.items.map((item,i) => {
+            const isActive = item.tab && activeTab === item.tab;
+            return (
+              <div key={i} onClick={() => { if (item.tab) setActiveTab(item.tab); else nav(item.nav); }} style={{
+                display:"flex", alignItems:"center", gap:9, padding:"8px 9px", borderRadius:10, cursor:"pointer", marginBottom:1,
+                background: isActive ? `linear-gradient(135deg,${C.purple}33,${C.blue}22)` : "transparent",
+                border:`1px solid ${isActive ? `${C.purple}44` : "transparent"}`,
+                color: isActive ? C.text : C.muted, fontWeight: isActive ? 700 : 600, fontSize:12.5,
+              }}>
+                <span style={{ fontSize:15, width:18, textAlign:"center" }}>{item.emoji}</span>
+                <span style={{ flex:1 }}>{item.label}</span>
+                {item.badge && <span style={{ background:C.purple, color:"#fff", fontSize:8.5, fontWeight:800, padding:"2px 5px", borderRadius:5 }}>{item.badge}</span>}
+              </div>
+            );
+          })}
+        </div>
+      ))}
+
+      {!student?.is_premium && (
+        <div style={{ marginTop:4, background:`linear-gradient(135deg,${C.purple}20,${C.gold}10)`, border:`1px solid ${C.gold}30`, borderRadius:14, padding:"14px 12px", textAlign:"center" }}>
+          <div style={{ fontSize:18, marginBottom:5 }}>👑</div>
+          <div style={{ fontWeight:800, fontSize:11.5, color:C.gold, marginBottom:8 }}>Upgrade to Pro</div>
+          <Btn onClick={() => nav("/subscribe")} grad={`linear-gradient(135deg,${C.gold},#FFB300)`} glow={C.gold} style={{ width:"100%", padding:"8px 0", fontSize:11.5, borderRadius:9 }}>
+            Upgrade Now
+          </Btn>
+        </div>
+      )}
+    </aside>
+  );
+
   return (
     <>
       <NotificationPrompt />
-      <div style={{ minHeight:"100vh", background:C.bg, fontFamily:"'Plus Jakarta Sans',sans-serif", maxWidth:520, margin:"0 auto", position:"relative" }}>
+      <div className="dash-shell" style={{ minHeight:"100vh", background:C.bg, fontFamily:"'Plus Jakarta Sans',sans-serif", position:"relative" }}>
         <XPFloat amount={xpFloat} visible={!!xpFloat} />
         <Sidebar />
+        <DesktopNav />
         <AppTourGuide />
 
-        <div style={{ position:"relative", zIndex:1, overflowY:"auto", overflowX:"clip", WebkitOverflowScrolling:"touch" }}>
+        <div className="dash-shell-inner" style={{ position:"relative", zIndex:1, overflowY:"auto", overflowX:"clip", WebkitOverflowScrolling:"touch", margin:"0 auto" }}>
           <Header />
 
           {activeTab === "home"     && <HomeTab />}
@@ -872,8 +992,8 @@ export default function Dashboard() {
           {activeTab === "progress" && <ProgressTab />}
           {activeTab === "profile"  && <ProfileTab />}
 
-          {/* Bottom Nav */}
-          <nav style={{ position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)", width:"100%", maxWidth:520, background:"var(--nav-bg)", backdropFilter:"blur(20px)", borderTop:`1px solid ${C.border}`, padding:"6px 0", paddingBottom:"calc(10px + env(safe-area-inset-bottom, 0px))", display:"flex", alignItems:"center", zIndex:50, boxShadow:"0 -4px 20px rgba(79,126,247,0.12)" }}>
+          {/* Bottom Nav (mobile only — desktop uses the persistent sidebar) */}
+          <nav className="mobile-only" style={{ position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)", width:"100%", maxWidth:520, background:"var(--nav-bg)", backdropFilter:"blur(20px)", borderTop:`1px solid ${C.border}`, padding:"6px 0", paddingBottom:"calc(10px + env(safe-area-inset-bottom, 0px))", display:"flex", alignItems:"center", zIndex:50, boxShadow:"0 -4px 20px rgba(79,126,247,0.12)" }}>
             {NAV_TABS.map(t => (
               <button key={t.id} className="nav-btn" onClick={() => setActiveTab(t.id)} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", padding:"5px 0", background:"none", border:"none", cursor:"pointer", color:activeTab===t.id ? C.purpleL : C.muted }}>
                 <div style={{ width:34, height:34, borderRadius:10, background:activeTab===t.id?`${C.purple}22`:"transparent", display:"flex", alignItems:"center", justifyContent:"center", marginBottom:1, transition:"all .2s" }}>
