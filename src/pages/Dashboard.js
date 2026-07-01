@@ -44,6 +44,71 @@ const GLOBAL_CSS = `
   @media (min-width: 1024px) and (max-width: 1179px) {
     .desktop-sidebar { left: 0; margin-left: 0; }
   }
+  /* ── New mockup-matched dashboard sections (mobile-first) ── */
+  .dv-hero{background:linear-gradient(120deg,rgba(124,92,255,.16),rgba(91,140,255,.08));border:1px solid var(--border);border-radius:20px;padding:18px 16px;margin:14px;position:relative;overflow:hidden;}
+  .dv-hero h1{font-size:19px;font-weight:900;margin:2px 0 4px;}
+  .dv-hero p{font-size:12px;color:var(--text-muted);}
+  .dv-hero-pill{display:inline-flex;align-items:center;gap:6px;background:var(--surface-alt);border:1px solid var(--border);padding:5px 11px;border-radius:20px;font-size:11px;font-weight:700;margin-top:10px;}
+
+  .dv-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 14px;margin-bottom:14px;}
+  .dv-stat-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px;}
+  .dv-stat-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;margin-bottom:8px;}
+  .dv-stat-label{font-size:10.5px;color:var(--text-muted);font-weight:700;}
+  .dv-stat-val{font-size:18px;font-weight:900;margin-top:1px;}
+  .dv-stat-delta{font-size:9.5px;font-weight:700;margin-top:4px;}
+
+  .dv-quick{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:0 14px;margin-bottom:14px;}
+  .dv-quick-card{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:12px;cursor:pointer;}
+  .dv-quick-icon{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;margin-bottom:8px;}
+  .dv-quick-title{font-size:12px;font-weight:800;}
+  .dv-quick-desc{font-size:10px;color:var(--text-muted);margin-top:1px;}
+
+  .dv-section{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;margin:0 14px 14px;}
+  .dv-section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .dv-section-title{font-size:13px;font-weight:800;}
+  .dv-section-link{font-size:11px;color:var(--primary-light);font-weight:700;cursor:pointer;background:none;border:none;}
+
+  .dv-split{display:flex;flex-direction:column;gap:14px;}
+
+  .dv-chart{height:120px;display:flex;align-items:flex-end;gap:4px;}
+  .dv-bar{flex:1;background:linear-gradient(180deg,var(--primary),var(--primary) 0%,transparent);border-radius:4px 4px 0 0;min-height:4px;}
+  .dv-chart-labels{display:flex;justify-content:space-between;margin-top:6px;font-size:9px;color:var(--text-muted);}
+
+  .dv-activity-item{display:flex;gap:9px;padding:9px 0;border-bottom:1px solid var(--border);align-items:center;}
+  .dv-activity-item:last-child{border-bottom:none;padding-bottom:0;}
+  .dv-activity-icon{width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+  .dv-activity-text{font-size:11.5px;font-weight:700;}
+  .dv-activity-sub{font-size:10px;color:var(--text-muted);}
+  .dv-activity-time{font-size:9.5px;color:var(--text-muted);margin-left:auto;white-space:nowrap;}
+
+  .dv-task-item{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--border);}
+  .dv-task-item:last-child{border-bottom:none;}
+  .dv-task-check{width:15px;height:15px;border-radius:5px;border:2px solid var(--border);flex-shrink:0;}
+  .dv-task-text{font-size:11.5px;font-weight:700;}
+  .dv-task-sub{font-size:10px;color:var(--text-muted);}
+  .dv-pill{margin-left:auto;font-size:9px;font-weight:800;padding:3px 7px;border-radius:6px;flex-shrink:0;}
+
+  .dv-countdown{text-align:center;background:var(--surface-alt);border:1px solid var(--border);border-radius:13px;padding:14px;margin-bottom:10px;}
+  .dv-countdown-num{font-size:26px;font-weight:900;color:var(--gold);}
+  .dv-countdown-label{font-size:10px;color:var(--text-muted);font-weight:700;}
+
+  .dv-table{width:100%;border-collapse:collapse;font-size:11.5px;}
+  .dv-table th{text-align:left;color:var(--text-muted);font-weight:700;font-size:9.5px;text-transform:uppercase;letter-spacing:.4px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+  .dv-table td{padding:10px 6px 10px 0;border-bottom:1px solid var(--border);}
+  .dv-table tr:last-child td{border-bottom:none;}
+  .dv-mobile-hide{display:none;}
+
+  @media (min-width:640px){
+    .dv-stats{grid-template-columns:repeat(4,1fr);}
+    .dv-quick{grid-template-columns:repeat(4,1fr);}
+    .dv-mobile-hide{display:table-cell;}
+  }
+  @media (min-width:1024px){
+    .dv-split-2col{display:grid !important;grid-template-columns:1.4fr 1fr;gap:14px;}
+    .dv-hero{margin:0 20px 16px;}
+    .dv-stats,.dv-quick{padding:0 20px;}
+    .dv-section{margin:0 20px 16px;}
+  }
 `;
 
 const C = {
@@ -454,111 +519,172 @@ export default function Dashboard() {
     return (
     <div style={{ padding:"0 0 calc(100px + env(safe-area-inset-bottom, 0px))", animation:"slide-in .3s ease" }}>
 
-      {/* ── Hero Card ── */}
-      <div style={{ padding:"16px 14px 0", marginBottom:16 }}>
-      <div style={{ background:`linear-gradient(135deg,${C.purple}dd,${C.blue}bb)`, borderRadius:24, padding:"20px 18px 16px", position:"relative", overflow:"hidden", boxShadow:`0 12px 40px ${C.purple}55` }}>
-        <div style={{ position:"absolute", top:-40, right:-40, width:120, height:120, borderRadius:"50%", background:`${C.blue}44`, filter:"blur(30px)" }} />
-        <div style={{ position:"absolute", bottom:-20, left:-20, width:80, height:80, borderRadius:"50%", background:`${C.purple}44`, filter:"blur(20px)" }} />
+      {/* ── Hero (mockup style) ── */}
+      <div className="dv-hero">
+        <div style={{ fontSize:11, color:"var(--text-muted)", marginBottom:2 }}>Good day,</div>
+        <h1>{firstName} 👋</h1>
+        <p>{history.length > 0 ? `You're averaging ${avgScore}% — keep the streak alive.` : "Let's get your first exam started."}</p>
+        <div className="dv-hero-pill">📅 JAMB UTME in {Math.max(0, Math.ceil((new Date("2027-04-26") - new Date()) / 86400000))} days</div>
+      </div>
 
-        {/* Top row */}
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:16, position:"relative" }}>
-          <div>
-            <div style={{ fontSize:12, color:"rgba(255,255,255,.65)", marginBottom:2 }}>Good day,</div>
-            <div style={{ fontSize:22, fontWeight:900, color:"#fff", letterSpacing:"-0.5px" }}>{firstName} 👋</div>
+      {/* ── Exam Track Row (JAMB / Post-UTME / University) ── */}
+      <div className="dv-quick" style={{ marginBottom:14 }}>
+        <div className="dv-quick-card c-btn" onClick={() => nav("/exam-select?type=JAMB")} style={{ borderColor:`${C.purple}44` }}>
+          <div className="dv-quick-icon" style={{ background:`${C.purple}22` }}>📘</div>
+          <div className="dv-quick-title">JAMB</div>
+          <div className="dv-quick-desc">Full simulation</div>
+        </div>
+        <div className="dv-quick-card c-btn" onClick={() => nav("/exam-select?type=POST-UTME")} style={{ borderColor:`${C.green}44` }}>
+          <div className="dv-quick-icon" style={{ background:`${C.green}22` }}>🏫</div>
+          <div className="dv-quick-title">Post-UTME</div>
+          <div className="dv-quick-desc">15+ universities</div>
+        </div>
+        <div className="dv-quick-card c-btn" onClick={() => nav("/exam-select?type=UNIVERSITY")} style={{ borderColor:"#00D4AA44", position:"relative" }}>
+          <span style={{ position:"absolute", top:8, right:8, background:"#00D4AA", color:"#04342C", fontSize:8, fontWeight:900, padding:"2px 5px", borderRadius:5 }}>NEW</span>
+          <div className="dv-quick-icon" style={{ background:"#00D4AA22" }}>🎓</div>
+          <div className="dv-quick-title">University</div>
+          <div className="dv-quick-desc">UNIPORT GES</div>
+        </div>
+        <div className="dv-quick-card c-btn" onClick={() => nav("/ai-tutor")} style={{ borderColor:`${C.gold}44` }}>
+          <div className="dv-quick-icon" style={{ background:`${C.gold}22` }}>🤖</div>
+          <div className="dv-quick-title">AI Tutor</div>
+          <div className="dv-quick-desc">Ask anything</div>
+        </div>
+      </div>
+
+      {/* ── Stat cards ── */}
+      <div className="dv-stats">
+        <div className="dv-stat-card">
+          <div className="dv-stat-icon" style={{ background:`${C.purple}22` }}>📝</div>
+          <div className="dv-stat-label">Exams Taken</div>
+          <div className="dv-stat-val">{history.length}</div>
+        </div>
+        <div className="dv-stat-card">
+          <div className="dv-stat-icon" style={{ background:`${C.green}22` }}>📈</div>
+          <div className="dv-stat-label">Average Score</div>
+          <div className="dv-stat-val">{avgScore}%</div>
+        </div>
+        <div className="dv-stat-card">
+          <div className="dv-stat-icon" style={{ background:`${C.red}22` }}>🔥</div>
+          <div className="dv-stat-label">Current Streak</div>
+          <div className="dv-stat-val">{streak}d</div>
+        </div>
+        <div className="dv-stat-card">
+          <div className="dv-stat-icon" style={{ background:`${C.gold}22` }}>🪙</div>
+          <div className="dv-stat-label">Token Balance</div>
+          <div className="dv-stat-val">{profile?.token_balance ?? 0}</div>
+        </div>
+      </div>
+
+      {/* ── Performance overview + Recent activity ── */}
+      <div className="dv-split dv-split-2col">
+        <div className="dv-section" style={{ margin:0 }}>
+          <div className="dv-section-head">
+            <div className="dv-section-title">Performance overview</div>
+            <button className="dv-section-link" onClick={() => setActiveTab("progress")}>Details</button>
           </div>
-          <div style={{ display:"flex", gap:6 }}>
-            <div style={{ background:"rgba(255,200,87,.2)", border:`1px solid ${C.gold}66`, borderRadius:12, padding:"5px 10px", display:"flex", alignItems:"center", gap:4 }}>
-              <span style={{ fontSize:12 }}>⚡</span>
-              <span style={{ fontWeight:900, color:C.gold, fontSize:12 }}>{xp.toLocaleString()}</span>
+          {history.length > 0 ? (
+            <>
+              <div className="dv-chart">
+                {history.slice(0,10).reverse().map((h,i) => (
+                  <div key={i} className="dv-bar" style={{ height:`${Math.max(6, Math.round(h.percentage||0))}%` }} title={`${Math.round(h.percentage||0)}%`} />
+                ))}
+              </div>
+              <div className="dv-chart-labels">
+                <span>{history.length > 10 ? "10 ago" : "Earliest"}</span>
+                <span>Latest</span>
+              </div>
+            </>
+          ) : (
+            <div style={{ fontSize:12, color:C.muted, textAlign:"center", padding:"20px 0" }}>Take your first exam to see your trend here.</div>
+          )}
+        </div>
+
+        <div className="dv-section" style={{ margin:0 }}>
+          <div className="dv-section-head">
+            <div className="dv-section-title">Recent activity</div>
+            <button className="dv-section-link" onClick={() => setNotifOpen(true)}>View all</button>
+          </div>
+          {notifications.length > 0 ? notifications.slice(0,4).map((n,i) => (
+            <div key={i} className="dv-activity-item">
+              <div className="dv-activity-icon" style={{ background:`${C.purple}22` }}>🔔</div>
+              <div style={{ minWidth:0 }}>
+                <div className="dv-activity-text" style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{n.title || n.message}</div>
+              </div>
+              <div className="dv-activity-time">{n.created_at ? new Date(n.created_at).toLocaleDateString("en-NG",{day:"numeric",month:"short"}) : ""}</div>
             </div>
-            <div style={{ background:"rgba(255,90,95,.2)", border:`1px solid ${C.red}66`, borderRadius:12, padding:"5px 10px", display:"flex", alignItems:"center", gap:4 }}>
-              <span style={{ fontSize:12 }}>🔥</span>
-              <span style={{ fontWeight:900, color:C.red, fontSize:12 }}>{streak}</span>
+          )) : history.length > 0 ? history.slice(0,4).map((h,i) => (
+            <div key={i} className="dv-activity-item">
+              <div className="dv-activity-icon" style={{ background:`${scoreColor(h.percentage||0)}22` }}>{parseFloat(h.percentage||0)>=70?"🏆":"📝"}</div>
+              <div style={{ minWidth:0 }}>
+                <div className="dv-activity-text">Completed {h.subject || h.exam_type}</div>
+                <div className="dv-activity-sub">Scored {Math.round(h.percentage||0)}%</div>
+              </div>
+              <div className="dv-activity-time">{new Date(h.completed_at).toLocaleDateString("en-NG",{day:"numeric",month:"short"})}</div>
             </div>
-          </div>
-        </div>
-
-        {/* Stats row */}
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, marginBottom:14, position:"relative" }}>
-          {[
-            { icon:"📝", val:history.length, lbl:"Exams" },
-            { icon:"📈", val:`${avgScore}%`, lbl:"Avg Score" },
-            { icon:"🏆", val:`${bestScore}%`, lbl:"Best" },
-          ].map((s,i) => (
-            <div key={i} style={{ background:"rgba(255,255,255,.12)", borderRadius:14, padding:"10px 6px", textAlign:"center", backdropFilter:"blur(10px)", border:"1px solid rgba(255,255,255,.1)" }}>
-              <div style={{ fontSize:18, marginBottom:2 }}>{s.icon}</div>
-              <div style={{ fontSize:17, fontWeight:900, color:"#fff" }}>{s.val}</div>
-              <div style={{ fontSize:10, color:"rgba(255,255,255,.6)", marginTop:1 }}>{s.lbl}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Level bar */}
-        {levelData && (
-          <div style={{ background:"rgba(0,0,0,.2)", borderRadius:12, padding:"10px 12px", position:"relative" }}>
-            <LevelBar level={levelData.level} pct={levelData.pct} title={levelData.title} icon={levelData.icon} />
-          </div>
-        )}
-      </div>
-      </div>{/* end hero wrapper */}
-
-      {/* ── Token balance strip ── */}
-      <div onClick={() => nav("/tokens")} className="c-btn" style={{ background: (profile?.token_balance || 0) <= 5 && (profile?.token_balance || 0) > 0 ? `linear-gradient(135deg,#e1700518,#e1700512)` : `linear-gradient(135deg,${C.purple}18,#e1700512)`, border:`1px solid ${ (profile?.token_balance || 0) <= 5 && (profile?.token_balance || 0) > 0 ? '#e17005' : C.purple}33`, borderRadius:14, padding:"11px 14px", marginBottom:14, marginLeft:14, marginRight:14, display:"flex", alignItems:"center", gap:10, cursor:"pointer" }}>
-        <div style={{ width:36, height:36, borderRadius:10, background:`${(profile?.token_balance || 0) <= 5 ? '#e1700522' : C.purple + '22'}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, flexShrink:0 }}>🪙</div>
-        <div style={{ flex:1, minWidth:0 }}>
-          <div style={{ fontWeight:800, fontSize:13, color:C.text }}>
-            {(profile?.token_balance || 0) === 0
-              ? "Get tokens to unlock AI Tutor"
-              : (profile?.token_balance || 0) <= 5
-              ? `⚠️ Only ${profile.token_balance} tokens left!`
-              : `${profile.token_balance} tokens available`}
-          </div>
-          <div style={{ fontSize:11, color:C.muted, marginTop:1 }}>AI Tutor · Extra spins · Arena hosting · from ₦200</div>
-        </div>
-        <div style={{ background:`linear-gradient(135deg,${(profile?.token_balance || 0) <= 5 && (profile?.token_balance || 0) > 0 ? '#e17005,#f39c12' : C.purple + ',#a29bfe'})`, borderRadius:8, padding:"6px 12px", color:"#fff", fontWeight:800, fontSize:12, flexShrink:0 }}>
-          {(profile?.token_balance || 0) > 0 ? "Top Up" : "Buy"}
+          )) : (
+            <div style={{ fontSize:12, color:C.muted, textAlign:"center", padding:"20px 0" }}>No activity yet — start an exam to see it here.</div>
+          )}
         </div>
       </div>
 
-      {/* ── Primary Actions ── */}
-      <div style={{ fontSize:10, fontWeight:800, color:C.muted, letterSpacing:1.5, textTransform:"uppercase", marginBottom:8, padding:"0 14px" }}>Start Practicing</div>
-      <div className="dash-grid-2" style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10, marginBottom:16, padding:"0 14px" }}>
-        <Btn onClick={() => nav("/exam-select?type=JAMB")} grad={`linear-gradient(135deg,${C.purple},${C.blue})`} glow={C.purple}
-          style={{ padding:"16px 0", fontSize:13, borderRadius:16, display:"flex", flexDirection:"column", alignItems:"center", gap:5 }}>
-          <span style={{ fontSize:24 }}>📘</span>
-          <span style={{ fontWeight:900 }}>JAMB</span>
-          <span style={{ fontSize:9, opacity:.7 }}>Full simulation</span>
-        </Btn>
-        <Btn onClick={() => nav("/exam-select?type=POST-UTME")} grad={`linear-gradient(135deg,${C.green}cc,#00a36c)`} glow={C.green}
-          style={{ padding:"16px 0", fontSize:13, borderRadius:16, display:"flex", flexDirection:"column", alignItems:"center", gap:5 }}>
-          <span style={{ fontSize:24 }}>🏫</span>
-          <span style={{ fontWeight:900 }}>Post-UTME</span>
-          <span style={{ fontSize:9, opacity:.7 }}>UNILAG · UI · OAU</span>
-        </Btn>
-        <Btn onClick={() => nav("/exam-select?type=UNIVERSITY")} grad={`linear-gradient(135deg,#00D4AA,#00a383)`} glow={"#00D4AA"}
-          style={{ padding:"16px 0", fontSize:13, borderRadius:16, display:"flex", flexDirection:"column", alignItems:"center", gap:5, position:"relative" }}>
-          <span style={{ position:"absolute", top:6, right:6, background:"#fff", color:"#00a383", fontSize:8, fontWeight:900, padding:"2px 5px", borderRadius:5 }}>NEW</span>
-          <span style={{ fontSize:24 }}>🎓</span>
-          <span style={{ fontWeight:900 }}>University</span>
-          <span style={{ fontSize:9, opacity:.7 }}>UNIPORT GES</span>
-        </Btn>
-      </div>
-
-
-      {/* ── Quick actions strip ── */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, marginBottom:16, padding:"0 14px" }}>
-        {[
-          { emoji:"🎯", label:"Missions",  path:"/missions",  color:C.purple },
-          { emoji:challenge?.already_done?"✅":"⚡", label:"Challenge", path:"/challenge", color:C.gold },
-          { emoji:"🎰", label:"Spin",      path:"/spin",      color:C.blue },
-          { emoji:"🤖", label:"AI Tutor",  path:"/ai-tutor",  color:"#a78bfa" },
-        ].map((a,i) => (
-          <div key={i} onClick={() => nav(a.path)} className="c-btn" style={{ background:`${a.color}12`, border:`1px solid ${a.color}25`, borderRadius:14, padding:"12px 6px", textAlign:"center", cursor:"pointer" }}>
-            <div style={{ fontSize:20, marginBottom:3 }}>{a.emoji}</div>
-            <div style={{ fontWeight:800, fontSize:10, color:C.text }}>{a.label}</div>
+      {/* ── Study Planner + JAMB countdown ── */}
+      <div className="dv-split dv-split-2col">
+        <div className="dv-section" style={{ margin:0 }}>
+          <div className="dv-section-head">
+            <div className="dv-section-title">Study planner</div>
+            <button className="dv-section-link" onClick={() => nav("/study-planner")}>Open planner</button>
           </div>
-        ))}
+          <div style={{ fontSize:12, color:C.muted, textAlign:"center", padding:"16px 0" }}>
+            Plan your revision schedule and get reminders — tap "Open planner" to set up your tasks.
+          </div>
+        </div>
+
+        <div className="dv-section" style={{ margin:0 }}>
+          <div className="dv-section-head"><div className="dv-section-title">JAMB countdown</div></div>
+          {(() => {
+            const daysLeft = Math.max(0, Math.ceil((new Date("2027-04-26") - new Date()) / 86400000));
+            return (
+              <div className="dv-countdown">
+                <div className="dv-countdown-num">{daysLeft}</div>
+                <div className="dv-countdown-label">days remaining</div>
+              </div>
+            );
+          })()}
+          <div style={{ fontSize:11, color:C.muted, textAlign:"center" }}>JAMB UTME 2027 · jamb.gov.ng</div>
+        </div>
       </div>
+
+      {/* ── Recent exams table ── */}
+      {history.length > 0 && (
+        <div className="dv-section">
+          <div className="dv-section-head">
+            <div className="dv-section-title">Recent exams</div>
+            <button className="dv-section-link" onClick={() => nav("/history")}>View history</button>
+          </div>
+          <table className="dv-table">
+            <thead><tr><th>Subject</th><th className="dv-mobile-hide">Type</th><th>Score</th><th className="dv-mobile-hide">Date</th><th>Result</th></tr></thead>
+            <tbody>
+              {history.slice(0,5).map((h,i) => (
+                <tr key={i}>
+                  <td style={{ fontWeight:700 }}>{h.subject || "Mixed"}</td>
+                  <td className="dv-mobile-hide" style={{ color:C.muted }}>{h.exam_type}</td>
+                  <td style={{ fontWeight:800, color:scoreColor(h.percentage||0) }}>{Math.round(h.percentage||0)}%</td>
+                  <td className="dv-mobile-hide" style={{ color:C.muted }}>{new Date(h.completed_at).toLocaleDateString("en-NG",{day:"numeric",month:"short",year:"numeric"})}</td>
+                  <td>
+                    <span style={{
+                      fontSize:9.5, fontWeight:800, padding:"3px 8px", borderRadius:6,
+                      background: (h.percentage||0) >= 50 ? `${C.green}22` : `${C.red}22`,
+                      color: (h.percentage||0) >= 50 ? C.green : C.red,
+                    }}>{(h.percentage||0) >= 50 ? "Passed" : "Below 50%"}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
 
       {/* ── Daily Chest Reminder ── */}
       <div onClick={() => nav("/chests")} style={{ background:"linear-gradient(135deg,rgba(255,200,87,0.12),rgba(124,92,255,0.08))", borderRadius:14, padding:"12px 14px", marginBottom:12, marginLeft:14, marginRight:14, display:"flex", alignItems:"center", gap:12, cursor:"pointer", border:"1px solid rgba(255,200,87,0.3)" }}>
