@@ -18,7 +18,7 @@ const SCHOOLS = [
     icon: "🏛️",
     color: "#00D4AA",
     courses: [
-      { code:"GES112", title:"Nigerian Peoples & Culture", dbSubject:"Nigerian People and Culture", unit:2, level:100, questions:60, topics:["Yoruba History","Hausa Culture","Igbo Traditions","Nigerian Art","Pre-1800 Kingdoms"] },
+      { code:"GES112", title:"Nigerian Peoples & Culture", dbSubject:"Nigerian People and Culture", unit:2, level:100, questions:50, topics:["Yoruba History","Hausa Culture","Igbo Traditions","Nigerian Art","Pre-1800 Kingdoms"] },
       { code:"GES103", title:"Nigerian Peoples & Culture (103)", dbSubject:"Nigerian Peoples & Culture (103)", unit:2, level:100, questions:40, topics:["HIV/AIDS in Nigeria","Ethnic Groups","Cultural Practices","Land Tenure","Social Institutions"] },
       { code:"GES101", title:"Use of English", dbSubject:"Use of English", unit:2, level:100, questions:50, topics:["Grammar","Comprehension","Figures of Speech","Vocabulary","Writing Skills"] },
     ],
