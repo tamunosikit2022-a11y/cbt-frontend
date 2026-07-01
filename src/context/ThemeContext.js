@@ -39,6 +39,46 @@ export const THEMES = {
     info:         "#8B5CF6",
     gradient:     "linear-gradient(135deg,#22C55E,#06B6D4)",
   },
+  // FIX: Added proper light mode — was completely missing. BASE was dark-only.
+  // ThemeSettings.js toggle now has a real effect.
+  light: {
+    name: "Daylight",  icon: "☀️", category: "Light",
+    primary:      "#7C5CFF",
+    primaryDark:  "#5A3FCC",
+    primaryLight: "#A98BFF",
+    accent:       "#00D4AA",
+    success:      "#16A34A",
+    warning:      "#D97706",
+    info:         "#7C5CFF",
+    gradient:     "linear-gradient(135deg,#7C5CFF,#00D4AA)",
+  },
+  light_blue: {
+    name: "Sky",       icon: "🌤️", category: "Light",
+    primary:      "#2563EB",
+    primaryDark:  "#1D4ED8",
+    primaryLight: "#93C5FD",
+    accent:       "#0891B2",
+    success:      "#16A34A",
+    warning:      "#D97706",
+    info:         "#2563EB",
+    gradient:     "linear-gradient(135deg,#2563EB,#0891B2)",
+  },
+};
+
+// Light mode base colours — separate from dark BASE
+const LIGHT_BASE = {
+  bg:           "#F8F9FC",
+  surface:      "#FFFFFF",
+  surfaceAlt:   "#F1F3F9",
+  surfaceHover: "#E8ECF4",
+  border:       "rgba(0,0,0,0.08)",
+  borderStrong: "rgba(0,0,0,0.18)",
+  text:         "#0F0F1A",
+  textSub:      "#374151",
+  textMuted:    "#6B7280",
+  navBg:        "rgba(248,249,252,0.97)",
+  topBarBg:     "#FFFFFF",
+  cardShadow:   "0 1px 12px rgba(0,0,0,0.08)",
 };
 
 /* ── Single dark mode (no light mode confusion) ─────────────── */
@@ -90,19 +130,23 @@ export function ThemeProvider({ children }) {
     r.style.setProperty("--info",          theme.info);
     r.style.setProperty("--gradient",      theme.gradient);
 
-    // ── Base colours ───────────────────────────────────────────
-    r.style.setProperty("--bg",            BASE.bg);
-    r.style.setProperty("--surface",       BASE.surface);
-    r.style.setProperty("--surface-alt",   BASE.surfaceAlt);
-    r.style.setProperty("--surface-hover", BASE.surfaceHover);
-    r.style.setProperty("--border",        BASE.border);
-    r.style.setProperty("--border-strong", BASE.borderStrong);
-    r.style.setProperty("--text",          BASE.text);
-    r.style.setProperty("--text-sub",      BASE.textSub);
-    r.style.setProperty("--text-muted",    BASE.textMuted);
-    r.style.setProperty("--nav-bg",        BASE.navBg);
-    r.style.setProperty("--topbar-bg",     BASE.topBarBg);
-    r.style.setProperty("--card-shadow",   BASE.cardShadow);
+    // ── Base colours — FIX: now switches between dark BASE and LIGHT_BASE ───
+    const isLight = theme.category === "Light";
+    const activeBase = isLight ? LIGHT_BASE : BASE;
+    r.style.setProperty("--bg",            activeBase.bg);
+    r.style.setProperty("--surface",       activeBase.surface);
+    r.style.setProperty("--surface-alt",   activeBase.surfaceAlt);
+    r.style.setProperty("--surface-hover", activeBase.surfaceHover);
+    r.style.setProperty("--border",        activeBase.border);
+    r.style.setProperty("--border-strong", activeBase.borderStrong);
+    r.style.setProperty("--text",          activeBase.text);
+    r.style.setProperty("--text-sub",      activeBase.textSub);
+    r.style.setProperty("--text-muted",    activeBase.textMuted);
+    r.style.setProperty("--nav-bg",        activeBase.navBg);
+    r.style.setProperty("--topbar-bg",     activeBase.topBarBg);
+    r.style.setProperty("--card-shadow",   activeBase.cardShadow);
+    // Set data-theme so CSS selectors can target light vs dark
+    document.documentElement.setAttribute("data-theme", isLight ? "light" : "dark");
 
     // ── Legacy compat ──────────────────────────────────────────
     r.style.setProperty("--light-surface-bg",     BASE.surface);

@@ -169,8 +169,22 @@ export default function SchoolFinder() {
 
             {/* Results */}
             <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-              {schools.map(school => (
-                <div key={school.id} style={s.schoolCard} onClick={() => openSchool(school.id)}>
+              {[...schools].sort((a,b) => (b.is_sponsored ? 1 : 0) - (a.is_sponsored ? 1 : 0)).map(school => (
+                <div key={school.id} style={{
+                    ...s.schoolCard,
+                    // FIX: Sponsored spotlight — highlighted card with subtle gold border
+                    border: school.is_sponsored
+                      ? "1px solid rgba(255,200,87,0.4)"
+                      : "1px solid rgba(255,255,255,0.07)",
+                    background: school.is_sponsored
+                      ? "linear-gradient(135deg,rgba(255,200,87,0.06) 0%,var(--surface,#1a1a2e) 60%)"
+                      : "var(--surface,#1a1a2e)",
+                  }} onClick={() => openSchool(school.id)}>
+                  {school.is_sponsored && (
+                    <div style={{ fontSize:10, color:"#FFC857", fontWeight:800, letterSpacing:".06em", marginBottom:6 }}>
+                      ⭐ FEATURED INSTITUTION
+                    </div>
+                  )}
                   <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:8 }}>
                     <div style={{ minWidth:0, flex:1 }}>
                       <h3 style={s.schoolName}>{school.name}</h3>

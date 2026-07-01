@@ -27,6 +27,21 @@ export default function Match() {
   const [reactions,   setReactions]   = useState([]);
   const [answered,    setAnswered]    = useState(false);
 
+  // FIX: Spirit skill system — was completely unwired on the frontend.
+  // Backend broadcast spirit:effect events into the void; nothing consumed them.
+  const [skillUsed,       setSkillUsed]       = useState(false);
+  const [skillActivating, setSkillActivating] = useState(false);
+  const [skillToast,      setSkillToast]      = useState(null);   // { message, emoji }
+  const [opponentBlurred, setOpponentBlurred] = useState(false);  // void_weaver: WEB TRAP on me
+  const [revealedWrong,   setRevealedWrong]   = useState(null);   // oracle_owl: FORESIGHT
+  const [xpBoostActive,   setXpBoostActive]   = useState(false);  // ember_wyrm: INFERNO BOOST
+  const [weakHighlight,   setWeakHighlight]   = useState(null);   // neuro_bot: TARGET ANALYSIS
+  const [extraTime,       setExtraTime]       = useState(0);      // storm_fox: THUNDER DASH
+  const [reviveAvailable, setReviveAvailable] = useState(false);  // crystal_phoenix: REBIRTH FLAME
+  const [skipAvailable,   setSkipAvailable]   = useState(false);  // shadow_lynx: SHADOW STEP
+  const [debuffsCleared,  setDebuffsCleared]  = useState(false);  // aqua_serpent: HYDRO SURGE
+  const skillToastTimer = useRef(null);
+
   const timerRef    = useRef(null);
   const qStartTime  = useRef(Date.now());
   
@@ -94,22 +109,85 @@ export default function Match() {
       setQuestion(data.question);
       setQIndex(data.questionIndex);
       setTotalQ(data.totalQuestions);
-      setTimeLimit(data.timeLimit);
-      setTimeLeft(data.timeLimit);
+      // FIX: storm_fox THUNDER DASH adds +5s to the NEXT question's timer
+      setTimeLimit(data.timeLimit + extraTime);
+      setTimeLeft(data.timeLimit + extraTime);
+      if (extraTime > 0) setExtraTime(0); // consume the bonus once
       setScores(data.scores || []);
       setSelected(null);
       setRevealed(false);
       setCorrect(null);
       setMyResult(null);
       setAnswered(false);
+      setOpponentBlurred(false);
+      setRevealedWrong(null);
+      setWeakHighlight(null);
       submitLock.current = false; // Reset lock for new question
       qStartTime.current = Date.now();
     });
 
+    // ── NEW: Spirit skill effect listeners ──────────────────
+    // Backend (spiritSkillsHandler.js) emits these but nothing consumed them before.
+    sock.off("spirit:webTrap").on("spirit:webTrap", ({ duration }) => {
+      setOpponentBlurred(true);
+      showSkillToast("🕷️ Your controls are disrupted by an opponent's Web Trap!");
+      setTimeout(() => setOpponentBlurred(false), duration || 3000);
+    });
+
+    sock.off("spirit:foresight").on("spirit:foresight", () => {
+      const wrongOpts = ["A", "B", "C", "D"].filter(o => o !== question?.correct_answer);
+      if (wrongOpts.length) {
+        setRevealedWrong(wrongOpts[Math.floor(Math.random() * wrongOpts.length)]);
+      }
+      showSkillToast("🦉 Foresight revealed a wrong answer!");
+    });
+
+    sock.off("spirit:infernoBoost").on("spirit:infernoBoost", ({ duration }) => {
+      setXpBoostActive(true);
+      showSkillToast("🐉 Inferno Boost active — 2× XP and coins this match!");
+      setTimeout(() => setXpBoostActive(false), duration || 180000);
+    });
+
+    sock.off("spirit:targetAnalysis").on("spirit:targetAnalysis", () => {
+      setWeakHighlight(true);
+      showSkillToast("🤖 Target Analysis: your weakest answer pattern is highlighted!");
+    });
+
+    sock.off("spirit:thunderDash").on("spirit:thunderDash", () => {
+      setExtraTime(5);
+      showSkillToast("🦊 Thunder Dash! +5 seconds on your next question!");
+    });
+
+    sock.off("spirit:rebirthFlame").on("spirit:rebirthFlame", () => {
+      setReviveAvailable(true);
+      showSkillToast("🦅 Rebirth Flame ready — you'll revive once if eliminated!");
+    });
+
+    sock.off("spirit:shadowStep").on("spirit:shadowStep", () => {
+      setSkipAvailable(true);
+      showSkillToast("🐱 Shadow Step ready — skip a question without losing your streak!");
+    });
+
+    sock.off("spirit:hydroSurge").on("spirit:hydroSurge", () => {
+      setDebuffsCleared(true);
+      setOpponentBlurred(false);
+      showSkillToast("🐍 Hydro Surge! All debuffs cleared!");
+      setTimeout(() => setDebuffsCleared(false), 1500);
+    });
+
     sock.on("answer_result", (data) => {
       setMyResult(data);
-      setMyLives(data.lives ?? 3);
-      setEliminated(data.eliminated || false);
+      // FIX: crystal_phoenix REBIRTH FLAME — consume the revive instead of staying eliminated
+      if (data.eliminated && reviveAvailable) {
+        setMyLives(1);
+        setEliminated(false);
+        setReviveAvailable(false);
+        showSkillToast("🦅 Rebirth Flame triggered — you're back in the match!");
+        socket.current?.emit("spirit:reviveUsed", { playerId, roomCode: room?.code });
+      } else {
+        setMyLives(data.lives ?? 3);
+        setEliminated(data.eliminated || false);
+      }
       if (data.correct) setCorrect(data.correct);
       submitLock.current = false; // Release lock after result
     });
@@ -169,6 +247,37 @@ export default function Match() {
     socket.current?.emit("reaction", { emoji });
   };
 
+  // ── NEW: Spirit skill activation ──────────────────────────
+  const showSkillToast = (message) => {
+    clearTimeout(skillToastTimer.current);
+    setSkillToast(message);
+    skillToastTimer.current = setTimeout(() => setSkillToast(null), 3500);
+  };
+
+  const activateSkill = useCallback(() => {
+    if (skillUsed || skillActivating || eliminated) return;
+    setSkillActivating(true);
+    socket.current?.emit("spirit:activate", { playerId, roomCode: room?.code }, (res) => {
+      setSkillActivating(false);
+      if (res?.success) {
+        setSkillUsed(true);
+        showSkillToast(res.message || "Spirit skill activated!");
+      } else {
+        showSkillToast(res?.error || "Could not activate skill.");
+      }
+    });
+  }, [skillUsed, skillActivating, eliminated, playerId, room]);
+
+  // FIX: shadow_lynx SHADOW STEP — actually skip the current question
+  const skipQuestion = useCallback(() => {
+    if (!skipAvailable || answered || revealed) return;
+    setSkipAvailable(false);
+    setAnswered(true);
+    submitLock.current = true;
+    socket.current?.emit("submit_answer", { answer: "SKIP", timeSpent: 0, skipped: true });
+    showSkillToast("🐱 Question skipped — your streak is safe!");
+  }, [skipAvailable, answered, revealed]);
+
   const timerPct   = totalQ > 0 ? ((qIndex + 1) / totalQ) * 100 : 0;
   const timerColor = timeLeft <= 5 ? "#e17055" : timeLeft <= 10 ? "#fdcb6e" : "#00b894";
   const myScore    = scores.find(s => s.playerId === playerId);
@@ -209,6 +318,30 @@ export default function Match() {
         ))}
       </div>
 
+      {/* NEW: Spirit skill toast — was previously broadcast and silently dropped */}
+      {skillToast && (
+        <div style={{
+          position: "fixed", top: 70, left: "50%", transform: "translateX(-50%)",
+          background: "rgba(108,99,255,0.95)", color: "#fff", fontWeight: 700, fontSize: 13,
+          padding: "10px 18px", borderRadius: 30, zIndex: 200, boxShadow: "0 8px 24px rgba(108,99,255,0.4)",
+          maxWidth: "88vw", textAlign: "center", animation: "fadeInDown .3s ease",
+        }}>
+          {skillToast}
+        </div>
+      )}
+
+      {/* NEW: XP boost badge (ember_wyrm INFERNO BOOST) */}
+      {xpBoostActive && (
+        <div style={{
+          position: "fixed", top: 14, right: 14, zIndex: 60,
+          background: "linear-gradient(135deg,#ff7849,#fdcb6e)", color: "#1a1a2e",
+          fontWeight: 900, fontSize: 11, padding: "5px 11px", borderRadius: 20,
+          boxShadow: "0 4px 14px rgba(255,120,73,0.5)",
+        }}>
+          🐉 2× XP
+        </div>
+      )}
+
       {/* TOP BAR */}
       <div style={s.topBar}>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -240,6 +373,23 @@ export default function Match() {
         <button style={s.scoreToggle} onClick={() => setShowScores(!showScores)}>
           {showScores ? "Hide" : "📊 Scores"}
         </button>
+
+        {/* NEW: Spirit skill activation button — wires up the previously dead backend system */}
+        {!eliminated && (
+          <button
+            onClick={activateSkill}
+            disabled={skillUsed || skillActivating}
+            style={{
+              ...s.scoreToggle,
+              background: skillUsed ? "rgba(255,255,255,0.04)" : "linear-gradient(135deg,#6c63ff,#a29bfe)",
+              color: skillUsed ? "#5a5a7a" : "#fff",
+              cursor: skillUsed ? "not-allowed" : "pointer",
+              fontWeight: 800,
+            }}
+          >
+            {skillUsed ? "✓ Used" : skillActivating ? "…" : "👻 Spirit"}
+          </button>
+        )}
       </div>
 
       {/* PROGRESS BAR */}
@@ -281,7 +431,18 @@ export default function Match() {
 
       {/* MAIN QUESTION */}
       <div style={s.main}>
-        <div style={s.qCard}>
+        <div style={{
+          ...s.qCard,
+          // FIX: void_weaver WEB TRAP — actually blurs/disrupts controls when targeted, was a no-op before
+          filter: opponentBlurred ? "blur(2.5px)" : "none",
+          pointerEvents: opponentBlurred ? "none" : "auto",
+          transition: "filter .2s ease",
+        }}>
+          {opponentBlurred && (
+            <div style={{ textAlign: "center", color: "#ff6b6b", fontWeight: 800, fontSize: 12, marginBottom: 8 }}>
+              🕷️ Web Trap active — controls disrupted!
+            </div>
+          )}
           {(question.difficulty || question.year) && (
             <div style={{ display: "flex", gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
               {question.year && <span style={s.metaTag}>{question.year}</span>}
@@ -292,19 +453,42 @@ export default function Match() {
           <p style={s.qText}>{question.question}</p>
 
           <div style={s.options}>
-            {["A","B","C","D"].map(opt => (
-              <div key={opt}
-                style={optionStyle(opt)}
-                onClick={() => submitAnswer(opt)}>
-                <span style={{ ...s.optLabel, background: selected === opt || (revealed && opt === correct) ? "var(--border)" : "var(--surface)" }}>
-                  {opt}
-                </span>
-                <span style={{ flex: 1, fontSize: 15 }}>{question[`option_${opt.toLowerCase()}`]}</span>
-                {revealed && opt === correct && <span style={{ marginLeft: 8 }}>✓</span>}
-                {revealed && opt === selected && opt !== correct && <span style={{ marginLeft: 8 }}>✗</span>}
-              </div>
-            ))}
+            {["A","B","C","D"].map(opt => {
+              // FIX: oracle_owl FORESIGHT — actually disables one wrong option, was a no-op before
+              const isForesightDisabled = revealedWrong === opt && !revealed;
+              return (
+                <div key={opt}
+                  style={{
+                    ...optionStyle(opt),
+                    opacity: isForesightDisabled ? 0.35 : 1,
+                    textDecoration: isForesightDisabled ? "line-through" : "none",
+                    // FIX: neuro_bot TARGET ANALYSIS — subtle highlight ring, was a no-op before
+                    boxShadow: weakHighlight && !revealed ? "0 0 0 2px rgba(253,203,110,0.4)" : undefined,
+                    cursor: isForesightDisabled ? "not-allowed" : "pointer",
+                  }}
+                  onClick={() => !isForesightDisabled && submitAnswer(opt)}>
+                  <span style={{ ...s.optLabel, background: selected === opt || (revealed && opt === correct) ? "var(--border)" : "var(--surface)" }}>
+                    {opt}
+                  </span>
+                  <span style={{ flex: 1, fontSize: 15 }}>{question[`option_${opt.toLowerCase()}`]}</span>
+                  {isForesightDisabled && <span style={{ marginLeft: 8 }}>🦉</span>}
+                  {revealed && opt === correct && <span style={{ marginLeft: 8 }}>✓</span>}
+                  {revealed && opt === selected && opt !== correct && <span style={{ marginLeft: 8 }}>✗</span>}
+                </div>
+              );
+            })}
           </div>
+
+          {/* NEW: Shadow Step skip button — only shown once the skill grants it */}
+          {skipAvailable && !answered && !revealed && (
+            <button onClick={skipQuestion} style={{
+              marginTop: 10, width: "100%", padding: "10px 0", borderRadius: 12,
+              background: "rgba(108,99,255,0.12)", border: "1px solid rgba(108,99,255,0.35)",
+              color: "#a29bfe", fontWeight: 800, fontSize: 13, cursor: "pointer",
+            }}>
+              🐱 Skip this question (Shadow Step)
+            </button>
+          )}
 
           {/* RESULT FEEDBACK */}
           {myResult && (

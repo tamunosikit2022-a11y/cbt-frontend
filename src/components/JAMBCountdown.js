@@ -5,6 +5,7 @@
  */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import API from "../utils/api";
 
 const STORAGE_KEY = "scholars_jamb_date";
 
@@ -40,13 +41,34 @@ export default function JAMBCountdown({ avgScore = 0 }) {
   const [inputDate,  setInputDate]  = useState("");
   const [dismissed,  setDismissed]  = useState(false);
 
+  // FIX: sync exam date from backend on mount so it survives device/browser wipes
+  useEffect(() => {
+    API.get("/auth/profile").then(({ data }) => {
+      const serverDate = data?.jamb_exam_date;
+      if (serverDate) {
+        const local = localStorage.getItem(STORAGE_KEY);
+        // Prefer whichever is more recent
+        if (!local || serverDate > local) {
+          localStorage.setItem(STORAGE_KEY, serverDate);
+          setJambDate(serverDate);
+        }
+      }
+    }).catch(() => {});
+  }, []);
+
   const daysLeft = getDaysLeft(jambDate);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!inputDate) return;
     localStorage.setItem(STORAGE_KEY, inputDate);
     setJambDate(inputDate);
     setShowPicker(false);
+    // FIX: persist to backend so date survives device/browser changes
+    try {
+      await API.patch("/auth/profile", { jamb_exam_date: inputDate });
+    } catch {
+      // silent — localStorage is still the fast-path fallback
+    }
   };
 
   const handleClear = () => {

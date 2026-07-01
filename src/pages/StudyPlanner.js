@@ -30,38 +30,61 @@ export default function StudyPlanner() {
     return Math.max(0, diff);
   }, [examDate]);
 
-  const generatePlan = () => {
+  const generatePlan = async () => {
     if (!examDate) return;
     setGenerating(true);
 
-    const weak   = (weakData || []).filter(s => s.strength === "weak").map(s => s.subject);
-    const medium = (weakData || []).filter(s => s.strength === "medium").map(s => s.subject);
-    const strong = (weakData || []).filter(s => s.strength === "strong").map(s => s.subject);
-    const subjects = [...new Set([...weak, ...medium, ...strong, ...JAMB_SUBJECTS.slice(0,4)])].slice(0,6);
-    const days = Math.min(daysLeft, 30);
+    const weak    = (weakData || []).filter(s => s.strength === "weak").map(s => s.subject);
+    const chosen  = [...new Set([...JAMB_SUBJECTS.slice(0,4), ...weak])].slice(0,6);
 
-    // Generate a smart 7-day rolling plan
-    const planDays = [];
-    const today = new Date();
-    for (let d = 0; d < Math.min(days, 28); d++) {
-      const date    = new Date(today);
-      date.setDate(today.getDate() + d);
-      const subj    = subjects[d % subjects.length];
-      const isWeak  = weak.includes(subj);
-      const isMed   = medium.includes(subj);
-      const tasks   = [
-        { id:`${d}-1`, text:`Practice 40 ${subj} questions`, type:"exam", subject: subj, mins: 45 },
-        ...(isWeak ? [{ id:`${d}-2`, text:`Review ${subj} wrong answers`, type:"review", subject: subj, mins: 20 }] : []),
-        ...(d % 7 === 6 ? [{ id:`${d}-3`, text:`Full JAMB mock exam`, type:"mock", subject:"All", mins: 120 }] : []),
-      ];
-      planDays.push({ date: date.toISOString().split("T")[0], day: DAYS_LABEL[date.getDay()], tasks });
+    try {
+      // FIX: was pure client-side JS — now calls Groq AI on the backend
+      const { data } = await API.post("/study-planner/generate", {
+        exam_date:       examDate,
+        weak_subjects:   weak,
+        chosen_subjects: chosen,
+      });
+
+      const newPlan = {
+        ...data.plan,
+        examDate,          // keep legacy key for UI compat
+        aiPowered: data.source === "ai",
+      };
+      // Hydrate task IDs if missing (local fallback may omit them)
+      newPlan.days = (newPlan.days || []).map((day, di) => ({
+        ...day,
+        tasks: (day.tasks || []).map((t, ti) => ({ ...t, id: t.id || `${di}-${ti}` })),
+      }));
+
+      setPlan(newPlan);
+      localStorage.setItem("study_plan", JSON.stringify(newPlan));
+      localStorage.setItem("jamb_exam_date", examDate);
+    } catch (err) {
+      console.error("generatePlan error:", err);
+      // Local fallback — same as before so UI never breaks
+      const weak2   = (weakData || []).filter(s => s.strength === "weak").map(s => s.subject);
+      const subjects = [...new Set([...weak2, ...JAMB_SUBJECTS.slice(0,4)])].slice(0,6);
+      const days = Math.min(daysLeft || 28, 28);
+      const planDays = [];
+      const today2 = new Date();
+      for (let d = 0; d < days; d++) {
+        const date = new Date(today2);
+        date.setDate(today2.getDate() + d);
+        const subj = subjects[d % subjects.length];
+        const isWeak = weak2.includes(subj);
+        const tasks = [
+          { id:`${d}-1`, text:`Practice 40 ${subj} questions`, type:"practice", subject: subj, mins: 45 },
+          ...(isWeak ? [{ id:`${d}-2`, text:`Review ${subj} wrong answers`, type:"review", subject: subj, mins: 20 }] : []),
+          ...(d % 7 === 6 ? [{ id:`${d}-3`, text:`Full JAMB mock exam`, type:"mock", subject:"All", mins: 120 }] : []),
+        ];
+        planDays.push({ date: date.toISOString().split("T")[0], day: DAYS_LABEL[date.getDay()], tasks });
+      }
+      const newPlan = { created: new Date().toISOString(), examDate, days: planDays };
+      setPlan(newPlan);
+      localStorage.setItem("study_plan", JSON.stringify(newPlan));
+    } finally {
+      setGenerating(false);
     }
-
-    const newPlan = { created: new Date().toISOString(), examDate, days: planDays, subjects };
-    setPlan(newPlan);
-    localStorage.setItem("study_plan", JSON.stringify(newPlan));
-    localStorage.setItem("jamb_exam_date", examDate);
-    setGenerating(false);
   };
 
   const toggleDone = (taskId) => {
@@ -113,7 +136,7 @@ export default function StudyPlanner() {
             disabled={!examDate || generating}
             onClick={generatePlan}
           >
-            {generating ? "Generating..." : plan ? "🔄 Regenerate Plan" : "✨ Generate My Plan"}
+            {generating ? "⏳ AI is building your plan..." : plan ? "🔄 Regenerate with AI" : "✨ Generate My Plan with AI"}
           </button>
         </div>
 
@@ -122,7 +145,7 @@ export default function StudyPlanner() {
             {/* OVERALL PROGRESS */}
             <div style={s.card}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
-                <div style={s.cardTitle}>📊 Overall Progress</div>
+                <div style={s.cardTitle}>📊 Overall Progress{plan?.aiPowered && <span style={{ fontSize:10, background:"rgba(124,92,255,0.2)", color:"#a29bfe", border:"1px solid rgba(124,92,255,0.3)", borderRadius:8, padding:"1px 7px", marginLeft:8, fontWeight:700 }}>AI</span>}</div>
                 <div style={{ fontSize:16, fontWeight:800, color:"#7C5CFF" }}>{pct}%</div>
               </div>
               <div style={s.barTrack}>

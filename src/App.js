@@ -39,6 +39,9 @@ const AdmissionChecker = lazy(() => import("./pages/AdmissionChecker"));
 const PersonalityProfile = lazy(() => import("./pages/PersonalityProfile"));
 const BeatYourself       = lazy(() => import("./pages/BeatYourself"));
 const ParentPortal       = lazy(() => import("./pages/ParentPortal"));
+const ParentInviteSetup  = lazy(() => import("./pages/ParentInviteSetup")); // NEW: admin-generated invite link
+const EmailVerify        = lazy(() => import("./pages/EmailVerify")); // NEW: email verification
+const UniversityCourses  = lazy(() => import("./pages/UniversityCourses")); // NEW: university past questions
 
 // ── NEW FEATURES ──────────────────────────────────────────
 const VideoLibrary     = lazy(() => import("./pages/VideoLibrary"));
@@ -222,6 +225,10 @@ export default function App() {
 
               {/* Parent Portal */}
               <Route path="/parent" element={<ParentPortal />} />
+              {/* NEW: unique admin-generated parent invite link — not linked anywhere in student UI */}
+              <Route path="/parent-access/:token" element={<ParentInviteSetup />} />
+              <Route path="/verify-email/:token" element={<EmailVerify />} />
+              <Route path="/university" element={<UniversityCourses />} />
 
               {/* NEW v2 ROUTES */}
               <Route path="/heatmap"       element={<Private><WeaknessHeatmap /></Private>} />

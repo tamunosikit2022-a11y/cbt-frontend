@@ -40,7 +40,8 @@ export default function Performance() {
     weak_subjects = [],
     strong_subjects = [],
     stats = {},
-    total_wrong_answers = 0
+    total_wrong_answers = 0,
+    score_history = [],
   } = data;
 
   return (
@@ -57,6 +58,11 @@ export default function Performance() {
           <StatCard icon="🏆" label="Best Score"    value={`${parseFloat(stats?.best_score || 0).toFixed(1)}%`} color="#00b894" />
           <StatCard icon="🔁" label="Need Review"   value={total_wrong_answers || 0}                          color="#e17055" />
         </div>
+
+        {/* NEW: Score Trajectory Graph — pure SVG, no library needed */}
+        {score_history.length > 1 && (
+          <ScoreTrajectory history={score_history} />
+        )}
 
         {weak_subjects.length > 0 && (
           <div style={s.alertBox}>
@@ -157,6 +163,65 @@ export default function Performance() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function ScoreTrajectory({ history }) {
+  const W = 340, H = 120, PAD = { t:16, b:28, l:32, r:12 };
+  const iW = W - PAD.l - PAD.r, iH = H - PAD.t - PAD.b;
+
+  const scores = history.map(h => h.score);
+  const min = Math.max(0,  Math.floor(Math.min(...scores) / 10) * 10 - 10);
+  const max = Math.min(100, Math.ceil (Math.max(...scores) / 10) * 10 + 10);
+  const range = max - min || 1;
+
+  const xOf = i => PAD.l + (i / (history.length - 1)) * iW;
+  const yOf = s => PAD.t + iH - ((s - min) / range) * iH;
+
+  const points = history.map((h, i) => `${xOf(i)},${yOf(h.score)}`).join(" ");
+  const areaClose = `${xOf(history.length-1)},${PAD.t+iH} ${PAD.l},${PAD.t+iH}`;
+
+  const latest = history[history.length-1];
+  const first  = history[0];
+  const trend  = latest.score - first.score;
+  const trendColor = trend >= 0 ? "#00b894" : "#e17055";
+
+  return (
+    <div style={{ background:"var(--surface)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:14, padding:"16px 18px", marginBottom:20 }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+        <div style={{ fontWeight:800, fontSize:15, color:"#fff" }}>📈 Score Trajectory</div>
+        <div style={{ fontSize:13, fontWeight:700, color:trendColor }}>
+          {trend >= 0 ? "▲" : "▼"} {Math.abs(trend).toFixed(1)}% over {history.length} days
+        </div>
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width:"100%", overflow:"visible" }}>
+        {/* Grid lines */}
+        {[0,25,50,75,100].filter(v => v >= min && v <= max).map(v => {
+          const y = yOf(v);
+          return (
+            <g key={v}>
+              <line x1={PAD.l} y1={y} x2={W-PAD.r} y2={y} stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+              <text x={PAD.l-4} y={y+4} textAnchor="end" fill="#6B7280" fontSize="9">{v}%</text>
+            </g>
+          );
+        })}
+        {/* Area fill */}
+        <polygon points={`${points} ${areaClose}`} fill="rgba(108,99,255,0.12)" />
+        {/* Line */}
+        <polyline points={points} fill="none" stroke="#6c63ff" strokeWidth="2" strokeLinejoin="round" />
+        {/* Data points */}
+        {history.map((h, i) => (
+          <circle key={i} cx={xOf(i)} cy={yOf(h.score)} r={i === history.length-1 ? 4 : 2.5}
+            fill={i === history.length-1 ? "#00b894" : "#6c63ff"} />
+        ))}
+        {/* X axis labels — show first, middle, last */}
+        {[0, Math.floor(history.length/2), history.length-1].map(i => (
+          <text key={i} x={xOf(i)} y={H-4} textAnchor="middle" fill="#6B7280" fontSize="8">
+            {history[i].day.slice(5)}
+          </text>
+        ))}
+      </svg>
     </div>
   );
 }

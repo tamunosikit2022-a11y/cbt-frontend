@@ -392,6 +392,27 @@ export default function AdminDashboard() {
     setProfile(null); setTab("students");
   };
 
+  // ── NEW: Parent invite link generator ─────────────────────
+  const [parentLinkInfo, setParentLinkInfo] = useState(null); // { link, expires_at }
+  const [parentLinkLoading, setParentLinkLoading] = useState(false);
+
+  const generateParentLink = async (studentId) => {
+    setParentLinkLoading(true);
+    setParentLinkInfo(null);
+    try {
+      const r = await adminPost(`/students/${studentId}/parent-invite`, {});
+      setParentLinkInfo(r);
+    } catch {
+      showMsg("Could not generate parent link.");
+    } finally {
+      setParentLinkLoading(false);
+    }
+  };
+
+  const copyParentLink = (link) => {
+    navigator.clipboard.writeText(link).then(() => showMsg("✅ Parent link copied!")).catch(() => {});
+  };
+
   const generateKeys = async () => {
     const res = await adminPost("/keys", { plan: keyPlan, quantity: parseInt(keyQty) });
     if (res.success) {
@@ -898,6 +919,36 @@ export default function AdminDashboard() {
                       ? <button style={{ ...st.actionBtn, background: "#00b894" }} onClick={() => unbanStudent(profile.profile.id)}>✓ Unban Student</button>
                       : <button style={{ ...st.actionBtn, background: "#e17055" }} onClick={() => banStudent(profile.profile.id)}>🚫 Ban Student</button>
                     }
+                  </div>
+
+                  {/* NEW: Parent Portal Invite Link — admin-only, never shown in student UI */}
+                  <div style={{ marginTop: 14, background: "rgba(124,92,255,0.06)", border: "1px solid rgba(124,92,255,0.2)", borderRadius: 12, padding: "14px 16px" }}>
+                    <div style={{ fontWeight: 800, fontSize: 13, color: "#a29bfe", marginBottom: 6 }}>👨‍👩‍👧 Parent Portal Access</div>
+                    <div style={{ fontSize: 12, color: "#8b9cbd", marginBottom: 10, lineHeight: 1.6 }}>
+                      Generate a unique one-time link for this student's parent. Share it directly via WhatsApp or SMS — it lets them set up their own monitoring portal without any code.
+                    </div>
+                    <button
+                      style={{ ...st.actionBtn, background: "#6c63ff", opacity: parentLinkLoading ? 0.6 : 1 }}
+                      disabled={parentLinkLoading}
+                      onClick={() => generateParentLink(profile.profile.id)}
+                    >
+                      {parentLinkLoading ? "Generating…" : "🔗 Generate Parent Link"}
+                    </button>
+                    {parentLinkInfo?.link && (
+                      <div style={{ marginTop: 12, background: "var(--bg)", borderRadius: 10, padding: "10px 12px" }}>
+                        <div style={{ fontSize: 11, color: "#8b9cbd", marginBottom: 6 }}>
+                          Expires {new Date(parentLinkInfo.expires_at).toLocaleDateString("en-NG", { dateStyle: "medium" })}
+                        </div>
+                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                          <div style={{ flex: 1, fontFamily: "monospace", fontSize: 11, color: "#a29bfe", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
+                            {parentLinkInfo.link}
+                          </div>
+                          <button style={{ ...st.actionBtn, padding: "6px 12px", fontSize: 11, background: "#00b894" }} onClick={() => copyParentLink(parentLinkInfo.link)}>
+                            📋 Copy
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 

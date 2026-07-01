@@ -59,10 +59,10 @@ export default function ExamSelect() {
   const back           = useBackNav();
   const [searchParams] = useSearchParams();
 
-  const [examType,       setExamType]       = useState(
-    searchParams.get("type") === "POST-UTME" ? "POST-UTME" :
-    searchParams.get("type") === "UNIVERSITY" ? "UNIVERSITY" : "JAMB"
-  );
+  const [examType, setExamType] = useState(() => {
+    const t = searchParams.get("type") || "JAMB";
+    return ["JAMB","POST-UTME","WAEC","NECO"].includes(t) ? t : "JAMB";
+  });
   const [jambMode,       setJambMode]       = useState("full");      // "full" | "single"
   const [selectedSubjs,  setSelectedSubjs]  = useState([]);          // user-chosen 3 subjects
   const [singleSubject,  setSingleSubject]  = useState(searchParams.get("subject") || "");
@@ -77,7 +77,7 @@ export default function ExamSelect() {
 
   // Fetch available subjects from DB
   useEffect(() => {
-    API.get(`/exam/subjects?exam_type=${examType === "JAMB" ? "JAMB" : "POST-UTME"}`)
+    API.get(`/exam/subjects?exam_type=${examType}`)
       .then(r => setAvailSubjects(r.data || []))
       .catch(() => {});
   }, [examType]);
@@ -154,7 +154,7 @@ export default function ExamSelect() {
         <div style={s.group}>
           <label style={s.label}>Exam Type</label>
           <div style={s.tabs}>
-            {[["JAMB","📘 JAMB / UTME"],["POST-UTME","🏫 Post-UTME"],["UNIVERSITY","🎓 University"]].map(([val, lbl]) => (
+            {[["JAMB","📘 JAMB / UTME"],["POST-UTME","🏫 Post-UTME"]].map(([val, lbl]) => (
               <button key={val}
                 style={{ ...s.tab, ...(examType === val ? s.tabActive : {}) }}
                 onClick={() => { setExamType(val); setError(""); setSelectedSubjs([]); setPostSubjects([]); }}>
@@ -337,22 +337,8 @@ export default function ExamSelect() {
           </>
         )}
 
-        {/* ── UNIVERSITY SECTION (coming soon) ── */}
-        {examType === "UNIVERSITY" && (
-          <div style={s.infoBox}>
-            <div style={s.infoTitle}>🎓 University · UNIPORT GES</div>
-            <p style={{ fontSize:13, color:"var(--text-muted)", lineHeight:1.6, marginBottom:10 }}>
-              Course past questions are on the way — starting with General Education (GES) courses at the University of Port Harcourt. We're loading the question bank now.
-            </p>
-            <p style={{ fontSize:12, color:"var(--text-muted)" }}>
-              More universities and courses will be added after launch.
-            </p>
-          </div>
-        )}
-
         {error && <p style={s.error}>⚠️ {error}</p>}
 
-        {examType !== "UNIVERSITY" && (
         <button style={{
           ...s.startBtn,
           opacity: (examType === "JAMB" && jambMode === "full" && selectedSubjs.length !== 3) ||
@@ -366,12 +352,6 @@ export default function ExamSelect() {
             ? `Start ${university} Post-UTME — ${uni.questions} Questions →`
             : "Start Practice →"}
         </button>
-        )}
-        {examType === "UNIVERSITY" && (
-          <button style={{ ...s.startBtn, opacity:0.5, cursor:"not-allowed" }} disabled>
-            Coming Soon →
-          </button>
-        )}
 
       </div>
     </div>

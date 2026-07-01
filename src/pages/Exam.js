@@ -380,6 +380,17 @@ export default function Exam() {
             </div>
           )}
 
+          {/* FIX: Question image/diagram support — JAMB Physics, Biology, Chemistry often include diagrams */}
+          {q.question_image_url && (
+            <div style={{ textAlign:"center", margin:"0 0 14px" }}>
+              <img
+                src={q.question_image_url}
+                alt={q.image_alt_text || "Question diagram"}
+                style={{ maxWidth:"100%", maxHeight:220, borderRadius:10, border:"1px solid rgba(255,255,255,0.1)", objectFit:"contain" }}
+                onError={e => { e.target.style.display="none"; }}
+              />
+            </div>
+          )}
           <p style={s.qText}>{q.question}</p>
 
           {/* SKILL BAR — Time Freeze / Smart Hint / 50-50 / Retry Shield */}

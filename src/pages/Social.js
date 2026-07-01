@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import API from "../utils/api";
 
-const API = process.env.REACT_APP_API_URL || "";
-const h   = () => ({ "Content-Type":"application/json", Authorization:`Bearer ${localStorage.getItem("token")}` });
 
 export default function Social() {
   const nav  = useNavigate();
@@ -28,11 +27,11 @@ export default function Social() {
     setLoading(true);
     try {
       const [fr, pend, sq, sqInv, hist] = await Promise.all([
-        fetch(`${API}/social/friends`,           { headers:h() }).then(r=>r.json()),
-        fetch(`${API}/social/friends/pending`,   { headers:h() }).then(r=>r.json()),
-        fetch(`${API}/social/squads/mine`,       { headers:h() }).then(r=>r.json()),
-        fetch(`${API}/social/squads/invites`,    { headers:h() }).then(r=>r.json()),
-        fetch(`${API}/live-challenges/history`,  { headers:h() }).then(r=>r.json()),
+        API.get('/social/friends').then(r=>r.data),
+        API.get('/social/friends/pending').then(r=>r.data),
+        API.get('/social/squads/mine').then(r=>r.data),
+        API.get('/social/squads/invites').then(r=>r.data),
+        API.get('/live-challenges/history').then(r=>r.data),
       ]);
       setFriends(fr.friends   || []);
       setPending(pend.requests|| []);
@@ -52,7 +51,7 @@ export default function Social() {
     searchTimer.current = setTimeout(async () => {
       setSearching(true);
       try {
-        const r = await fetch(`${API}/social/search?q=${encodeURIComponent(search)}`, { headers:h() });
+        const r = await API.get('/social/search', { params: { q: search } });
         const d = await r.json();
         setSearchResults(d.students || []);
       } catch {}
@@ -61,45 +60,45 @@ export default function Social() {
   }, [search]);
 
   const sendRequest = async (toId) => {
-    const r = await fetch(`${API}/social/friends/request`, { method:"POST", headers:h(), body:JSON.stringify({ toId }) });
+    const r = await API.post('/social/friends/request', { toId });
     const d = await r.json();
     flash(d.success ? "✅ Friend request sent!" : "❌ " + d.error);
   };
 
   const respondToRequest = async (requestId, accept) => {
-    await fetch(`${API}/social/friends/respond`, { method:"POST", headers:h(), body:JSON.stringify({ requestId, accept }) });
+    await API.post('/social/friends/respond', { requestId, accept });
     flash(accept ? "✅ Friend added!" : "Request declined.");
     load();
   };
 
   const removeFriend = async (friendId) => {
     if (!window.confirm("Remove this friend?")) return;
-    await fetch(`${API}/social/friends/${friendId}`, { method:"DELETE", headers:h() });
+    await API.delete(`/social/friends/${friendId}`);
     load();
   };
 
   const createSquad = async () => {
     if (!squadName.trim()) return flash("Enter a squad name.");
-    const r = await fetch(`${API}/social/squads`, { method:"POST", headers:h(), body:JSON.stringify({ name:squadName }) });
+    const r = await API.post('/social/squads', { name:squadName });
     const d = await r.json();
     if (d.success) { flash("✅ Squad created!"); load(); } else flash("❌ " + d.error);
   };
 
   const leaveSquad = async () => {
     if (!window.confirm("Leave your squad?")) return;
-    await fetch(`${API}/social/squads/leave`, { method:"DELETE", headers:h() });
+    await API.delete('/social/squads/leave');
     flash("Left squad."); load();
   };
 
   const inviteToSquad = async (targetId) => {
     if (!squad) return flash("Create or join a squad first.");
-    const r = await fetch(`${API}/social/squads/${squad.id}/invite`, { method:"POST", headers:h(), body:JSON.stringify({ targetId }) });
+    const r = await API.post('/social/squads/${squad.id}/invite', { targetId });
     const d = await r.json();
     flash(d.success ? "✅ Invite sent!" : "❌ " + d.error);
   };
 
   const acceptSquadInvite = async (inviteId) => {
-    const r = await fetch(`${API}/social/squads/accept-invite`, { method:"POST", headers:h(), body:JSON.stringify({ inviteId }) });
+    const r = await API.post('/social/squads/accept-invite', { inviteId });
     const d = await r.json();
     if (d.success) { flash("✅ Joined squad!"); load(); } else flash("❌ " + d.error);
   };
