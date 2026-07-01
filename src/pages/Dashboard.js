@@ -22,16 +22,21 @@ const NAV_GROUPS = [
       { icon: "🏠",  label: "Dashboard",       action: "home" },
       { icon: "📝",  label: "Take Exam",        path: "/exam-select" },
       { icon: "🎓",  label: "University",       path: "/university", badge: "New" },
+      { icon: "⏯️",  label: "Resume Exam",      path: "/resume" },
+      { icon: "🎓",  label: "Admission Checker", path: "/admission" },
       { icon: "🕓",  label: "History",          path: "/history" },
       { icon: "📈",  label: "Performance",      path: "/performance" },
-      { icon: "🎯",  label: "Weakness Heatmap", path: "/heatmap" },
+      { icon: "🔮",  label: "Predicted Score",  path: "/predicted" },
+      { icon: "🎯",  label: "Weakness Detector", path: "/weakness" },
+      { icon: "🗺️",  label: "Weakness Heatmap", path: "/heatmap" },
     ],
   },
   {
     label: "Study Tools",
     items: [
       { icon: "🤖",  label: "AI Tutor",          path: "/ai-tutor" },
-      { icon: "✨",  label: "AI Quiz Generator", path: "/ai-questions" },
+      { icon: "✨",  label: "AI Questions",      path: "/ai-questions" },
+      { icon: "📄",  label: "AI Quiz Generator", path: "/ai-quiz" },
       { icon: "🗂️", label: "Flashcards",        path: "/flashcards" },
       { icon: "📅",  label: "Study Planner",     path: "/study-planner" },
       { icon: "📚",  label: "Knowledge Vault",   path: "/vault" },
@@ -46,7 +51,10 @@ const NAV_GROUPS = [
       { icon: "📊",  label: "Leaderboard",    path: "/leaderboard" },
       { icon: "🔥",  label: "Daily Challenge", path: "/challenge" },
       { icon: "⚡",  label: "Blitz Mode",     path: "/blitz" },
+      { icon: "🥇",  label: "Beat Yourself",  path: "/beat-yourself" },
       { icon: "🏫",  label: "School Wars",    path: "/school-wars" },
+      { icon: "🛡️",  label: "Factions",       path: "/factions" },
+      { icon: "🏅",  label: "Seasons",        path: "/seasons" },
     ],
   },
   {
@@ -57,12 +65,21 @@ const NAV_GROUPS = [
       { icon: "💎",  label: "Gem Store",  path: "/gems" },
       { icon: "🎰",  label: "Spin Wheel", path: "/spin" },
       { icon: "🗝️", label: "Skills",     path: "/skills" },
+      { icon: "🐾",  label: "Spirits",    path: "/spirits" },
+      { icon: "🎁",  label: "Treasure Chests", path: "/chests" },
+    ],
+  },
+  {
+    label: "Discover",
+    items: [
+      { icon: "🧭",  label: "Career Quiz",         path: "/career-quiz" },
+      { icon: "🧠",  label: "Personality Profile", path: "/personality" },
     ],
   },
   {
     label: "Account",
     items: [
-      { icon: "👤",  label: "Profile",      action: "profile" },
+      { icon: "👤",  label: "Profile",      path: "/profile" },
       { icon: "🎨",  label: "Appearance",   path: "/theme" },
       { icon: "🎁",  label: "Refer & Earn", path: "/refer" },
       { icon: "👪",  label: "Parent Portal", path: "/parent" },
@@ -138,7 +155,6 @@ export default function Dashboard() {
   const go = (item) => {
     setSideOpen(false);
     if (item.action === "home")    { setPage("home");    return; }
-    if (item.action === "profile") { setPage("profile"); return; }
     if (item.path) nav(item.path);
   };
 
@@ -322,7 +338,7 @@ export default function Dashboard() {
         </div>
 
         {/* Profile */}
-        <div onClick={() => setPage("profile")} style={{ display:"flex", alignItems:"center", gap:9, paddingLeft:12, borderLeft:`1px solid ${C.border}`, cursor:"pointer" }}>
+        <div onClick={() => nav("/profile")} style={{ display:"flex", alignItems:"center", gap:9, paddingLeft:12, borderLeft:`1px solid ${C.border}`, cursor:"pointer" }}>
           <div style={{ width:36, height:36, borderRadius:"50%", background:`linear-gradient(135deg,${C.p},${C.acc})`, display:"flex", alignItems:"center", justifyContent:"center", fontWeight:800, fontSize:14, color:"#fff", flexShrink:0, overflow:"hidden" }}>
             {profile.avatar_url
               ? <img src={profile.avatar_url} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
@@ -610,7 +626,7 @@ export default function Dashboard() {
     { id:"exam",    emoji:"📝", label:"Exam",     path:"/exam-select" },
     { id:"uni",     emoji:"🎓", label:"Uni",      path:"/university"  },
     { id:"arena",   emoji:"⚔️", label:"Arena",   path:"/arena"       },
-    { id:"profile", emoji:"👤", label:"Profile"  },
+    { id:"profile", emoji:"👤", label:"Profile", path:"/profile" },
   ];
 
   // ── Render ───────────────────────────────────────────────
