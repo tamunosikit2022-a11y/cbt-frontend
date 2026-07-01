@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import React, { lazy, Suspense, useState, useCallback, useEffect, useRef } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import YouTubeGate from "./components/YouTubeGate";    // ← FIX 1: YouTube subscription gate
+import FloatingNav from "./components/FloatingNav";    // ← always-available Home button
 
 // ── CORE ──────────────────────────────────────────────────
 const Landing          = lazy(() => import("./pages/Landing"));
@@ -134,6 +135,17 @@ function AdminGuard({ children }) {
   return token ? children : <Navigate to="/admin/login" replace />;
 }
 
+// ── ROOT ROUTE ────────────────────────────────────────────
+// FIX: "/" used to always render the marketing Landing page, even for
+// returning/logged-in students. Now: logged-in students are sent straight
+// to their Dashboard on every visit; Landing (with the compulsory YouTube
+// subscribe CTA baked into YouTubeGate above) is only ever shown to
+// signed-out / new visitors.
+function RootRoute() {
+  const { student } = useAuth();
+  return student ? <Navigate to="/dashboard" replace /> : <Landing />;
+}
+
 // ── AI TUTOR WRAPPER ──────────────────────────────────────
 function AITutorWithUser() {
   const { student } = useAuth();
@@ -161,7 +173,7 @@ export default function App() {
           <Suspense fallback={<PageLoader />}>
             <Routes>
               {/* Public Routes */}
-              <Route path="/" element={<Landing />} />
+              <Route path="/" element={<RootRoute />} />
               <Route path="/login" element={<Public><Login /></Public>} />
               <Route path="/register" element={<Public><Register /></Public>} />
               <Route path="/forgot-password" element={<Public><ForgotPassword /></Public>} />
@@ -251,6 +263,7 @@ export default function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Suspense>
+          <FloatingNav />
         </BrowserRouter>
       </AuthProvider>
     </ThemeProvider>

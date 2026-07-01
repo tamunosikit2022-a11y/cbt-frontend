@@ -266,92 +266,119 @@ export default function Dashboard() {
   );
 
   // ── Top Bar ──────────────────────────────────────────────
-  const TopBar = () => (
-    <div style={{
-      display:"flex", alignItems:"center", gap:14, padding:"16px 28px",
-      borderBottom:`1px solid ${C.border}`,
-      position:"sticky", top:0, zIndex:10,
-      background:"rgba(10,10,15,0.85)", backdropFilter:"blur(10px)",
-    }}>
-      {mobile && (
-        <button onClick={() => setSideOpen(true)} style={{ background:`${C.surfA}`, border:`1px solid ${C.border}`, borderRadius:10, width:38, height:38, fontSize:17, cursor:"pointer", color:C.text, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>☰</button>
-      )}
-      {/* Search */}
-      <div style={{ position:"relative", flex:1, maxWidth:420 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:8, background:C.surfA, border:`1px solid ${C.border}`, borderRadius:11, padding:"9px 13px" }}>
-          <span style={{ fontSize:13 }}>🔍</span>
-          <input
-            value={searchQuery}
-            onChange={e => { setSearchQuery(e.target.value); setSearchOpen(true); }}
-            onFocus={() => setSearchOpen(true)}
-            onBlur={() => setTimeout(() => setSearchOpen(false), 150)}
-            onKeyDown={e => {
-              if (e.key === "Enter" && searchResults.length) {
-                nav(searchResults[0].path); setSearchOpen(false); setSearchQuery("");
-              }
-            }}
-            placeholder="Search subjects, past questions, topics…"
-            style={{ flex:1, background:"none", border:"none", outline:"none", color:C.text, fontSize:13 }}
-          />
+  // Mobile-first: on small screens the search box gets its own full-width
+  // row underneath the icon row, instead of fighting the hamburger/bell/
+  // chat/profile icons for space on a ~360px-wide screen.
+  const SearchBox = ({ mobileStyle }) => (
+    <div style={{ position:"relative", flex:1, maxWidth: mobileStyle ? "none" : 420, width: mobileStyle ? "100%" : "auto" }}>
+      <div style={{ display:"flex", alignItems:"center", gap:8, background:C.surfA, border:`1px solid ${C.border}`, borderRadius:11, padding: mobileStyle ? "10px 13px" : "9px 13px" }}>
+        <span style={{ fontSize:13, flexShrink:0 }}>🔍</span>
+        <input
+          value={searchQuery}
+          onChange={e => { setSearchQuery(e.target.value); setSearchOpen(true); }}
+          onFocus={() => setSearchOpen(true)}
+          onBlur={() => setTimeout(() => setSearchOpen(false), 150)}
+          onKeyDown={e => {
+            if (e.key === "Enter" && searchResults.length) {
+              nav(searchResults[0].path); setSearchOpen(false); setSearchQuery("");
+            }
+          }}
+          placeholder={mobileStyle ? "Search subjects, topics…" : "Search subjects, past questions, topics…"}
+          style={{ flex:1, minWidth:0, background:"none", border:"none", outline:"none", color:C.text, fontSize:13 }}
+        />
+      </div>
+      {searchOpen && searchQuery.trim() && (
+        <div style={{ position:"absolute", top:44, left:0, right:0, background:C.surf, border:`1px solid ${C.brdStr}`, borderRadius:12, padding:6, boxShadow:"0 16px 48px rgba(0,0,0,0.5)", zIndex:60, maxHeight:280, overflowY:"auto" }}>
+          {searchResults.length ? searchResults.map(r => (
+            <div key={r.path} onMouseDown={() => { nav(r.path); setSearchOpen(false); setSearchQuery(""); }}
+              style={{ padding:"9px 10px", borderRadius:8, cursor:"pointer", fontSize:13, color:C.text, display:"flex", justifyContent:"space-between", gap:8 }}
+              onMouseEnter={e => e.currentTarget.style.background = C.surfA}
+              onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+              <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{r.label}</span>
+              <span style={{ color:C.muted, fontSize:11, flexShrink:0 }}>{r.group}</span>
+            </div>
+          )) : (
+            <div style={{ padding:"9px 10px", fontSize:12, color:C.muted }}>No matches for "{searchQuery}"</div>
+          )}
         </div>
-        {searchOpen && searchQuery.trim() && (
-          <div style={{ position:"absolute", top:44, left:0, right:0, background:C.surf, border:`1px solid ${C.brdStr}`, borderRadius:12, padding:6, boxShadow:"0 16px 48px rgba(0,0,0,0.5)", zIndex:60, maxHeight:280, overflowY:"auto" }}>
-            {searchResults.length ? searchResults.map(r => (
-              <div key={r.path} onMouseDown={() => { nav(r.path); setSearchOpen(false); setSearchQuery(""); }}
-                style={{ padding:"9px 10px", borderRadius:8, cursor:"pointer", fontSize:13, color:C.text, display:"flex", justifyContent:"space-between" }}
-                onMouseEnter={e => e.currentTarget.style.background = C.surfA}
-                onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                <span>{r.label}</span>
-                <span style={{ color:C.muted, fontSize:11 }}>{r.group}</span>
+      )}
+    </div>
+  );
+
+  const IconCluster = () => (
+    <div style={{ display:"flex", alignItems:"center", gap: mobile ? 6 : 8, marginLeft: mobile ? 0 : "auto" }}>
+      {/* Notifications */}
+      <div style={{ position:"relative" }}>
+        <div onClick={() => setNotifOpen(v => !v)} style={{ position:"relative", width: mobile ? 36 : 38, height: mobile ? 36 : 38, borderRadius:10, background:C.surfA, border:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:15, cursor:"pointer" }}>
+          🔔
+          {unread > 0 && <span style={{ position:"absolute", top:6, right:6, width:8, height:8, borderRadius:"50%", background:C.danger, border:`2px solid ${C.surf}` }} />}
+        </div>
+        {notifOpen && (
+          <div style={{
+            position:"absolute", top:46, right:0,
+            width: mobile ? "min(300px, calc(100vw - 28px))" : 300,
+            background:C.surf, border:`1px solid ${C.brdStr}`, borderRadius:14, padding:14,
+            boxShadow:"0 16px 48px rgba(0,0,0,0.5)", zIndex:50,
+          }}>
+            <div style={{ fontWeight:800, fontSize:13, marginBottom:10, color:C.text }}>Notifications</div>
+            {notifs.slice(0,5).map((n,i) => (
+              <div key={i} style={{ padding:"8px 0", borderBottom:`1px solid ${C.border}`, fontSize:12, color:C.sub }}>
+                <div style={{ fontWeight:600 }}>{n.title || n.message}</div>
+                <div style={{ color:C.muted, fontSize:11, marginTop:2 }}>{timeAgo(n.created_at)}</div>
               </div>
-            )) : (
-              <div style={{ padding:"9px 10px", fontSize:12, color:C.muted }}>No matches for "{searchQuery}"</div>
-            )}
+            ))}
+            {!notifs.length && <div style={{ color:C.muted, fontSize:12 }}>No new notifications</div>}
           </div>
         )}
       </div>
 
-      <div style={{ display:"flex", alignItems:"center", gap:8, marginLeft:"auto" }}>
-        {/* Notifications */}
-        <div style={{ position:"relative" }}>
-          <div onClick={() => setNotifOpen(v => !v)} style={{ position:"relative", width:38, height:38, borderRadius:10, background:C.surfA, border:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:15, cursor:"pointer" }}>
-            🔔
-            {unread > 0 && <span style={{ position:"absolute", top:6, right:6, width:8, height:8, borderRadius:"50%", background:C.danger, border:`2px solid ${C.surf}` }} />}
-          </div>
-          {notifOpen && (
-            <div style={{ position:"absolute", top:46, right:0, width:300, background:C.surf, border:`1px solid ${C.brdStr}`, borderRadius:14, padding:14, boxShadow:"0 16px 48px rgba(0,0,0,0.5)", zIndex:50 }}>
-              <div style={{ fontWeight:800, fontSize:13, marginBottom:10, color:C.text }}>Notifications</div>
-              {notifs.slice(0,5).map((n,i) => (
-                <div key={i} style={{ padding:"8px 0", borderBottom:`1px solid ${C.border}`, fontSize:12, color:C.sub }}>
-                  <div style={{ fontWeight:600 }}>{n.title || n.message}</div>
-                  <div style={{ color:C.muted, fontSize:11, marginTop:2 }}>{timeAgo(n.created_at)}</div>
-                </div>
-              ))}
-              {!notifs.length && <div style={{ color:C.muted, fontSize:12 }}>No new notifications</div>}
-            </div>
-          )}
-        </div>
-
-        {/* Chat */}
-        <div onClick={() => nav("/social")} style={{ width:38, height:38, borderRadius:10, background:C.surfA, border:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:15, cursor:"pointer" }}>
-          💬
-        </div>
-
-        {/* Profile */}
-        <div onClick={() => nav("/profile")} style={{ display:"flex", alignItems:"center", gap:9, paddingLeft:12, borderLeft:`1px solid ${C.border}`, cursor:"pointer" }}>
-          <div style={{ width:36, height:36, borderRadius:"50%", background:`linear-gradient(135deg,${C.p},${C.acc})`, display:"flex", alignItems:"center", justifyContent:"center", fontWeight:800, fontSize:14, color:"#fff", flexShrink:0, overflow:"hidden" }}>
-            {profile.avatar_url
-              ? <img src={profile.avatar_url} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
-              : (profile.full_name || "S").slice(0,2).toUpperCase()}
-          </div>
-          {!mobile && (
-            <div>
-              <div style={{ fontSize:13, fontWeight:700, color:C.text }}>{(profile.full_name || "Scholar").split(" ").slice(0,2).join(" ")}</div>
-              <div style={{ fontSize:10.5, color:C.muted }}>🔥 {profile.current_streak || 0}-day streak</div>
-            </div>
-          )}
-        </div>
+      {/* Chat */}
+      <div onClick={() => nav("/social")} style={{ width: mobile ? 36 : 38, height: mobile ? 36 : 38, borderRadius:10, background:C.surfA, border:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:15, cursor:"pointer" }}>
+        💬
       </div>
+
+      {/* Profile */}
+      <div onClick={() => nav("/profile")} style={{ display:"flex", alignItems:"center", gap:9, paddingLeft: mobile ? 8 : 12, borderLeft:`1px solid ${C.border}`, cursor:"pointer" }}>
+        <div style={{ width:36, height:36, borderRadius:"50%", background:`linear-gradient(135deg,${C.p},${C.acc})`, display:"flex", alignItems:"center", justifyContent:"center", fontWeight:800, fontSize:14, color:"#fff", flexShrink:0, overflow:"hidden" }}>
+          {profile.avatar_url
+            ? <img src={profile.avatar_url} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+            : (profile.full_name || "S").slice(0,2).toUpperCase()}
+        </div>
+        {!mobile && (
+          <div>
+            <div style={{ fontSize:13, fontWeight:700, color:C.text }}>{(profile.full_name || "Scholar").split(" ").slice(0,2).join(" ")}</div>
+            <div style={{ fontSize:10.5, color:C.muted }}>🔥 {profile.current_streak || 0}-day streak</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const TopBar = () => (
+    <div style={{
+      display:"flex", flexDirection: mobile ? "column" : "row", alignItems: mobile ? "stretch" : "center",
+      gap: mobile ? 10 : 14, padding: mobile ? "12px 14px" : "16px 28px",
+      borderBottom:`1px solid ${C.border}`,
+      position:"sticky", top:0, zIndex:10,
+      background:"rgba(10,10,15,0.85)", backdropFilter:"blur(10px)",
+    }}>
+      {mobile ? (
+        <>
+          {/* Row 1: hamburger + icon cluster — search gets its own row below */}
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <button onClick={() => setSideOpen(true)} style={{ background:`${C.surfA}`, border:`1px solid ${C.border}`, borderRadius:10, width:36, height:36, fontSize:16, cursor:"pointer", color:C.text, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>☰</button>
+            <div style={{ flex:1 }} />
+            <IconCluster />
+          </div>
+          {/* Row 2: full-width search */}
+          <SearchBox mobileStyle />
+        </>
+      ) : (
+        <>
+          <SearchBox />
+          <IconCluster />
+        </>
+      )}
     </div>
   );
 
