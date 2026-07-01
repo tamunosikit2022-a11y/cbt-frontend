@@ -12,42 +12,46 @@ const SCHOOLS = [
   {
     id: "UNIPORT",
     name: "University of Port Harcourt",
+    dbInstitution: "University of Port Harcourt", // must match `institution` exactly as stored in the questions table
     short: "UNIPORT",
     state: "Rivers",
     icon: "🏛️",
     color: "#00D4AA",
     courses: [
-      { code:"GES112", title:"Nigerian Peoples & Culture", unit:2, level:100, questions:60, topics:["Yoruba History","Hausa Culture","Igbo Traditions","Nigerian Art","Pre-1800 Kingdoms"] },
-      { code:"GES103", title:"Nigerian Peoples & Culture (103)", unit:2, level:100, questions:40, topics:["HIV/AIDS in Nigeria","Ethnic Groups","Cultural Practices","Land Tenure","Social Institutions"] },
-      { code:"GES101", title:"Use of English", unit:2, level:100, questions:50, topics:["Grammar","Comprehension","Figures of Speech","Vocabulary","Writing Skills"] },
+      { code:"GES112", title:"Nigerian Peoples & Culture", dbSubject:"Nigerian People and Culture", unit:2, level:100, questions:60, topics:["Yoruba History","Hausa Culture","Igbo Traditions","Nigerian Art","Pre-1800 Kingdoms"] },
+      { code:"GES103", title:"Nigerian Peoples & Culture (103)", dbSubject:"Nigerian Peoples & Culture (103)", unit:2, level:100, questions:40, topics:["HIV/AIDS in Nigeria","Ethnic Groups","Cultural Practices","Land Tenure","Social Institutions"] },
+      { code:"GES101", title:"Use of English", dbSubject:"Use of English", unit:2, level:100, questions:50, topics:["Grammar","Comprehension","Figures of Speech","Vocabulary","Writing Skills"] },
     ],
   },
   {
     id: "UI",
     name: "University of Ibadan",
+    dbInstitution: "University of Ibadan",
     short: "UI",
     state: "Oyo",
     icon: "🎓",
     color: "#7C5CFF",
     courses: [
-      { code:"GST 111", title:"Communication in English", unit:2, level:100, questions:0, coming:true },
-      { code:"GST 112", title:"Logic & Philosophy",       unit:2, level:100, questions:0, coming:true },
+      { code:"GST 111", title:"Communication in English", dbSubject:"Communication in English", unit:2, level:100, questions:0, coming:true },
+      { code:"GST 112", title:"Logic & Philosophy",       dbSubject:"Logic & Philosophy",       unit:2, level:100, questions:0, coming:true },
     ],
   },
   {
     id: "UNILAG",
     name: "University of Lagos",
+    dbInstitution: "University of Lagos",
     short: "UNILAG",
     state: "Lagos",
     icon: "🏙️",
     color: "#3B82F6",
     courses: [
-      { code:"LIN 101", title:"Introduction to Linguistics", unit:2, level:100, questions:0, coming:true },
+      { code:"LIN 101", title:"Introduction to Linguistics", dbSubject:"Introduction to Linguistics", unit:2, level:100, questions:0, coming:true },
     ],
   },
   {
     id: "OAU",
     name: "Obafemi Awolowo University",
+    dbInstitution: "Obafemi Awolowo University",
     short: "OAU",
     state: "Osun",
     icon: "🌳",
@@ -86,7 +90,7 @@ export default function UniversityCourses() {
     // Go straight to the exam engine — ExamSelect is a subject-picker UI and
     // has no concept of a pre-chosen university course, so routing through it
     // silently dropped institution/course_code/subject and fell back to JAMB.
-    nav(`/exam?exam_type=UNIVERSITY&institution=${selected}&subject=${encodeURIComponent(course.title)}&mode=exam&limit=${course.questions || 40}&time=${course.questions || 40}`);
+    nav(`/exam?exam_type=UNIVERSITY&institution=${encodeURIComponent(school.dbInstitution)}&subject=${encodeURIComponent(course.dbSubject)}&mode=exam&limit=${course.questions || 40}&time=${course.questions || 40}`);
   };
 
   return (
@@ -149,7 +153,7 @@ export default function UniversityCourses() {
         {/* Course cards */}
         <div style={{ display:"grid", gridTemplateColumns: mobile ? "1fr" : "1fr 1fr", gap:14 }}>
           {school.courses.map(course => {
-            const realCount = counts[`${selected}_${course.code}`] || course.questions;
+            const realCount = counts[`${school.dbInstitution}_${course.dbSubject}`] || course.questions;
             return (
               <div key={course.code} onClick={() => startCourse(course)} style={{
                 background: course.coming ? C.surf : `linear-gradient(160deg,rgba(0,212,170,.06),${C.surf} 60%)`,
