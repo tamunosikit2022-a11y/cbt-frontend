@@ -24,7 +24,7 @@ const NAV_GROUPS = [
       { icon: "🎓",  label: "University",       path: "/university", badge: "New" },
       { icon: "🕓",  label: "History",          path: "/history" },
       { icon: "📈",  label: "Performance",      path: "/performance" },
-      { icon: "🎯",  label: "Weakness Heatmap", path: "/performance" },
+      { icon: "🎯",  label: "Weakness Heatmap", path: "/heatmap" },
     ],
   },
   {
@@ -45,8 +45,8 @@ const NAV_GROUPS = [
       { icon: "🏆",  label: "Tournaments",    path: "/tournaments" },
       { icon: "📊",  label: "Leaderboard",    path: "/leaderboard" },
       { icon: "🔥",  label: "Daily Challenge", path: "/challenge" },
-      { icon: "⚡",  label: "Blitz Mode",     path: "/arena?mode=blitz" },
-      { icon: "🏫",  label: "School Wars",    path: "/factions" },
+      { icon: "⚡",  label: "Blitz Mode",     path: "/blitz" },
+      { icon: "🏫",  label: "School Wars",    path: "/school-wars" },
     ],
   },
   {
@@ -56,17 +56,16 @@ const NAV_GROUPS = [
       { icon: "✅",  label: "Missions",   path: "/missions", dot: true },
       { icon: "💎",  label: "Gem Store",  path: "/gems" },
       { icon: "🎰",  label: "Spin Wheel", path: "/spin" },
-      { icon: "🗝️", label: "Skills",     path: "/spirits" },
+      { icon: "🗝️", label: "Skills",     path: "/skills" },
     ],
   },
   {
     label: "Account",
     items: [
       { icon: "👤",  label: "Profile",      action: "profile" },
-      { icon: "🎨",  label: "Appearance",   path: "/settings/theme" },
-      { icon: "🎁",  label: "Refer & Earn", path: "/referral" },
+      { icon: "🎨",  label: "Appearance",   path: "/theme" },
+      { icon: "🎁",  label: "Refer & Earn", path: "/refer" },
       { icon: "👪",  label: "Parent Portal", path: "/parent" },
-      { icon: "❓",  label: "Help Center",  path: "/help" },
     ],
   },
 ];
