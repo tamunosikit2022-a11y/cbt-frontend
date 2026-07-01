@@ -70,6 +70,8 @@ const NAV_GROUPS = [
   },
 ];
 
+const SEARCH_INDEX = NAV_GROUPS.flatMap(g => g.items.filter(i => i.path).map(i => ({ label: i.label, path: i.path, group: g.label })));
+
 const BAR_HEIGHTS = [35, 50, 42, 60, 55, 70, 65, 80, 76, 85];
 const BAR_LABELS  = ["Wk1","Wk2","Wk3","Wk4","Wk5","Wk6","Wk7","Wk8","Wk9","Wk10"];
 
@@ -100,6 +102,11 @@ export default function Dashboard() {
   const [unread, setUnread] = useState(0);
   const [notifs, setNotifs] = useState([]);
   const [sideOpen, setSideOpen] = useState(false); // mobile sidebar overlay
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchResults = searchQuery.trim()
+    ? SEARCH_INDEX.filter(i => i.label.toLowerCase().includes(searchQuery.trim().toLowerCase()))
+    : [];
 
   useEffect(() => {
     const handler = () => setMobile(window.innerWidth < 768);
@@ -254,8 +261,38 @@ export default function Dashboard() {
         <button onClick={() => setSideOpen(true)} style={{ background:`${C.surfA}`, border:`1px solid ${C.border}`, borderRadius:10, width:38, height:38, fontSize:17, cursor:"pointer", color:C.text, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>☰</button>
       )}
       {/* Search */}
-      <div style={{ flex:1, maxWidth:420, display:"flex", alignItems:"center", gap:8, background:C.surfA, border:`1px solid ${C.border}`, borderRadius:11, padding:"9px 13px", color:C.muted, fontSize:13, cursor:"text" }}>
-        🔍 Search subjects, past questions, topics…
+      <div style={{ position:"relative", flex:1, maxWidth:420 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:8, background:C.surfA, border:`1px solid ${C.border}`, borderRadius:11, padding:"9px 13px" }}>
+          <span style={{ fontSize:13 }}>🔍</span>
+          <input
+            value={searchQuery}
+            onChange={e => { setSearchQuery(e.target.value); setSearchOpen(true); }}
+            onFocus={() => setSearchOpen(true)}
+            onBlur={() => setTimeout(() => setSearchOpen(false), 150)}
+            onKeyDown={e => {
+              if (e.key === "Enter" && searchResults.length) {
+                nav(searchResults[0].path); setSearchOpen(false); setSearchQuery("");
+              }
+            }}
+            placeholder="Search subjects, past questions, topics…"
+            style={{ flex:1, background:"none", border:"none", outline:"none", color:C.text, fontSize:13 }}
+          />
+        </div>
+        {searchOpen && searchQuery.trim() && (
+          <div style={{ position:"absolute", top:44, left:0, right:0, background:C.surf, border:`1px solid ${C.brdStr}`, borderRadius:12, padding:6, boxShadow:"0 16px 48px rgba(0,0,0,0.5)", zIndex:60, maxHeight:280, overflowY:"auto" }}>
+            {searchResults.length ? searchResults.map(r => (
+              <div key={r.path} onMouseDown={() => { nav(r.path); setSearchOpen(false); setSearchQuery(""); }}
+                style={{ padding:"9px 10px", borderRadius:8, cursor:"pointer", fontSize:13, color:C.text, display:"flex", justifyContent:"space-between" }}
+                onMouseEnter={e => e.currentTarget.style.background = C.surfA}
+                onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                <span>{r.label}</span>
+                <span style={{ color:C.muted, fontSize:11 }}>{r.group}</span>
+              </div>
+            )) : (
+              <div style={{ padding:"9px 10px", fontSize:12, color:C.muted }}>No matches for "{searchQuery}"</div>
+            )}
+          </div>
+        )}
       </div>
 
       <div style={{ display:"flex", alignItems:"center", gap:8, marginLeft:"auto" }}>

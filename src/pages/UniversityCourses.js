@@ -83,7 +83,10 @@ export default function UniversityCourses() {
 
   const startCourse = (course) => {
     if (course.coming) return;
-    nav(`/exam-select?type=UNIVERSITY&institution=${selected}&course_code=${encodeURIComponent(course.code)}&subject=${encodeURIComponent(course.title)}`);
+    // Go straight to the exam engine — ExamSelect is a subject-picker UI and
+    // has no concept of a pre-chosen university course, so routing through it
+    // silently dropped institution/course_code/subject and fell back to JAMB.
+    nav(`/exam?exam_type=UNIVERSITY&institution=${selected}&subject=${encodeURIComponent(course.title)}&mode=exam&limit=${course.questions || 40}&time=${course.questions || 40}`);
   };
 
   return (
