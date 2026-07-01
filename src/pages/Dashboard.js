@@ -41,6 +41,7 @@ const NAV_GROUPS = [
       { icon: "📅",  label: "Study Planner",     path: "/study-planner" },
       { icon: "📚",  label: "Knowledge Vault",   path: "/vault" },
       { icon: "🎬",  label: "Video Library",     path: "/videos" },
+      { icon: "🧑‍🏫", label: "Scholar Sessions",  path: "/classroom" },
     ],
   },
   {
