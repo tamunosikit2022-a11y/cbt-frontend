@@ -264,7 +264,7 @@ function ComponentNode({ comp, selected, pendingPin, onSelect, onDrag, onPinClic
         style={{ cursor: "grab" }}
       />
       <g pointerEvents="none">
-        <ComponentShape type={comp.type} w={width} h={height * 0.62} values={comp.values} />
+        <ComponentShape id={comp.id} type={comp.type} w={width} h={height * 0.62} values={comp.values} />
       </g>
       <text x={width / 2} y={height * 0.62 + 12} fill="#e0e0e0" fontSize="10" fontWeight="700" textAnchor="middle">
         {meta.label}

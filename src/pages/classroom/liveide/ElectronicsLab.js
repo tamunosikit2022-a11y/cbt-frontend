@@ -980,7 +980,7 @@ function ComponentNode({ comp, selected, pendingPin, live, warning, snapPreview,
             style={{ cursor: "grab" }}
           />
           <g pointerEvents="none">
-            <ComponentShape type={comp.type} w={width} h={comp.type === "lcd1602" ? height : height * 0.62} values={{ ...comp.values, on: live }} />
+            <ComponentShape id={comp.id} type={comp.type} w={width} h={comp.type === "lcd1602" ? height : height * 0.62} values={{ ...comp.values, on: live }} />
           </g>
           {comp.type !== "lcd1602" && (
             <text x={width / 2} y={height * 0.62 + 12} fill="#e0e0e0" fontSize="10" fontWeight="700" textAnchor="middle">

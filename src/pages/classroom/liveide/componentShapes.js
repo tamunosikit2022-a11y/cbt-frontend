@@ -29,21 +29,53 @@ export function resistorBands(value) {
   return [BAND_COLORS[d1], BAND_COLORS[d2], BAND_COLORS[Math.min(mult, 9)] || "#d4af37", "#d4af37"];
 }
 
-function Led({ w, h, values }) {
+function Led({ id, w, h, values }) {
   const color = LED_COLORS[values?.color] || LED_COLORS.red;
-  const cx = w / 2, cy = h * 0.42;
   const lit = Boolean(values?.on);
+  const cx = w / 2;
+  const domeR = h * 0.3;
+  const domeTopY = h * 0.1 + domeR;
+  const domeBottomY = h * 0.52;
+  const gradId = `led-grad-${id ?? `${values?.color || "red"}-${lit ? 1 : 0}`}`;
+  const legTopY = domeBottomY + h * 0.03;
+
   return (
     <>
-      {lit && <circle cx={cx} cy={cy} r={h * 0.55} fill={color} opacity={0.28} />}
-      <circle cx={cx} cy={cy} r={h * 0.32} fill={color} opacity={lit ? 0.9 : 0.35} />
+      <defs>
+        {/* Off-center highlight + darker edge — reads as a rounded, glossy
+            plastic dome instead of a flat-filled circle. */}
+        <radialGradient id={gradId} cx="35%" cy="30%" r="75%">
+          <stop offset="0%"   stopColor="#ffffff" stopOpacity={lit ? 0.9 : 0.55} />
+          <stop offset="35%"  stopColor={color}    stopOpacity={lit ? 0.95 : 0.6} />
+          <stop offset="100%" stopColor={color}    stopOpacity={lit ? 0.85 : 0.35} />
+        </radialGradient>
+      </defs>
+
+      {/* ambient glow when powered */}
+      {lit && <circle cx={cx} cy={(domeTopY + domeBottomY) / 2} r={h * 0.55} fill={color} opacity={0.25} />}
+
+      {/* two legs — deliberately uneven lengths, like the real anode/cathode
+          leads students use to tell polarity apart */}
+      <line x1={cx - h * 0.1} y1={legTopY} x2={cx - h * 0.1} y2={legTopY + h * 0.26} stroke="#c9c9c9" strokeWidth={1.4} strokeLinecap="round" />
+      <line x1={cx + h * 0.1} y1={legTopY} x2={cx + h * 0.1} y2={legTopY + h * 0.4}  stroke="#c9c9c9" strokeWidth={1.4} strokeLinecap="round" />
+
+      {/* base flange where the dome meets the leads */}
+      <rect x={cx - h * 0.22} y={domeBottomY - h * 0.02} width={h * 0.44} height={h * 0.07} rx={1.5} fill="#dedede" opacity={0.55} />
+
+      {/* dome body — flat sides, rounded top, matching a real 5mm LED silhouette */}
       <path
-        d={`M ${cx - h * 0.22} ${cy + h * 0.1}
-            A ${h * 0.22} ${h * 0.22} 0 1 1 ${cx + h * 0.22} ${cy + h * 0.1}
-            L ${cx + h * 0.22} ${cy + h * 0.22} L ${cx - h * 0.22} ${cy + h * 0.22} Z`}
-        fill={color} stroke="#fff" strokeWidth={0.6}
+        d={`M ${cx - domeR} ${domeBottomY}
+            L ${cx - domeR} ${domeTopY}
+            A ${domeR} ${domeR} 0 0 1 ${cx + domeR} ${domeTopY}
+            L ${cx + domeR} ${domeBottomY} Z`}
+        fill={`url(#${gradId})`}
+        stroke={color}
+        strokeWidth={0.8}
+        strokeOpacity={0.6}
       />
-      <rect x={cx - h * 0.22} y={cy + h * 0.16} width={h * 0.44} height={h * 0.08} fill={color} />
+
+      {/* gloss highlight */}
+      <ellipse cx={cx - domeR * 0.35} cy={domeTopY} rx={domeR * 0.28} ry={domeR * 0.4} fill="#ffffff" opacity={lit ? 0.5 : 0.3} />
     </>
   );
 }
@@ -262,10 +294,10 @@ const SHAPES = {
   lcd1602: Lcd1602,
 };
 
-export function ComponentShape({ type, w, h, values }) {
+export function ComponentShape({ id, type, w, h, values }) {
   const Shape = SHAPES[type];
   if (!Shape) return null;
-  return <Shape w={w} h={h} values={values} />;
+  return <Shape id={id} w={w} h={h} values={values} />;
 }
 
 // Small human-readable "330Ω" / "green" style caption shown under a
