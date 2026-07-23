@@ -1009,12 +1009,12 @@ function ComponentNode({ comp, selected, pendingPin, live, warning, snapPreview,
     <g transform={`translate(${comp.x},${comp.y})`}>
       {isArduino ? (
         <g onMouseDown={startDrag} style={{ cursor: "grab" }}>
-          <ArduinoBoardArt w={width} h={height} />
+          <ArduinoBoardArt id={comp.id} w={width} h={height} />
           {selected && <rect x={-3} y={-3} width={width + 6} height={height + 6} rx={12} fill="none" stroke="#6c63ff" strokeWidth={2} />}
         </g>
       ) : isBreadboard ? (
         <g onMouseDown={startDrag} style={{ cursor: "grab" }}>
-          <BreadboardArt w={width} h={height} />
+          <BreadboardArt id={comp.id} w={width} h={height} />
           {selected && <rect x={-3} y={-3} width={width + 6} height={height + 6} rx={12} fill="none" stroke="#6c63ff" strokeWidth={2} />}
         </g>
       ) : (
