@@ -36,7 +36,7 @@ import { ComponentShape, valueCaption, ArduinoBoardArt, BreadboardArt } from "./
 const WIRE_COLORS = ["#ff6b6b", "#feca57", "#1dd1a1", "#54a0ff", "#a29bfe", "#ff9ff3", "#00d2d3"];
 const CANVAS_W = 1040;
 const CANVAS_H = 500;
-const POPULAR = [ARDUINO_META.type, BREADBOARD_META.type, "led", "resistor", "button", "potentiometer", "lcd1602", "hcsr04"];
+const POPULAR = [ARDUINO_META.type, BREADBOARD_META.type, "battery", "led", "resistor", "button", "potentiometer", "lcd1602", "hcsr04"];
 
 function newId() { return Math.random().toString(36).slice(2, 9); }
 
@@ -277,17 +277,26 @@ export default function ElectronicsLab({ project, onProjectSaved }) {
     const currentPlaced = placedRef.current;
     const currentWires = wiresRef.current;
     const arduino = currentPlaced.find((c) => c.type === ARDUINO_META.type);
-    if (!arduino) { setLiveMap({}); return; }
+    // NEW: battery packs are a second, independent power source — a
+    // student should be able to light an LED with just a battery, a
+    // resistor, and wires, with no Arduino on the canvas at all.
+    const batteries = currentPlaced.filter((c) => c.type === "battery");
+    if (!arduino && batteries.length === 0) { setLiveMap({}); return; }
+
     const highPins = new Set();
-    Object.entries(ARDUINO_PIN_TO_AVR).forEach(([pin, [port, bit]]) => {
-      if ((pinBitsRef.current[port] >> bit) & 1) highPins.add(pin);
-    });
+    if (arduino) {
+      Object.entries(ARDUINO_PIN_TO_AVR).forEach(([pin, [port, bit]]) => {
+        if ((pinBitsRef.current[port] >> bit) & 1) highPins.add(pin);
+      });
+    }
 
     // Undirected "wire network": the wires the student drew, plus internal
     // pass-through for genuine 2-terminal, non-polarized parts (a resistor,
     // buzzer, motor, or button really does conduct either direction).
     // The LED is excluded here — it gets its own directed edge below,
-    // because unlike these other parts it's polarized.
+    // because unlike these other parts it's polarized. A battery is also
+    // excluded — its two terminals are a source, not a conductor, so they
+    // must never be treated as directly wired together internally.
     const undirected = {};
     const addUndirected = (a, b) => { (undirected[a] = undirected[a] || []).push(b); (undirected[b] = undirected[b] || []).push(a); };
     currentWires.forEach((w) => addUndirected(nodeKey(w.from.compId, w.from.pinName), nodeKey(w.to.compId, w.to.pinName)));
@@ -321,16 +330,28 @@ export default function ElectronicsLab({ project, onProjectSaved }) {
     };
 
     const powerStarts = [];
-    ARDUINO_META.pins.forEach((pin) => {
-      if (highPins.has(pin) || pin === "5V" || pin === "3V3") powerStarts.push(nodeKey(arduino.id, pin));
-    });
+    if (arduino) {
+      ARDUINO_META.pins.forEach((pin) => {
+        if (highPins.has(pin) || pin === "5V" || pin === "3V3") powerStarts.push(nodeKey(arduino.id, pin));
+      });
+    }
+    // NEW: every placed battery's "+" terminal is always a live power start
+    // — unlike an Arduino digital pin, a battery isn't switched on/off by
+    // code, it's just always on once wired in.
+    batteries.forEach((b) => powerStarts.push(nodeKey(b.id, "+")));
     const poweredSet = walk(powerStarts, [undirected, ledForward]);
-    const groundedSet = walk([nodeKey(arduino.id, "GND")], [undirected]);
 
+    const groundStarts = [];
+    if (arduino) groundStarts.push(nodeKey(arduino.id, "GND"));
+    batteries.forEach((b) => groundStarts.push(nodeKey(b.id, "-")));
+    const groundedSet = walk(groundStarts, [undirected]);
+
+    const sourceIds = new Set(batteries.map((b) => b.id));
+    if (arduino) sourceIds.add(arduino.id);
     const map = {};
     poweredSet.forEach((node) => {
       const compId = node.split("::")[0];
-      if (compId !== arduino.id) map[compId] = true; // loose "touched by a powered net" flag for non-LED shapes
+      if (!sourceIds.has(compId)) map[compId] = true; // loose "touched by a powered net" flag for non-LED shapes
     });
     currentPlaced.forEach((c) => {
       if (c.type !== "led") return;
@@ -347,7 +368,8 @@ export default function ElectronicsLab({ project, onProjectSaved }) {
   const wiringWarnings = useMemo(() => {
     const empty = { ledsMissingResistor: new Set(), shortCircuit: false };
     const arduino = placed.find((c) => c.type === ARDUINO_META.type);
-    if (!arduino) return empty;
+    const batteries = placed.filter((c) => c.type === "battery");
+    if (!arduino && batteries.length === 0) return empty;
 
     const adj = {};
     const addEdge = (a, b) => { (adj[a] = adj[a] || []).push(b); (adj[b] = adj[b] || []).push(a); };
@@ -362,9 +384,22 @@ export default function ElectronicsLab({ project, onProjectSaved }) {
       if (meta?.pins?.length === 2) addEdge(nodeKey(c.id, meta.pins[0]), nodeKey(c.id, meta.pins[1]));
     });
 
+    // NEW: a battery's "+"/"-" terminals are power/ground nodes exactly
+    // like the Arduino's 5V/VIN and GND pins — these two helpers let every
+    // check below work the same way whether the source is an Arduino, a
+    // battery, or (commonly, for a beginner project) just a battery alone.
+    const POWER_PINS = new Set([...ARDUINO_PINS_TOP, "5V", "VIN"]);
+    const isPowerNode = (compId, pinName) => {
+      if (arduino && compId === arduino.id && POWER_PINS.has(pinName)) return true;
+      return batteries.some((b) => b.id === compId) && pinName === "+";
+    };
+    const isGroundNode = (compId, pinName) => {
+      if (arduino && compId === arduino.id && pinName === "GND") return true;
+      return batteries.some((b) => b.id === compId) && pinName === "-";
+    };
+
     // --- Check 1: LED with no current-limiting resistor in its path ---
     const ledsMissingResistor = new Set();
-    const POWER_PINS = new Set([...ARDUINO_PINS_TOP, "5V", "VIN"]);
     placed.filter((c) => c.type === "led").forEach((led) => {
       const seen = new Set();
       const queue = [nodeKey(led.id, "anode"), nodeKey(led.id, "cathode")].map((n) => ({ node: n, hasResistor: false }));
@@ -374,7 +409,7 @@ export default function ElectronicsLab({ project, onProjectSaved }) {
         if (seen.has(node)) continue;
         seen.add(node);
         const [compId, pinName] = node.split("::");
-        if (compId === arduino.id && POWER_PINS.has(pinName) && !hasResistor) flagged = true;
+        if (isPowerNode(compId, pinName) && !hasResistor) flagged = true;
         const comp = placed.find((c) => c.id === compId);
         const nextHasResistor = hasResistor || comp?.type === "resistor";
         (adj[node] || []).forEach((n) => { if (!seen.has(n)) queue.push({ node: n, hasResistor: nextHasResistor }); });
@@ -385,18 +420,20 @@ export default function ElectronicsLab({ project, onProjectSaved }) {
     // --- Check 2: dead short — power wired to GND with NOTHING current-
     // limiting anywhere in between (no resistor, no LED). This is the
     // real "paperclip across the battery" mistake, and it's dangerous
-    // regardless of which parts happen to be involved.
+    // regardless of which parts happen to be involved — including when
+    // the power source really is a battery, not just a figure of speech.
     let shortCircuit = false;
     {
       const seen = new Set();
       const queue = [];
-      ["5V", "VIN", ...ARDUINO_PINS_TOP].forEach((pin) => queue.push(nodeKey(arduino.id, pin)));
+      if (arduino) ["5V", "VIN", ...ARDUINO_PINS_TOP].forEach((pin) => queue.push(nodeKey(arduino.id, pin)));
+      batteries.forEach((b) => queue.push(nodeKey(b.id, "+")));
       while (queue.length) {
         const node = queue.shift();
         if (seen.has(node)) continue;
         seen.add(node);
         const [compId, pinName] = node.split("::");
-        if (compId === arduino.id && pinName === "GND") { shortCircuit = true; break; }
+        if (isGroundNode(compId, pinName)) { shortCircuit = true; break; }
         const comp = placed.find((c) => c.id === compId);
         if (comp?.type === "resistor" || comp?.type === "led") continue; // current-limited or blocked here — don't propagate through it
         (adj[node] || []).forEach((n) => { if (!seen.has(n)) queue.push(n); });
@@ -405,6 +442,16 @@ export default function ElectronicsLab({ project, onProjectSaved }) {
 
     return { ledsMissingResistor, shortCircuit };
   }, [placed, wires]);
+
+  // NEW: recomputeLiveMap used to only be triggered by the AVR emulator's
+  // onPinChange callback, i.e. only while an Arduino sketch was actually
+  // running. That left battery-only circuits (no Arduino, no code, no
+  // emulator) permanently dark even when correctly wired. Recomputing
+  // whenever the circuit itself changes covers that case too, on top of
+  // the existing emulator-driven updates for Arduino-based circuits.
+  useEffect(() => {
+    recomputeLiveMap();
+  }, [placed, wires, recomputeLiveMap]);
 
   useEffect(() => {
     emulatorRef.current = new AVREmulator({

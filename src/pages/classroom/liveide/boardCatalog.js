@@ -86,6 +86,14 @@ export const COMPONENTS = [
   ARDUINO_META,
   BREADBOARD_META,
   {
+    // NEW: a real, independent power source — lets a circuit run on its
+    // own (LED + resistor + battery, no Arduino needed at all) instead of
+    // every circuit being implicitly required to have a board on canvas.
+    type: "battery", label: "Battery Pack", icon: "🔋", category: "Power Sources", pins: ["+", "-"],
+    props: [{ key: "voltage", label: "Voltage", type: "select", unit: "V", default: 9,
+      options: [1.5, 3, 4.5, 6, 9, 12] }],
+  },
+  {
     type: "led", label: "LED", icon: "💡", category: "Semiconductors", pins: ["anode", "cathode"],
     props: [{ key: "color", label: "Color", type: "select", unit: "", default: "red",
       options: ["red", "green", "blue", "yellow", "white"] }],
@@ -145,7 +153,7 @@ export const COMPONENTS = [
 ];
 
 export const CATEGORY_ORDER = [
-  "Boards", "Passive Components", "Semiconductors", "Sensors",
+  "Boards", "Power Sources", "Passive Components", "Semiconductors", "Sensors",
   "Displays", "Motors", "Input Devices", "Output Devices",
 ];
 

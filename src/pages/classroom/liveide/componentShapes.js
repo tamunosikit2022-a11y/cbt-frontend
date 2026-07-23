@@ -80,6 +80,44 @@ function Led({ id, w, h, values }) {
   );
 }
 
+// A real cell's telltale silhouette: flat body, a raised metal button on
+// the positive end, flush on the negative end — the visual cue students
+// actually use to tell polarity apart on a real battery.
+function Battery({ id, w, h, values }) {
+  const v = values?.voltage ?? 9;
+  const bodyX = w * 0.14, bodyW = w * 0.62, bodyY = h * 0.3, bodyH = h * 0.4;
+  const gradId = `battery-grad-${id ?? "x"}`;
+
+  return (
+    <>
+      <defs>
+        <linearGradient id={gradId} x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%"   stopColor="#5a6578" />
+          <stop offset="45%"  stopColor="#2d3748" />
+          <stop offset="100%" stopColor="#1a202c" />
+        </linearGradient>
+      </defs>
+
+      {/* leads */}
+      <line x1={0} y1={h * 0.5} x2={bodyX} y2={h * 0.5} stroke="#c9c9c9" strokeWidth={2} strokeLinecap="round" />
+      <line x1={bodyX + bodyW + w * 0.08} y1={h * 0.5} x2={w} y2={h * 0.5} stroke="#c9c9c9" strokeWidth={2} strokeLinecap="round" />
+
+      {/* body — flat negative end on the left */}
+      <rect x={bodyX} y={bodyY} width={bodyW} height={bodyH} rx={3} fill={`url(#${gradId})`} stroke="#0d1117" strokeWidth={0.8} />
+
+      {/* raised positive terminal button on the right */}
+      <rect x={bodyX + bodyW} y={h * 0.5 - bodyH * 0.16} width={w * 0.08} height={bodyH * 0.32} rx={2} fill="#d4af37" stroke="#8a7238" strokeWidth={0.5} />
+
+      {/* polarity marks */}
+      <text x={bodyX + bodyW * 0.16} y={h * 0.5 + h * 0.06} fontSize={h * 0.26} fill="#e2e8f0" fontWeight="900" textAnchor="middle">−</text>
+      <text x={bodyX + bodyW * 0.87} y={h * 0.5 + h * 0.06} fontSize={h * 0.22} fill="#e2e8f0" fontWeight="900" textAnchor="middle">+</text>
+
+      {/* voltage stamp, like the printed rating on a real cell */}
+      <text x={bodyX + bodyW * 0.5} y={bodyY + bodyH * 0.9} fontSize={h * 0.15} fill="#93c5fd" fontWeight="700" textAnchor="middle">{v}V</text>
+    </>
+  );
+}
+
 function Resistor({ w, h, values }) {
   const bodyY = h * 0.38, bodyH = h * 0.24;
   const bands = resistorBands(values?.value ?? 220);
@@ -289,7 +327,7 @@ export function BreadboardArt({ w, h }) {
 }
 
 const SHAPES = {
-  led: Led, resistor: Resistor, button: PushButton, potentiometer: Potentiometer,
+  led: Led, battery: Battery, resistor: Resistor, button: PushButton, potentiometer: Potentiometer,
   buzzer: Buzzer, dht11: Dht11, hcsr04: HcSr04, servo: Servo, sevenseg: SevenSeg, dcmotor: DcMotor,
   lcd1602: Lcd1602,
 };
@@ -303,13 +341,13 @@ export function ComponentShape({ id, type, w, h, values }) {
 // Small human-readable "330Ω" / "green" style caption shown under a
 // placed component, built from its current values.
 export function valueCaption(type, values) {
-  const meta = { resistor: "value", potentiometer: "value", led: "color", buzzer: "variant", servo: "range", dcmotor: "voltage" }[type];
+  const meta = { resistor: "value", potentiometer: "value", led: "color", buzzer: "variant", servo: "range", dcmotor: "voltage", battery: "voltage" }[type];
   if (!meta || !values || values[meta] == null) return null;
   const v = values[meta];
   if (type === "resistor" || type === "potentiometer") {
     return v >= 1000 ? `${v / 1000}kΩ` : `${v}Ω`;
   }
   if (type === "servo") return `${v}°`;
-  if (type === "dcmotor") return `${v}V`;
+  if (type === "dcmotor" || type === "battery") return `${v}V`;
   return String(v);
 }
